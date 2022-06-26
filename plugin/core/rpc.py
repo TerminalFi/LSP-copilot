@@ -2,7 +2,17 @@
 
 from .types import TCP_CONNECT_TIMEOUT
 from .types import TransportConfig
-from .typing import Dict, Any, Optional, IO, Protocol, Generic, List, Callable, Tuple, TypeVar, Union
+from .typing import Dict
+from .typing import Any
+from .typing import Optional
+from .typing import IO
+from .typing import Protocol
+from .typing import Generic
+from .typing import List
+from .typing import Callable
+from .typing import Tuple
+from .typing import TypeVar
+from .typing import Union
 from .spec import Spec
 from contextlib import closing
 from queue import Queue
@@ -107,7 +117,6 @@ class ProcessTransport(Transport[T]):
                  writer: IO[bytes], stderr: Optional[IO[bytes]], processor: AbstractProcessor[T],
                  callback_object: TransportCallbacks[T]) -> None:
         self._i = -1
-        self._results = {}
         self._methods = {}
         self._closed = False
         self._process = process
@@ -127,9 +136,12 @@ class ProcessTransport(Transport[T]):
         self._writer_thread.start()
         self._stderr_thread.start()
 
-    def send_json_rpc(self, method: str, params) -> None:
+    def send_json_rpc(self, method: str, params, callback: Any = None) -> None:
         self._i += 1
-        self._methods[self._i] = method
+        self._methods[self._i] = {
+            'method': method,
+            'callback': callback if callback is not None else None
+            }
         req = Spec.request(method=method, id=self._i, params=params)
         self._send_queue.put_nowait(req)
 
@@ -163,7 +175,13 @@ class ProcessTransport(Transport[T]):
                     continue
                 obj = dict(**payload)
                 req_id = int(obj.get("id", -1))
-                method = self._methods.get(req_id, None)
+                details = self._methods.get(req_id, None)
+                method = ''
+                callback = None # type: Any
+                if details is not None:
+                    method = details.get('method', None)
+                    callback = details.get('callback', None)
+
                 if method is None:
                     # try seeing if the response has a method
                     method = obj.get('method', None)
@@ -179,7 +197,10 @@ class ProcessTransport(Transport[T]):
                     if callback_object:
                         callback_object.on_payload(method, payload)
 
-                invoke(method, payload)
+                if callback is None:
+                    invoke(method, payload)
+                else:
+                    callback(payload)
                 try:
                     del self._methods[req_id]
                 except:

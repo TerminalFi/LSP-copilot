@@ -1,4 +1,4 @@
-import sublime
+
 from .typing import Union
 from .types import INITIALIZE
 from .types import SET_EDITOR_INFO
@@ -17,9 +17,9 @@ from .types import STATUS_NOTIFICATION
 from .typing import Any
 from .typing import Dict
 from .typing import Optional
-
 from .rpc import Transport
 
+import sublime
 
 class Handler:
     def __init__(self) -> None:
@@ -55,10 +55,8 @@ class Handler:
             self._handle_notify_accepted(obj=payload)
         elif method == LOG_MESSAGE:
             pass
-            # print(payload.get('params').get('message'))
         elif method == STATUS_NOTIFICATION:
             pass
-            # print(payload.get('params').get('status'))
         else:
             sublime.set_timeout_async(print('unknown method {}'.format(method)), 0)
 
