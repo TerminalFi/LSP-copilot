@@ -1,0 +1,14 @@
+[
+    {
+        "caption": "Copilot: Enable",
+        "command": "copilot_enable"
+    },
+    {
+        "caption": "Preferences: Copilot Settings",
+        "command": "edit_settings",
+        "args": {
+            "base_file": "${packages}/Copilot/Copilot.sublime-settings",
+            "default": "{\n\t$0\n}\n"
+        }
+    }
+]
