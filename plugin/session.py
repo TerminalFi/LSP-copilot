@@ -86,6 +86,8 @@ class CopilotPreviewCompletionsCommand(CopilotTextCommand):
 
     def insert_completion(self, index):
         i = int(index)
+        if i > len(self.copilot.current_completions)-1:
+            return
         completion = self.copilot.current_completions[i]
         mdpopups.erase_phantoms(view=self.view, key='copilot.completion.previews')
         self.view.run_command('insert', {"characters": completion['displayText'].replace('\t', '')})
