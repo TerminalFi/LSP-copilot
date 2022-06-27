@@ -1,3 +1,5 @@
+from LSP.plugin.core.typing import Any, Callable, Tuple
+from lsp_utils import request_handler
 from .core.registry import CopilotTextCommand
 import sublime
 import mdpopups
