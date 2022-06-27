@@ -38,7 +38,7 @@ class Copilot:
             return False
 
         self.transport = create_transport(config=TransportConfig(name='Copilot', command=[
-            'node', '/Users/zacharyschulze/git/Alfred-Man/copilot.el/dist/agent.js'], env={}, listener_socket=None), cwd=None, callback_object=self.handler)
+            'node', R'E:\Repo\copilot.vim\copilot\dist\agent.js'], env={}, listener_socket=None), cwd=None, callback_object=self.handler)
         self.handler.transport = self.transport
         self._enabled = True
         return self._enabled
