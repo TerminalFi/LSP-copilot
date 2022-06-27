@@ -21,6 +21,8 @@ from .rpc import Transport
 
 import sublime
 
+
+# Working to get rid of this completely
 class Handler:
     def __init__(self) -> None:
         self.transport = None # type: Transport[Dict[str, Any]]
@@ -58,7 +60,7 @@ class Handler:
         elif method == STATUS_NOTIFICATION:
             pass
         else:
-            sublime.set_timeout_async(print('unknown method {}'.format(method)), 0)
+            pass
 
 
         # result = payload.get('result', None)

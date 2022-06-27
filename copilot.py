@@ -5,6 +5,7 @@ from .plugin.core.registry import CopilotViewEventListener
 from .plugin.core.registry import CopilotTextCommand
 
 from .plugin.session import CopilotEnableCommand
+from .plugin.session import CopilotSignInCommand
 from .plugin.session import CopilotPreviewCompletionsCommand
 
 def plugin_loaded():

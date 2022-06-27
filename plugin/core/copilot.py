@@ -1,4 +1,5 @@
 
+from subprocess import call
 import sublime
 from .handler import Handler
 from .rpc import create_transport
@@ -24,6 +25,9 @@ class Copilot:
         self.handler = Handler()
         self.transport = None
         self._enabled = False
+        self.signed_in = False
+        self.current_completions = []
+        self.completion_index = 0
         self.plugin_name = PLUGIN_NAME
         self.plugin_version = PLUGIN_VERSION
         self.copilot_version = COPILOT_VERION
@@ -74,28 +78,29 @@ class Copilot:
             'localChecksOnly': local_checks_only
         }), callback=self.handler._handle_check_status)
 
-    def send_sign_in_initiate(self) -> None:
+    def send_sign_in_initiate(self, callback) -> None:
         if self.transport is None:
             return
-        self.transport.send_json_rpc(method=SIGN_IN_INITIATE, params=({}))
+        self.transport.send_json_rpc(method=SIGN_IN_INITIATE, params=({}), callback=callback)
 
-    def send_sign_in_confirm(self, user_code: str):
+    def send_sign_in_confirm(self, user_code: str, callback):
         if self.transport is None:
             return
         self.transport.send_json_rpc(method=SIGN_IN_CONFIRM, params=({
             'userCode': user_code
-        }))
+        }), callback=callback)
 
     def send_sign_out(self) -> None:
         if self.transport is None:
             return
         self.transport.send_json_rpc(method=SIGN_OUT, params=({}))
 
-    def send_get_completions(self, view: sublime.View) -> None:
+    def send_get_completions(self, view: sublime.View, callback) -> None:
         if self.transport is None:
             return
         source = view.substr(sublime.Region(0, view.size()))
         language_id = view.syntax().scope.split('.')[-1]
+        # this is all hacky
         request = {
             'doc': {
                 'source': source,
@@ -113,7 +118,7 @@ class Copilot:
             }
         }
         
-        self.transport.send_json_rpc(method=GET_COMPLETIONS, params=(request))
+        self.transport.send_json_rpc(method=GET_COMPLETIONS, params=(request), callback=callback)
 
     def send_record_telemetry_consent(self, response: bool) -> None:
         pass

@@ -89,25 +89,14 @@ class CopilotViewEventListener(sublime_plugin.ViewEventListener):
         return self._copilot
 
     def _register_async(self) -> bool:
-        # self.workspace_ref = session_manager.add_view_to_session(
-        #     self.view, self.view.settings().get('livesession.view.uid')
-        # )
-        # if not self.workspace_ref:
-        #     # debug('not adding view to session')
-        #     return False
-
-        # self._file_name = self.workspace_ref['relative_name']
-        # self.uid = self.view.settings().get('livesession.view.uid')
         buf = self.view.buffer()
         if not buf:
-            # debug(f'not tracking bufferless view {self.view.id()}')
             return False
 
         text_change_listener = CopilotTextChangeListener.ids_to_listeners.get(
             buf.buffer_id
         )
         if not text_change_listener:
-            # debug(f'couldn\'t find a text change listener for listener {self}')
             return False
 
         text_change_listener.view_listeners.add(self)
@@ -125,13 +114,27 @@ class CopilotViewEventListener(sublime_plugin.ViewEventListener):
 
     def _deregister_view_async(self) -> None:
         pass
-        # if self.manager.session_exists():
-        #     self.manager.remove_view_from_session(self.uid)
 
     def on_text_changed_async(self, change_count, changes: Iterable[sublime.TextChange]) -> None:
         if self.copilot is None or not self.copilot.is_enabled():
             return
-        self.copilot.send_get_completions(self.view)
+        self.copilot.send_get_completions(self.view, self._handler_get_completions)
+
+
+    def _handler_get_completions(self, obj):
+        results = obj.get('result', None)
+        if results is None:
+            self.copilot.current_completions = []
+            return
+
+        completions = results.get('completions', None)
+        if completions is None or len(completions) == 0:
+            self.copilot.current_completions = []
+            return
+
+        self.copilot.current_completions = completions
+        sublime.set_timeout_async(self.view.run_command('copilot_preview_completions', {'completions': self.copilot.current_completions, 'cycle': 0}), 0)
+
 
 
 class CopilotTextCommand(sublime_plugin.TextCommand):

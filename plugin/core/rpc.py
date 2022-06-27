@@ -46,7 +46,7 @@ class Transport(Generic[T]):
     def send(self, payload: T) -> None:
         raise NotImplementedError()
 
-    def send_json_rpc(self, method: str, params: Dict) -> None:
+    def send_json_rpc(self, method: str, params: Dict, callback: Any = None) -> None:
         raise NotImplementedError()
 
     def close(self) -> None:

@@ -4,6 +4,10 @@
         "command": "copilot_enable"
     },
     {
+        "caption": "Copilot: Signin",
+        "command": "copilot_sign_in"
+    },
+    {
         "caption": "Preferences: Copilot Settings",
         "command": "edit_settings",
         "args": {
