@@ -1,6 +1,14 @@
 [
     {
-        "caption": "LSP-Copilot: Signin",
-        "command": "lsp_copilot_sign_in"
+        "caption": "Copilot: Check Status",
+        "command": "copilot_check_status",
+    },
+    {
+        "caption": "Copilot: Sign In",
+        "command": "copilot_sign_in",
+    },
+    {
+        "caption": "Copilot: Sign Out",
+        "command": "copilot_sign_out",
     },
 ]
