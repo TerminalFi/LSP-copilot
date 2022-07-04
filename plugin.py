@@ -22,13 +22,13 @@ from .types import (
     CopilotPayloadStatusNotification,
 )
 from abc import ABCMeta
-from LSP.plugin import Request, filename_to_uri
+from LSP.plugin import filename_to_uri
+from LSP.plugin import Request
 from LSP.plugin import Session
-from LSP.plugin.core.protocol import Request
 from LSP.plugin.core.registry import LspTextCommand
+from LSP.plugin.core.types import debounced
 from LSP.plugin.core.types import FEATURES_TIMEOUT
-from LSP.plugin.core.types import Union, debounced
-from LSP.plugin.core.typing import List, Optional, Tuple
+from LSP.plugin.core.typing import List, Optional, Tuple, Union
 from lsp_utils import ApiWrapperInterface
 from lsp_utils import notification_handler
 from lsp_utils import NpmClientHandler

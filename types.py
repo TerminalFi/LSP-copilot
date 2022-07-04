@@ -1,5 +1,4 @@
-from LSP.plugin.core.types import TypedDict
-from LSP.plugin.core.typing import List, Literal
+from LSP.plugin.core.typing import List, Literal, TypedDict
 
 CopilotPayloadCompletionPosition = TypedDict(
     "CopilotPayloadCompletionPosition",
