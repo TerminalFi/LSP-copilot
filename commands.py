@@ -1,6 +1,5 @@
 from .constants import (
     PACKAGE_NAME,
-    PHANTOM_KEY,
     REQ_CHECK_STATUS,
     REQ_SIGN_IN_CONFIRM,
     REQ_SIGN_IN_INITIATE,
@@ -14,12 +13,12 @@ from .types import (
     CopilotPayloadSignOut,
 )
 from .utils import clear_completion_preview
+from .utils import update_completion_preview
 from abc import ABCMeta
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import List, Union
 import functools
-import mdpopups
 import sublime
 
 
@@ -37,14 +36,10 @@ class CopilotPreviewCompletionsCommand(CopilotTextCommand):
         content = '<a href="{}">Accept Suggestion</a>\n```{}\n{}\n```'.format(
             cycle, syntax_id, completions[cycle]["displayText"]
         )
-        clear_completion_preview(self.view)
-        # This currently doesn't care about where the completion is actually supposed to be
-        mdpopups.add_phantom(
+        update_completion_preview(
             view=self.view,
-            key=PHANTOM_KEY,
             region=self.view.sel()[0],
             content=content,
-            md=True,
             layout=sublime.LAYOUT_BELOW,
             on_navigate=functools.partial(self._insert_completion, completions=completions),
         )
@@ -54,7 +49,7 @@ class CopilotPreviewCompletionsCommand(CopilotTextCommand):
         if not (0 <= idx < len(completions)):
             return
         completion = completions[idx]
-        mdpopups.erase_phantoms(view=self.view, key=PHANTOM_KEY)
+        clear_completion_preview(self.view)
         self.view.run_command("insert", {"characters": completion["displayText"]})
 
 
