@@ -1,5 +1,5 @@
-from .constants import COPILOT_WAITING_COMPLETION_KEY
 from .plugin import CopilotPlugin
+from .utils import get_view_is_waiting_completion
 from LSP.plugin.core.types import debounced
 from LSP.plugin.core.types import FEATURES_TIMEOUT
 import functools
@@ -14,6 +14,6 @@ class EventListener(sublime_plugin.ViewEventListener):
         debounced(
             functools.partial(plugin.request_get_completions, self.view),
             FEATURES_TIMEOUT,
-            lambda: not getattr(self.view, COPILOT_WAITING_COMPLETION_KEY, False),
+            lambda: not get_view_is_waiting_completion(self.view),
             async_thread=True,
         )

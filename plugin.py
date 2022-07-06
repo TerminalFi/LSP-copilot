@@ -1,5 +1,4 @@
 from .constants import (
-    COPILOT_WAITING_COMPLETION_KEY,
     NTFY_LOG_MESSAGE,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
@@ -16,6 +15,7 @@ from .types import (
 )
 from .utils import clear_completion_preview
 from .utils import get_project_relative_path
+from .utils import set_view_is_waiting_completion
 from LSP.plugin import filename_to_uri
 from LSP.plugin import Request
 from LSP.plugin import Session
@@ -53,10 +53,10 @@ class CopilotPlugin(NpmClientHandler):
             self.plugin_mapping[sess.window.id()] = self
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
-        def on_check_status(result: CopilotPayloadSignInConfirm, _: bool) -> None:
+        def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
             self.set_has_signed_in(result.get("status") == "OK")
 
-        def on_set_editor_info(result: str, _: bool) -> None:
+        def on_set_editor_info(result: str, failed: bool) -> None:
             pass
 
         api.send_request(REQ_CHECK_STATUS, {}, on_check_status)
@@ -116,20 +116,22 @@ class CopilotPlugin(NpmClientHandler):
 
     def request_get_completions(self, view: sublime.View) -> None:
         clear_completion_preview(view)
+
         session = self.weaksession()
         syntax = view.syntax()
         sel = view.sel()
         if not (self.get_has_signed_in() and session and syntax and len(sel) == 1):
             return
-        setattr(view, COPILOT_WAITING_COMPLETION_KEY, True)
+
+        cursor = sel[0]
         file_path = view.file_name() or ""
-        row, col = view.rowcol(sel[0].begin())
+        row, col = view.rowcol(cursor.begin())
         params = {
             "doc": {
                 "source": view.substr(sublime.Region(0, view.size())),
                 "tabSize": view.settings().get("tab_size", 4),
                 "indentSize": 1,  # there is no such concept in ST
-                "insertSpaces": False,  # always use TAB and let ST auto converts it
+                "insertSpaces": False,  # always use TAB and let ST auto converts it accordingly
                 "path": file_path,
                 "uri": file_path and filename_to_uri(file_path),
                 "relativePath": get_project_relative_path(file_path),
@@ -137,19 +139,33 @@ class CopilotPlugin(NpmClientHandler):
                 "position": {"line": row, "character": col},
             }
         }
+
+        set_view_is_waiting_completion(view, True)
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),
-            functools.partial(self._on_get_completions_async, view),
+            functools.partial(self._on_get_completions_async, view, region=cursor.to_tuple()),
         )
 
-    def _on_get_completions_async(self, view: sublime.View, payload: CopilotPayloadCompletions) -> None:
-        setattr(view, COPILOT_WAITING_COMPLETION_KEY, False)
+    def _on_get_completions_async(
+        self,
+        view: sublime.View,
+        payload: CopilotPayloadCompletions,
+        region: Tuple[int, int],
+    ) -> None:
+        set_view_is_waiting_completion(view, False)
+
+        # re-request completions because the cursor position changed during awaiting Copilot's response
+        if view.sel()[0].to_tuple() != region:
+            self.request_get_completions(view)
+            return
+
         completions = payload.get("completions")
         if not completions:
             return
+
         sublime.set_timeout_async(
             lambda: view.run_command(
                 "copilot_preview_completions",
-                {"completions": completions},
+                {"completions": completions, "region": region},
             )
         )

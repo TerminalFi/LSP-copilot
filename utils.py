@@ -1,4 +1,4 @@
-from .constants import PHANTOM_KEY
+from .constants import COPILOT_WAITING_COMPLETION_KEY, PHANTOM_KEY
 from LSP.plugin.core.typing import Callable
 import mdpopups
 import os
@@ -29,6 +29,14 @@ def update_completion_preview(
         key=PHANTOM_KEY,
         **kwargs
     )
+
+
+def get_view_is_waiting_completion(view: sublime.View) -> bool:
+    return bool(getattr(view, COPILOT_WAITING_COMPLETION_KEY, False))
+
+
+def set_view_is_waiting_completion(view: sublime.View, is_waiting: bool) -> None:
+    setattr(view, COPILOT_WAITING_COMPLETION_KEY, is_waiting)
 
 
 def get_project_relative_path(file_path: str) -> str:

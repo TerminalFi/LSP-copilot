@@ -17,22 +17,15 @@ from .utils import update_completion_preview
 from abc import ABCMeta
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
-from LSP.plugin.core.typing import List, Union
+from LSP.plugin.core.typing import List, Tuple, Union
 import functools
 import sublime
 import sublime_plugin
 
 
 class CopilotInsertAsIsCommand(sublime_plugin.TextCommand):
-    def run(self, edit: sublime.Edit, characters: str) -> None:
-        sel = self.view.sel()
-        if not (characters and len(sel) == 1):
-            return
-        self.view.replace(edit, sel[0], characters)
-
-        end = sel[0].end()
-        sel.clear()
-        sel.add(end)
+    def run(self, edit: sublime.Edit, characters: str, region: Tuple[int, int]) -> None:
+        self.view.insert(edit, region[1], characters)
 
 
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
@@ -40,7 +33,13 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
 
 
 class CopilotPreviewCompletionsCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit, completions: List[CopilotPayloadCompletion], cycle: int = 0) -> None:
+    def run(
+        self,
+        _: sublime.Edit,
+        completions: List[CopilotPayloadCompletion],
+        region: Tuple[int, int],
+        cycle: int = 0,
+    ) -> None:
         syntax = self.view.syntax()
         if not (syntax and completions):
             return
@@ -51,19 +50,34 @@ class CopilotPreviewCompletionsCommand(CopilotTextCommand):
         )
         update_completion_preview(
             view=self.view,
-            region=self.view.sel()[0],
+            region=sublime.Region(max(region)),
             content=content,
             layout=sublime.LAYOUT_BELOW,
-            on_navigate=functools.partial(self._insert_completion, completions=completions),
+            on_navigate=functools.partial(
+                self._insert_completion,
+                completions=completions,
+                region=region,
+            ),
         )
 
-    def _insert_completion(self, index: str, completions: List[CopilotPayloadCompletion]) -> None:
+    def _insert_completion(
+        self,
+        index: str,
+        completions: List[CopilotPayloadCompletion],
+        region: Tuple[int, int],
+    ) -> None:
         idx = int(index)
         if not (0 <= idx < len(completions)):
             return
         completion = completions[idx]
         clear_completion_preview(self.view)
-        self.view.run_command("copilot_insert_as_is", {"characters": completion["displayText"]})
+        self.view.run_command(
+            "copilot_insert_as_is",
+            {
+                "characters": completion["displayText"],
+                "region": region,
+            },
+        )
 
 
 class CopilotSignInCommand(CopilotTextCommand):
