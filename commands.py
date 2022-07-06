@@ -20,6 +20,19 @@ from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import List, Union
 import functools
 import sublime
+import sublime_plugin
+
+
+class CopilotInsertAsIsCommand(sublime_plugin.TextCommand):
+    def run(self, edit: sublime.Edit, characters: str) -> None:
+        sel = self.view.sel()
+        if not (characters and len(sel) == 1):
+            return
+        self.view.replace(edit, sel[0], characters)
+
+        end = sel[0].end()
+        sel.clear()
+        sel.add(end)
 
 
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
@@ -50,7 +63,7 @@ class CopilotPreviewCompletionsCommand(CopilotTextCommand):
             return
         completion = completions[idx]
         clear_completion_preview(self.view)
-        self.view.run_command("insert", {"characters": completion["displayText"]})
+        self.view.run_command("copilot_insert_as_is", {"characters": completion["displayText"]})
 
 
 class CopilotSignInCommand(CopilotTextCommand):

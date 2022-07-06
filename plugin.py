@@ -124,15 +124,14 @@ class CopilotPlugin(NpmClientHandler):
         setattr(view, COPILOT_WAITING_COMPLETION_KEY, True)
         file_path = view.file_name() or ""
         row, col = view.rowcol(sel[0].begin())
-        # this is all hacky
         params = {
             "doc": {
                 "source": view.substr(sublime.Region(0, view.size())),
-                "tabSize": 4,  # @todo what the hell... I don't get it
-                "indentSize": 4,  # @todo what the hell... I don't get it
-                "insertSpaces": False,  # @todo what the hell... I don't get it
+                "tabSize": view.settings().get("tab_size", 4),
+                "indentSize": 1,  # there is no such concept in ST
+                "insertSpaces": False,  # always use TAB and let ST auto converts it
                 "path": file_path,
-                "uri": filename_to_uri(file_path),
+                "uri": file_path and filename_to_uri(file_path),
                 "relativePath": get_project_relative_path(file_path),
                 "languageId": syntax.scope.rpartition(".")[2],  # @todo there is a mapping in LSP already?
                 "position": {"line": row, "character": col},
