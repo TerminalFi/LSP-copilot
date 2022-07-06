@@ -88,9 +88,11 @@ class CopilotPlugin(NpmClientHandler):
     def set_has_signed_in(cls, value: bool) -> None:
         cls._has_signed_in = value
         if value:
-            sublime.status_message("✈ Copilot has been signed in.")
+            msg = "✈ Copilot has been signed in."
         else:
-            sublime.status_message("⚠ Copilot has NOT been signed in.")
+            msg = "⚠ Copilot has NOT been signed in."
+        print('[{}] {}'.format(PACKAGE_NAME, msg))
+        sublime.status_message(msg)
 
     @classmethod
     def plugin_from_view(cls, view: sublime.View) -> Optional["CopilotPlugin"]:
