@@ -1,0 +1,49 @@
+[tool.mypy]
+# ignore_missing_imports = False
+check_untyped_defs = true
+strict_optional = true
+mypy_path = 'typings:stubs'
+
+[[tool.mypy.overrides]]
+module = [
+    # "plugin.libs.*",
+]
+ignore_errors = true
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 120
+target-version = ['py33']
+
+# regex
+exclude = '''
+/(
+  \.git
+  | \.?venv
+  | \.mypy_cache
+  | br-*
+  | branch-*
+  | libs
+  | stubs
+  | tests/files
+  | typings
+)/
+'''
+
+[tool.pyright]
+include = ['./']
+exclude = [
+  '**/__pycache__/',
+  '**/node_modules/',
+  # git-related
+  '**/.git/',
+  '**/br-*/',
+  '**/branch-*/',
+]
+ignore = [
+  '**/.venv',
+  '**/libs',
+]
+stubPath = 'typings'
+# pretending using py38 since pyright doesn't work well with py33...
+pythonVersion = '3.8'
