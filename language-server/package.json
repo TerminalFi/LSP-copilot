@@ -1,7 +1,6 @@
 {
     "private": true,
-    "version": "c2e75a3a7519c126c6fdb35984976df9ae13f564",
     "dependencies": {
-        "none": "*"
+        "copilot-node-server": "^1.0.1"
     }
 }

@@ -41,7 +41,14 @@ def plugin_unloaded():
 class CopilotPlugin(NpmClientHandler):
     package_name = PACKAGE_NAME
     server_directory = "language-server"
-    server_binary_path = os.path.join(server_directory, "copilot", "dist", "agent.js")
+    server_binary_path = os.path.join(
+        server_directory,
+        "node_modules",
+        "copilot-node-server",
+        "copilot",
+        "dist",
+        "agent.js",
+    )
 
     plugin_mapping = weakref.WeakValueDictionary()  # type: weakref.WeakValueDictionary[int, CopilotPlugin]
     _has_signed_in = False
@@ -91,7 +98,7 @@ class CopilotPlugin(NpmClientHandler):
             msg = "✈ Copilot has been signed in."
         else:
             msg = "⚠ Copilot has NOT been signed in."
-        print('[{}] {}'.format(PACKAGE_NAME, msg))
+        print("[{}] {}".format(PACKAGE_NAME, msg))
         sublime.status_message(msg)
 
     @classmethod
