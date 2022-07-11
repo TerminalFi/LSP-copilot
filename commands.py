@@ -21,6 +21,7 @@ from LSP.plugin.core.typing import List, Tuple, Union
 import functools
 import sublime
 import sublime_plugin
+import textwrap
 
 
 class CopilotInsertAsIsCommand(sublime_plugin.TextCommand):
@@ -43,10 +44,11 @@ class CopilotPreviewCompletionsCommand(CopilotTextCommand):
         syntax = self.view.syntax()
         if not (syntax and completions):
             return
-        cycle = cycle % len(completions)
-        syntax_id = syntax.scope.rpartition(".")[2]
-        content = '<a href="{}">Accept Suggestion</a>\n```{}\n{}\n```'.format(
-            cycle, syntax_id, completions[cycle]["displayText"]
+        cycle %= len(completions)
+        content = '<a href="{idx}">Accept Suggestion</a>\n```{lang}\n{code}\n```'.format(
+            idx=cycle,
+            lang=syntax.scope.rpartition(".")[2],
+            code=self._fix_popup_code_indentation(completions[cycle]["displayText"]),
         )
         update_completion_preview(
             view=self.view,
@@ -59,6 +61,18 @@ class CopilotPreviewCompletionsCommand(CopilotTextCommand):
                 region=region,
             ),
         )
+
+    @staticmethod
+    def _fix_popup_code_indentation(text: str) -> str:
+        # The returned suggestion is in the form of
+        #   - the first won't be indented
+        #   - the rest of lines will be indented basing on the indentation level of the current line
+        # The rest of lines don't visually look good if the current line is deeply indented.
+        # Hence we modify the rest of lines into always indented by one level if it's originally indented.
+        first_line, sep, rest = text.partition("\n")
+        if rest.startswith("\t"):
+            return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
+        return text
 
     def _insert_completion(
         self,

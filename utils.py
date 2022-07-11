@@ -1,4 +1,4 @@
-from .constants import COPILOT_WAITING_COMPLETION_KEY, PHANTOM_KEY
+from .constants import COPILOT_WAITING_COMPLETION_KEY
 from LSP.plugin.core.typing import Callable
 import mdpopups
 import os
@@ -6,7 +6,7 @@ import sublime
 
 
 def clear_completion_preview(view: sublime.View) -> None:
-    mdpopups.erase_phantoms(view=view, key=PHANTOM_KEY)
+    mdpopups.hide_popup(view)
 
 
 def update_completion_preview(
@@ -19,14 +19,15 @@ def update_completion_preview(
     **kwargs
 ) -> None:
     clear_completion_preview(view)
-    mdpopups.add_phantom(
+    mdpopups.show_popup(
         view=view,
         region=region,
         content=content,
         md=md,
         on_navigate=on_navigate,
         layout=layout,
-        key=PHANTOM_KEY,
+        flags=sublime.COOPERATE_WITH_AUTO_COMPLETE,
+        max_width=640,
         **kwargs
     )
 
