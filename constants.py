@@ -2,6 +2,7 @@ PACKAGE_NAME = __package__.partition(".")[0]
 PACKAGE_VERSION = "0.0.1"
 
 COPILOT_WAITING_COMPLETION_KEY = "copilot.completion.is_waiting"
+COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 
 # ---------------- #
 # Copilot requests #

@@ -1,4 +1,5 @@
 from .constants import (
+    COPILOT_WAITING_COMPLETION_KEY,
     NTFY_LOG_MESSAGE,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
@@ -13,9 +14,8 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
 )
-from .utils import clear_completion_preview
+from .ui import Completion
 from .utils import get_project_relative_path
-from .utils import set_view_is_waiting_completion
 from LSP.plugin import filename_to_uri
 from LSP.plugin import Request
 from LSP.plugin import Session
@@ -111,6 +111,14 @@ class CopilotPlugin(NpmClientHandler):
             return None
         return self
 
+    @staticmethod
+    def is_waiting_completion(view: sublime.View) -> bool:
+        return bool(getattr(view, COPILOT_WAITING_COMPLETION_KEY, False))
+
+    @staticmethod
+    def _set_is_waiting_completion(view: sublime.View, is_waiting: bool) -> None:
+        setattr(view, COPILOT_WAITING_COMPLETION_KEY, is_waiting)
+
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()
         return bool(session and session.session_view_for_view_async(view))
@@ -124,7 +132,7 @@ class CopilotPlugin(NpmClientHandler):
         pass
 
     def request_get_completions(self, view: sublime.View) -> None:
-        clear_completion_preview(view)
+        Completion(view).hide()
 
         session = self.weaksession()
         syntax = view.syntax()
@@ -149,7 +157,7 @@ class CopilotPlugin(NpmClientHandler):
             }
         }
 
-        set_view_is_waiting_completion(view, True)
+        self._set_is_waiting_completion(view, True)
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),
             functools.partial(self._on_get_completions_async, view, region=cursor.to_tuple()),
@@ -161,7 +169,7 @@ class CopilotPlugin(NpmClientHandler):
         payload: CopilotPayloadCompletions,
         region: Tuple[int, int],
     ) -> None:
-        set_view_is_waiting_completion(view, False)
+        self._set_is_waiting_completion(view, False)
 
         # re-request completions because the cursor position changed during awaiting Copilot's response
         if view.sel()[0].to_tuple() != region:
@@ -173,8 +181,5 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         sublime.set_timeout_async(
-            lambda: view.run_command(
-                "copilot_preview_completions",
-                {"completions": completions, "region": region},
-            )
+            lambda: Completion(view).show(region, completions)
         )

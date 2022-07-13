@@ -7,21 +7,17 @@ from .constants import (
 )
 from .plugin import CopilotPlugin
 from .types import (
-    CopilotPayloadCompletion,
     CopilotPayloadSignInConfirm,
     CopilotPayloadSignInInitiate,
     CopilotPayloadSignOut,
 )
-from .utils import clear_completion_preview
-from .utils import update_completion_preview
+from .ui import Completion
 from abc import ABCMeta
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
-from LSP.plugin.core.typing import List, Tuple, Union
-import functools
+from LSP.plugin.core.typing import Tuple, Union
 import sublime
 import sublime_plugin
-import textwrap
 
 
 class CopilotInsertAsIsCommand(sublime_plugin.TextCommand):
@@ -29,69 +25,32 @@ class CopilotInsertAsIsCommand(sublime_plugin.TextCommand):
         self.view.insert(edit, region[1], characters)
 
 
+class CopilotAcceptSuggestionCommand(sublime_plugin.TextCommand):
+    def run(self, edit: sublime.Edit) -> None:
+        completion = Completion(self.view)
+
+        if not completion.is_visible():
+            return
+
+        region = completion.region
+        display_text = completion.display_text
+
+        completion.hide()
+        self.view.insert(edit, region[1], display_text)
+
+
+class CopilotDismissSuggestionCommand(sublime_plugin.TextCommand):
+    def run(self, _) -> None:
+        completion = Completion(self.view)
+
+        if not completion.is_visible():
+            return
+
+        completion.hide()
+
+
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
     session_name = PACKAGE_NAME
-
-
-class CopilotPreviewCompletionsCommand(CopilotTextCommand):
-    def run(
-        self,
-        _: sublime.Edit,
-        completions: List[CopilotPayloadCompletion],
-        region: Tuple[int, int],
-        cycle: int = 0,
-    ) -> None:
-        syntax = self.view.syntax()
-        if not (syntax and completions):
-            return
-        cycle %= len(completions)
-        content = '<a href="{idx}">Accept Suggestion</a>\n```{lang}\n{code}\n```'.format(
-            idx=cycle,
-            lang=syntax.scope.rpartition(".")[2],
-            code=self._fix_popup_code_indentation(completions[cycle]["displayText"]),
-        )
-        update_completion_preview(
-            view=self.view,
-            region=sublime.Region(max(region)),
-            content=content,
-            layout=sublime.LAYOUT_BELOW,
-            on_navigate=functools.partial(
-                self._insert_completion,
-                completions=completions,
-                region=region,
-            ),
-        )
-
-    @staticmethod
-    def _fix_popup_code_indentation(text: str) -> str:
-        # The returned suggestion is in the form of
-        #   - the first won't be indented
-        #   - the rest of lines will be indented basing on the indentation level of the current line
-        # The rest of lines don't visually look good if the current line is deeply indented.
-        # Hence we modify the rest of lines into always indented by one level if it's originally indented.
-        first_line, sep, rest = text.partition("\n")
-        if rest.startswith("\t"):
-            return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
-        return text
-
-    def _insert_completion(
-        self,
-        index: str,
-        completions: List[CopilotPayloadCompletion],
-        region: Tuple[int, int],
-    ) -> None:
-        idx = int(index)
-        if not (0 <= idx < len(completions)):
-            return
-        completion = completions[idx]
-        clear_completion_preview(self.view)
-        self.view.run_command(
-            "copilot_insert_as_is",
-            {
-                "characters": completion["displayText"],
-                "region": region,
-            },
-        )
 
 
 class CopilotSignInCommand(CopilotTextCommand):
