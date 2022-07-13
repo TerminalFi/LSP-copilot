@@ -1,7 +1,6 @@
 from abc import ABCMeta
 
 import sublime
-import sublime_plugin
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import Tuple, Union
@@ -30,11 +29,9 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
             return
 
         region = completion.region
-        if region is None:
-            return
+        display_text = completion.display_text or ""
 
-        display_text = completion.display_text
-        if display_text is None:
+        if not region:
             return
 
         completion.hide()
@@ -54,7 +51,7 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
 
 
 class CopilotDismissSuggestionCommand(CopilotTextCommand):
-    def run(self, _) -> None:
+    def run(self, _: sublime.Edit) -> None:
         completion = Completion(self.view)
 
         if not completion.is_visible():
@@ -88,7 +85,7 @@ class CopilotSignInCommand(CopilotTextCommand):
         sublime.set_clipboard(user_code)
         sublime.run_command("open_url", {"url": verification_uri})
         if not sublime.ok_cancel_dialog(
-            "[Copilot] The device activation code has been copied."
+            "[LSP-Copilot] The device activation code has been copied."
             + " Please paste it in the popup GitHub page. Press OK when completed."
         ):
             return
@@ -103,7 +100,7 @@ class CopilotSignInCommand(CopilotTextCommand):
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
         if payload.get("status") == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            sublime.message_dialog('[Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
+            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
 
     def is_enabled(self) -> bool:
         session = self.session_by_name(self.session_name)

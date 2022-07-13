@@ -3,6 +3,7 @@ import functools
 import sublime
 import sublime_plugin
 from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
+from LSP.plugin.core.typing import Optional
 
 from .plugin import CopilotPlugin
 from .ui import Completion
@@ -24,7 +25,7 @@ class EventListener(sublime_plugin.ViewEventListener):
             async_thread=True,
         )
 
-    def on_query_context(self, key: str, operator: str, operand, _):
+    def on_query_context(self, key: str, operator: int, operand: str, _: bool) -> Optional[bool]:
         if key != self.COPILOT_SUGGESTION_VISIBLE:
             return None
 
@@ -32,5 +33,6 @@ class EventListener(sublime_plugin.ViewEventListener):
 
         if operator == sublime.OP_EQUAL:
             return completion.is_visible() == operand
-        elif operator == sublime.OP_NOT_EQUAL:
+        if operator == sublime.OP_NOT_EQUAL:
             return completion.is_visible() != operand
+        return None

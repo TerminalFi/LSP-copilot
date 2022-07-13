@@ -2,17 +2,18 @@ import textwrap
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import List, Tuple
+from LSP.plugin.core.typing import Any, List, Optional, Tuple
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
 from .types import CopilotPayloadCompletion
 
 
 class Completion:
-    def __init__(self, view: sublime.View):
+    def __init__(self, view: sublime.View) -> None:
         self.view = view
 
-    def _settings(self, key, default_or_new_value=None, do: str = "get"):
+    # This is not good for analysis. Refactor it into three functions: getter, setter, eraser?
+    def _settings(self, key: str, default_or_new_value: Optional[Any] = None, do: str = "get") -> None:
         settings_key = "{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key)
 
         if do == "set":
@@ -23,11 +24,11 @@ class Completion:
             return self.view.settings().get(settings_key, default_or_new_value)
 
     @property
-    def region(self):
+    def region(self) -> Optional[Tuple[int, int]]:
         return self._settings("region")
 
     @property
-    def display_text(self):
+    def display_text(self) -> Optional[str]:
         return self._settings("display_text")
 
     @property
@@ -37,7 +38,7 @@ class Completion:
     def is_visible(self) -> bool:
         return bool(self.region) and bool(self.display_text)
 
-    def get_display_text(self, region: Tuple[int, int], raw_display_text: str):
+    def get_display_text(self, region: Tuple[int, int], raw_display_text: str) -> str:
         if "\n" in raw_display_text:
             return raw_display_text
 
@@ -50,13 +51,13 @@ class Completion:
 
         return raw_display_text[:index] if index != -1 else raw_display_text
 
-    def hide(self):
+    def hide(self) -> None:
         PopupCompletion.hide(self.view)
 
         self._settings("region", do="erase")
         self._settings("display_text", do="erase")
 
-    def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0):
+    def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0) -> None:
         cycle %= len(completions)
 
         completion_uuid = completions[cycle]["uuid"]
@@ -90,42 +91,21 @@ class PopupCompletion:
     )
     COMPLETION_TEMPLATE = '<a href="subl:copilot_accept_suggestion">Accept ⇥</a>\n```{lang}\n{code}\n```'
 
-    @staticmethod
-    def hide(view: sublime.View):
-        mdpopups.hide_popup(view)
-
-    def __init__(self, view: sublime.View, region: Tuple[int, int], display_text: str):
+    def __init__(self, view: sublime.View, region: Tuple[int, int], display_text: str) -> None:
         self.view = view
         self.region = region
         self.display_text = display_text
-
-        self.syntax = self.view.syntax()
-
-    def _prepare_display_text(self):
-        # The returned suggestion is in the form of
-        #   - the first won't be indented
-        #   - the rest of lines will be indented basing on the indentation level of the current line
-        # The rest of lines don't visually look good if the current line is deeply indented.
-        # Hence we modify the rest of lines into always indented by one level if it's originally indented.
-        first_line, sep, rest = self.display_text.partition("\n")
-
-        if rest.startswith("\t"):
-            return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
-
-        return self.display_text
+        self.syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
 
     @property
-    def content(self):
+    def content(self) -> str:
         return self.COMPLETION_TEMPLATE.format(
             lang=self.syntax.scope.rpartition(".")[2],
             code=self._prepare_display_text(),
         )
 
-    def show(self) -> bool:
+    def show(self) -> None:
         self.hide(self.view)
-
-        if not self.syntax:
-            return False
 
         mdpopups.show_popup(
             view=self.view,
@@ -139,4 +119,19 @@ class PopupCompletion:
             wrapper_class=self.CSS_CLASS_NAME,
         )
 
-        return True
+    @staticmethod
+    def hide(view: sublime.View) -> None:
+        mdpopups.hide_popup(view)
+
+    def _prepare_display_text(self):
+        # The returned suggestion is in the form of
+        #   - the first won't be indented
+        #   - the rest of lines will be indented basing on the indentation level of the current line
+        # The rest of lines don't visually look good if the current line is deeply indented.
+        # Hence we modify the rest of lines into always indented by one level if it's originally indented.
+        first_line, sep, rest = self.display_text.partition("\n")
+
+        if rest.startswith("\t"):
+            return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
+
+        return self.display_text

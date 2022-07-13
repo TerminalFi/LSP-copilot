@@ -1,10 +1,24 @@
 [
-    { "keys": ["tab"], "command": "copilot_accept_suggestion", "context": [
-        { "key": "copilot_suggestion_visible", "operator": "equal", "operand": true }
-      ]
+    {
+        "keys": [
+            "tab",
+        ],
+        "command": "copilot_accept_suggestion",
+        "context": [
+            {
+                "key": "copilot_suggestion_visible",
+            },
+        ],
     },
-    { "keys": ["escape"], "command": "copilot_dismiss_suggestion", "context": [
-        { "key": "copilot_suggestion_visible", "operator": "equal", "operand": true }
-      ]
-    }
+    {
+        "keys": [
+            "escape",
+        ],
+        "command": "copilot_dismiss_suggestion",
+        "context": [
+            {
+                "key": "copilot_suggestion_visible",
+            },
+        ],
+    },
 ]
