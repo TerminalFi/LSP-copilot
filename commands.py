@@ -1,23 +1,15 @@
-from .constants import (
-    PACKAGE_NAME,
-    REQ_CHECK_STATUS,
-    REQ_SIGN_IN_CONFIRM,
-    REQ_SIGN_IN_INITIATE,
-    REQ_SIGN_OUT,
-)
-from .plugin import CopilotPlugin
-from .types import (
-    CopilotPayloadSignInConfirm,
-    CopilotPayloadSignInInitiate,
-    CopilotPayloadSignOut,
-)
-from .ui import Completion
 from abc import ABCMeta
+
+import sublime
+import sublime_plugin
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import Tuple, Union
-import sublime
-import sublime_plugin
+
+from .constants import PACKAGE_NAME, REQ_CHECK_STATUS, REQ_SIGN_IN_CONFIRM, REQ_SIGN_IN_INITIATE, REQ_SIGN_OUT
+from .plugin import CopilotPlugin
+from .types import CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate, CopilotPayloadSignOut
+from .ui import Completion
 
 
 class CopilotInsertAsIsCommand(sublime_plugin.TextCommand):

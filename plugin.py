@@ -1,3 +1,12 @@
+import functools
+import os
+import weakref
+
+import sublime
+from LSP.plugin import Request, Session, filename_to_uri
+from LSP.plugin.core.typing import Optional, Tuple
+from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
+
 from .constants import (
     COPILOT_WAITING_COMPLETION_KEY,
     NTFY_LOG_MESSAGE,
@@ -16,17 +25,6 @@ from .types import (
 )
 from .ui import Completion
 from .utils import get_project_relative_path
-from LSP.plugin import filename_to_uri
-from LSP.plugin import Request
-from LSP.plugin import Session
-from LSP.plugin.core.typing import Optional, Tuple
-from lsp_utils import ApiWrapperInterface
-from lsp_utils import notification_handler
-from lsp_utils import NpmClientHandler
-import functools
-import os
-import sublime
-import weakref
 
 
 def plugin_loaded():
@@ -180,6 +178,4 @@ class CopilotPlugin(NpmClientHandler):
         if not completions:
             return
 
-        sublime.set_timeout_async(
-            lambda: Completion(view).show(region, completions)
-        )
+        sublime.set_timeout_async(lambda: Completion(view).show(region, completions))
