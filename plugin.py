@@ -27,11 +27,11 @@ from .ui import Completion
 from .utils import get_project_relative_path
 
 
-def plugin_loaded():
+def plugin_loaded() -> None:
     CopilotPlugin.setup()
 
 
-def plugin_unloaded():
+def plugin_unloaded() -> None:
     CopilotPlugin.cleanup()
     CopilotPlugin.plugin_mapping.clear()
 

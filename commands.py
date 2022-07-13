@@ -1,10 +1,9 @@
 from abc import ABCMeta
 
 import sublime
-import sublime_plugin
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
-from LSP.plugin.core.typing import Tuple, Union
+from LSP.plugin.core.typing import Union
 
 from .constants import PACKAGE_NAME, REQ_CHECK_STATUS, REQ_SIGN_IN_CONFIRM, REQ_SIGN_IN_INITIATE, REQ_SIGN_OUT
 from .plugin import CopilotPlugin
@@ -12,12 +11,11 @@ from .types import CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate, Co
 from .ui import Completion
 
 
-class CopilotInsertAsIsCommand(sublime_plugin.TextCommand):
-    def run(self, edit: sublime.Edit, characters: str, region: Tuple[int, int]) -> None:
-        self.view.insert(edit, region[1], characters)
+class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
+    session_name = PACKAGE_NAME
 
 
-class CopilotAcceptSuggestionCommand(sublime_plugin.TextCommand):
+class CopilotAcceptSuggestionCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit) -> None:
         completion = Completion(self.view)
 
@@ -25,14 +23,17 @@ class CopilotAcceptSuggestionCommand(sublime_plugin.TextCommand):
             return
 
         region = completion.region
-        display_text = completion.display_text
+        display_text = completion.display_text or ""
+
+        if not region:
+            return
 
         completion.hide()
         self.view.insert(edit, region[1], display_text)
 
 
-class CopilotDismissSuggestionCommand(sublime_plugin.TextCommand):
-    def run(self, _) -> None:
+class CopilotDismissSuggestionCommand(CopilotTextCommand):
+    def run(self, _: sublime.Edit) -> None:
         completion = Completion(self.view)
 
         if not completion.is_visible():
@@ -41,8 +42,23 @@ class CopilotDismissSuggestionCommand(sublime_plugin.TextCommand):
         completion.hide()
 
 
-class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
-    session_name = PACKAGE_NAME
+class CopilotCheckStatusCommand(CopilotTextCommand):
+    def run(self, _: sublime.Edit) -> None:
+        session = self.session_by_name(self.session_name)
+        if not session:
+            return
+        session.send_request(
+            Request(REQ_CHECK_STATUS, {}),
+            self._on_result_check_status,
+        )
+
+    def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
+        if payload.get("status") == "OK":
+            CopilotPlugin.set_has_signed_in(True)
+            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
+        else:
+            CopilotPlugin.set_has_signed_in(False)
+            sublime.message_dialog("[LSP-Copilot] You haven't signed in yet.")
 
 
 class CopilotSignInCommand(CopilotTextCommand):
@@ -70,7 +86,7 @@ class CopilotSignInCommand(CopilotTextCommand):
         sublime.set_clipboard(user_code)
         sublime.run_command("open_url", {"url": verification_uri})
         if not sublime.ok_cancel_dialog(
-            "[Copilot] The device activation code has been copied."
+            "[LSP-Copilot] The device activation code has been copied."
             + " Please paste it in the popup GitHub page. Press OK when completed."
         ):
             return
@@ -85,7 +101,7 @@ class CopilotSignInCommand(CopilotTextCommand):
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
         if payload.get("status") == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            sublime.message_dialog('[Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
+            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
 
 
 class CopilotSignOutCommand(CopilotTextCommand):
@@ -102,22 +118,3 @@ class CopilotSignOutCommand(CopilotTextCommand):
         if payload.get("status") == "NotSignedIn":
             CopilotPlugin.set_has_signed_in(False)
             sublime.message_dialog("[Copilot] Sign out OK. Bye!")
-
-
-class CopilotCheckStatusCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
-        session = self.session_by_name(self.session_name)
-        if not session:
-            return
-        session.send_request(
-            Request(REQ_CHECK_STATUS, {}),
-            self._on_result_check_status,
-        )
-
-    def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
-        if payload.get("status") == "OK":
-            CopilotPlugin.set_has_signed_in(True)
-            sublime.message_dialog('[Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
-        else:
-            CopilotPlugin.set_has_signed_in(False)
-            sublime.message_dialog("[Copilot] You haven't signed in yet.")
