@@ -38,6 +38,23 @@ CopilotPayloadCompletions = TypedDict(
     total=True,
 )
 
+CopilotPayloadNotifyAccepted = TypedDict(
+    "CopilotPayloadNotifyAccepted",
+    {
+        "uuid": str
+    },
+    total=True,
+)
+
+
+CopilotPayloadNotifyRejected = TypedDict(
+    "CopilotPayloadNotifyRejected",
+    {
+        "uuids": List[str]
+    },
+    total=True,
+)
+
 CopilotPayloadSignInInitiate = TypedDict(
     "CopilotPayloadSignInInitiate",
     {

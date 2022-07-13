@@ -30,6 +30,10 @@ class Completion:
     def display_text(self):
         return self._settings("display_text")
 
+    @property
+    def uuid(self):
+        return self._settings("uuid")
+
     def is_visible(self) -> bool:
         return bool(self.region) and bool(self.display_text)
 
@@ -54,12 +58,16 @@ class Completion:
 
     def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0):
         cycle %= len(completions)
-        display_text = self.get_display_text(region, completions[cycle]["displayText"])
 
+        completion_uuid = completions[cycle]["uuid"]
+
+        display_text = self.get_display_text(region, completions[cycle]["displayText"])
         if not display_text:
             return
 
+
         self._settings("region", region, do="set")
+        self._settings("uuid", completion_uuid, do="set")
         self._settings("display_text", display_text, do="set")
 
         PopupCompletion(self.view, region, display_text).show()

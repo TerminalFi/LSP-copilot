@@ -5,19 +5,24 @@ import sublime_plugin
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import Tuple, Union
+from .utils import get_setting
 
-from .constants import PACKAGE_NAME, REQ_CHECK_STATUS, REQ_SIGN_IN_CONFIRM, REQ_SIGN_IN_INITIATE, REQ_SIGN_OUT
+from .constants import PACKAGE_NAME, REQ_CHECK_STATUS, REQ_NOTIFY_ACCEPTED, REQ_SIGN_IN_CONFIRM, REQ_SIGN_IN_INITIATE, REQ_SIGN_OUT
 from .plugin import CopilotPlugin
 from .types import CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate, CopilotPayloadSignOut
 from .ui import Completion
 
 
-class CopilotInsertAsIsCommand(sublime_plugin.TextCommand):
+class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
+    session_name = PACKAGE_NAME
+
+
+class CopilotInsertAsIsCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit, characters: str, region: Tuple[int, int]) -> None:
         self.view.insert(edit, region[1], characters)
 
 
-class CopilotAcceptSuggestionCommand(sublime_plugin.TextCommand):
+class CopilotAcceptSuggestionCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit) -> None:
         completion = Completion(self.view)
 
@@ -25,13 +30,30 @@ class CopilotAcceptSuggestionCommand(sublime_plugin.TextCommand):
             return
 
         region = completion.region
+        if region is None:
+            return
+
         display_text = completion.display_text
+        if display_text is None:
+            return
 
         completion.hide()
         self.view.insert(edit, region[1], display_text)
 
+        session = self.session_by_name(self.session_name)
+        if not session:
+            return
 
-class CopilotDismissSuggestionCommand(sublime_plugin.TextCommand):
+        def on_notify_accepted(result: str, failed: bool) -> None:
+            pass
+
+        session.send_request(
+            Request(REQ_NOTIFY_ACCEPTED, {}),
+            on_notify_accepted,
+        )
+
+
+class CopilotDismissSuggestionCommand(CopilotTextCommand):
     def run(self, _) -> None:
         completion = Completion(self.view)
 
@@ -39,10 +61,6 @@ class CopilotDismissSuggestionCommand(sublime_plugin.TextCommand):
             return
 
         completion.hide()
-
-
-class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
-    session_name = PACKAGE_NAME
 
 
 class CopilotSignInCommand(CopilotTextCommand):
@@ -87,6 +105,12 @@ class CopilotSignInCommand(CopilotTextCommand):
             CopilotPlugin.set_has_signed_in(True)
             sublime.message_dialog('[Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
 
+    def is_enabled(self) -> bool:
+        session = self.session_by_name(self.session_name)
+        if not session:
+            return not CopilotPlugin.get_has_signed_in()
+        return (not CopilotPlugin.get_has_signed_in() or get_setting(session, 'debug', False))
+
 
 class CopilotSignOutCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
@@ -102,6 +126,12 @@ class CopilotSignOutCommand(CopilotTextCommand):
         if payload.get("status") == "NotSignedIn":
             CopilotPlugin.set_has_signed_in(False)
             sublime.message_dialog("[Copilot] Sign out OK. Bye!")
+
+    def is_enabled(self) -> bool:
+        session = self.session_by_name(self.session_name)
+        if not session:
+            return CopilotPlugin.get_has_signed_in()
+        return (CopilotPlugin.get_has_signed_in() or get_setting(session, 'debug', False))
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):
