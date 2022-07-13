@@ -7,8 +7,6 @@
         "context": [
             {
                 "key": "copilot_suggestion_visible",
-                "operator": "equal",
-                "operand": true,
             },
         ],
     },
@@ -20,8 +18,6 @@
         "context": [
             {
                 "key": "copilot_suggestion_visible",
-                "operator": "equal",
-                "operand": true,
             },
         ],
     },
