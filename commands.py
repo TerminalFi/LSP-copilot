@@ -14,6 +14,9 @@ from .ui import Completion
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
     session_name = PACKAGE_NAME
 
+    def want_event(self) -> bool:
+        return False
+
 
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit) -> None:
@@ -34,12 +37,7 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
 
 class CopilotDismissSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        completion = Completion(self.view)
-
-        if not completion.is_visible():
-            return
-
-        completion.hide()
+        Completion(self.view).hide()
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):

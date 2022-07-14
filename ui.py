@@ -69,19 +69,63 @@ class Completion:
 class PopupCompletion:
     CSS_CLASS_NAME = "copilot-suggestion-popup"
     CSS = """
+    html {{
+        --copilot-accept-foreground: var(--foreground);
+        --copilot-accept-background: var(--background);
+        --copilot-accept-border: var(--greenish);
+        --copilot-dismiss-foreground: var(--foreground);
+        --copilot-dismiss-background: var(--background);
+        --copilot-dismiss-border: var(--yellowish);
+    }}
+
     .{class_name} {{
-        margin-left: 10px;
-        margin-right: 10px;
-        margin-top: 10px;
+        margin: 1rem 0.5rem 0 0.5rem;
+    }}
+
+    .{class_name} .header {{
+        display: block;
+        margin-bottom: 1rem;
     }}
 
     .{class_name} a {{
-        display: block;
+        border-radius: 3px;
+        border-style: solid;
+        border-width: 1px;
+        display: inline;
+        padding: 5px;
+        text-decoration: none;
+    }}
+
+    .{class_name} a.accept {{
+        background: var(--copilot-accept-background);
+        border-color: var(--copilot-accept-border);
+        color: var(--copilot-accept-foreground);
+    }}
+
+    .{class_name} a.accept i {{
+        color: var(--copilot-accept-border);
+    }}
+
+    .{class_name} a.dismiss {{
+        background: var(--copilot-dismiss-background);
+        border-color: var(--copilot-dismiss-border);
+        color: var(--copilot-dismiss-foreground);
+    }}
+
+    .{class_name} a.dismiss i {{
+        color: var(--copilot-dismiss-border);
     }}
     """.format(
         class_name=CSS_CLASS_NAME
     )
-    COMPLETION_TEMPLATE = '<a href="subl:copilot_accept_suggestion">Accept ⇥</a>\n```{lang}\n{code}\n```'
+    COMPLETION_TEMPLATE = (
+        '<div class="header">'
+        '<a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;'
+        '<a class="dismiss" href="subl:copilot_dismiss_suggestion"><i>×</i> Dismiss</a>'
+        "</div>"
+        "\n"
+        "```{lang}\n{code}\n```"
+    )
 
     def __init__(self, view: sublime.View, region: Tuple[int, int], display_text: str) -> None:
         self.view = view
