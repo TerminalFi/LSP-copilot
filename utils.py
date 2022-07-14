@@ -15,5 +15,5 @@ def get_project_relative_path(file_path: str) -> str:
 
 
 def reformat(text: str) -> str:
-    """Remove common indentaions and then trim."""
+    """Remove common indentations and then trim."""
     return textwrap.dedent(text).strip()
