@@ -121,7 +121,7 @@ class PopupCompletion:
     COMPLETION_TEMPLATE = (
         '<div class="header">'
         '<a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;'
-        '<a class="dismiss" href="subl:copilot_dimiss_suggestion"><i>×</i> Dismiss</a>'
+        '<a class="dismiss" href="subl:copilot_dismiss_suggestion"><i>×</i> Dismiss</a>'
         "</div>"
         "\n"
         "```{lang}\n{code}\n```"
