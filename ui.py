@@ -13,7 +13,7 @@ class Completion:
         self.view = view
 
     # This is not good for analysis. Refactor it into three functions: getter, setter, eraser?
-    def _settings(self, key: str, default_or_new_value: Optional[Any] = None, do: str = "get") -> None:
+    def _settings(self, key: str, default_or_new_value: Optional[Any] = None, do: str = "get") -> Optional[Any]:
         settings_key = "{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key)
 
         if do == "set":
@@ -38,7 +38,7 @@ class Completion:
         if "\n" in raw_display_text:
             return raw_display_text
 
-        if (self.view.classify(region[1]) & sublime.CLASS_LINE_END) != 0:
+        if self.view.classify(region[1]) & sublime.CLASS_LINE_END:
             return raw_display_text
 
         current_line = self.view.line(region[1])
