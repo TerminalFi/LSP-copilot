@@ -158,10 +158,10 @@ class CopilotPlugin(NpmClientHandler):
         self._set_is_waiting_completion(view, True)
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),
-            functools.partial(self._on_get_completions_async, view, region=cursor.to_tuple()),
+            functools.partial(self._on_get_completions, view, region=cursor.to_tuple()),
         )
 
-    def _on_get_completions_async(
+    def _on_get_completions(
         self,
         view: sublime.View,
         payload: CopilotPayloadCompletions,
@@ -178,4 +178,4 @@ class CopilotPlugin(NpmClientHandler):
         if not completions:
             return
 
-        sublime.set_timeout_async(lambda: Completion(view).show(region, completions))
+        Completion(view).show(region, completions)

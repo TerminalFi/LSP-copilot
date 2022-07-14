@@ -35,4 +35,8 @@ class EventListener(sublime_plugin.ViewEventListener):
             return completion.is_visible() == operand
         if operator == sublime.OP_NOT_EQUAL:
             return completion.is_visible() != operand
+
         return None
+
+    def on_deactivated_async(self) -> None:
+        Completion(self.view).hide()

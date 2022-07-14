@@ -1,4 +1,5 @@
 import os
+import textwrap
 
 import sublime
 
@@ -22,3 +23,8 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     if value is None:
         return default
     return value
+
+
+def reformat(text: str) -> str:
+    """Remove common indentations and then trim."""
+    return textwrap.dedent(text).strip()

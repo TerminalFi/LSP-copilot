@@ -6,6 +6,7 @@ from LSP.plugin.core.typing import Any, List, Optional, Tuple
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
 from .types import CopilotPayloadCompletion
+from .utils import reformat
 
 
 class Completion:
@@ -13,7 +14,7 @@ class Completion:
         self.view = view
 
     # This is not good for analysis. Refactor it into three functions: getter, setter, eraser?
-    def _settings(self, key: str, default_or_new_value: Optional[Any] = None, do: str = "get") -> None:
+    def _settings(self, key: str, default_or_new_value: Optional[Any] = None, do: str = "get") -> Optional[Any]:
         settings_key = "{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key)
 
         if do == "set":
@@ -42,7 +43,7 @@ class Completion:
         if "\n" in raw_display_text:
             return raw_display_text
 
-        if (self.view.classify(region[1]) & sublime.CLASS_LINE_END) != 0:
+        if self.view.classify(region[1]) & sublime.CLASS_LINE_END:
             return raw_display_text
 
         current_line = self.view.line(region[1])
@@ -77,19 +78,66 @@ class Completion:
 class PopupCompletion:
     CSS_CLASS_NAME = "copilot-suggestion-popup"
     CSS = """
+    html {{
+        --copilot-accept-foreground: var(--foreground);
+        --copilot-accept-background: var(--background);
+        --copilot-accept-border: var(--greenish);
+        --copilot-dismiss-foreground: var(--foreground);
+        --copilot-dismiss-background: var(--background);
+        --copilot-dismiss-border: var(--yellowish);
+    }}
+
     .{class_name} {{
-        margin-left: 10px;
-        margin-right: 10px;
-        margin-top: 10px;
+        margin: 1rem 0.5rem 0 0.5rem;
+    }}
+
+    .{class_name} .header {{
+        display: block;
+        margin-bottom: 1rem;
     }}
 
     .{class_name} a {{
-        display: block;
+        border-radius: 3px;
+        border-style: solid;
+        border-width: 1px;
+        display: inline;
+        padding: 5px;
+        text-decoration: none;
+    }}
+
+    .{class_name} a.accept {{
+        background: var(--copilot-accept-background);
+        border-color: var(--copilot-accept-border);
+        color: var(--copilot-accept-foreground);
+    }}
+
+    .{class_name} a.accept i {{
+        color: var(--copilot-accept-border);
+    }}
+
+    .{class_name} a.dismiss {{
+        background: var(--copilot-dismiss-background);
+        border-color: var(--copilot-dismiss-border);
+        color: var(--copilot-dismiss-foreground);
+    }}
+
+    .{class_name} a.dismiss i {{
+        color: var(--copilot-dismiss-border);
     }}
     """.format(
         class_name=CSS_CLASS_NAME
     )
-    COMPLETION_TEMPLATE = '<a href="subl:copilot_accept_suggestion">Accept ⇥</a>\n```{lang}\n{code}\n```'
+    COMPLETION_TEMPLATE = reformat(
+        """
+        <div class="header">
+            <a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;
+            <a class="dismiss" href="subl:copilot_dismiss_suggestion"><i>×</i> Dismiss</a>
+        </div>
+        ```{lang}
+        {code}
+        ```
+        """
+    )
 
     def __init__(self, view: sublime.View, region: Tuple[int, int], display_text: str) -> None:
         self.view = view
@@ -123,7 +171,7 @@ class PopupCompletion:
     def hide(view: sublime.View) -> None:
         mdpopups.hide_popup(view)
 
-    def _prepare_display_text(self):
+    def _prepare_display_text(self) -> str:
         # The returned suggestion is in the form of
         #   - the first won't be indented
         #   - the rest of lines will be indented basing on the indentation level of the current line

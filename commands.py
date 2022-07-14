@@ -15,6 +15,9 @@ from .ui import Completion
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
     session_name = PACKAGE_NAME
 
+    def want_event(self) -> bool:
+        return False
+
 
 class CopilotInsertAsIsCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit, characters: str, region: Tuple[int, int]) -> None:
@@ -52,12 +55,23 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
 
 class CopilotDismissSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        completion = Completion(self.view)
+        Completion(self.view).hide()
 
-        if not completion.is_visible():
+
+class CopilotCheckStatusCommand(CopilotTextCommand):
+    def run(self, _: sublime.Edit) -> None:
+        session = self.session_by_name(self.session_name)
+        if not session:
             return
+        session.send_request(Request(REQ_CHECK_STATUS), self._on_result_check_status)
 
-        completion.hide()
+    def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
+        if payload.get("status") == "OK":
+            CopilotPlugin.set_has_signed_in(True)
+            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
+        else:
+            CopilotPlugin.set_has_signed_in(False)
+            sublime.message_dialog("[LSP-Copilot] You haven't signed in yet.")
 
 
 class CopilotSignInCommand(CopilotTextCommand):
@@ -65,10 +79,7 @@ class CopilotSignInCommand(CopilotTextCommand):
         session = self.session_by_name(self.session_name)
         if not session:
             return
-        session.send_request(
-            Request(REQ_SIGN_IN_INITIATE, {}),
-            self._on_result_sign_in_initiate,
-        )
+        session.send_request(Request(REQ_SIGN_IN_INITIATE), self._on_result_sign_in_initiate)
 
     def _on_result_sign_in_initiate(
         self,
@@ -114,37 +125,9 @@ class CopilotSignOutCommand(CopilotTextCommand):
         session = self.session_by_name(self.session_name)
         if not session:
             return
-        session.send_request(
-            Request(REQ_SIGN_OUT, {}),
-            self._on_result_sign_out,
-        )
+        session.send_request(Request(REQ_SIGN_OUT), self._on_result_sign_out)
 
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
         if payload.get("status") == "NotSignedIn":
             CopilotPlugin.set_has_signed_in(False)
-            sublime.message_dialog("[Copilot] Sign out OK. Bye!")
-
-    def is_enabled(self) -> bool:
-        session = self.session_by_name(self.session_name)
-        if not session:
-            return CopilotPlugin.get_has_signed_in()
-        return (CopilotPlugin.get_has_signed_in() or get_setting(session, 'debug', False))
-
-
-class CopilotCheckStatusCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
-        session = self.session_by_name(self.session_name)
-        if not session:
-            return
-        session.send_request(
-            Request(REQ_CHECK_STATUS, {}),
-            self._on_result_check_status,
-        )
-
-    def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
-        if payload.get("status") == "OK":
-            CopilotPlugin.set_has_signed_in(True)
-            sublime.message_dialog('[Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
-        else:
-            CopilotPlugin.set_has_signed_in(False)
-            sublime.message_dialog("[Copilot] You haven't signed in yet.")
+            sublime.message_dialog("[LSP-Copilot] Sign out OK. Bye!")
