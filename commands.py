@@ -34,12 +34,7 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
 
 class CopilotDismissSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        completion = Completion(self.view)
-
-        if not completion.is_visible():
-            return
-
-        completion.hide()
+        Completion(self.view).hide()
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):

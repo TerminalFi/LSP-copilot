@@ -77,6 +77,7 @@ class PopupCompletion:
 
     .{class_name} a {{
         display: block;
+        text-decoration: none;
     }}
     """.format(
         class_name=CSS_CLASS_NAME
