@@ -6,6 +6,7 @@ from LSP.plugin.core.typing import Any, List, Optional, Tuple
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
 from .types import CopilotPayloadCompletion
+from .utils import reformat
 
 
 class Completion:
@@ -118,13 +119,16 @@ class PopupCompletion:
     """.format(
         class_name=CSS_CLASS_NAME
     )
-    COMPLETION_TEMPLATE = (
-        '<div class="header">'
-        '<a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;'
-        '<a class="dismiss" href="subl:copilot_dismiss_suggestion"><i>×</i> Dismiss</a>'
-        "</div>"
-        "\n"
-        "```{lang}\n{code}\n```"
+    COMPLETION_TEMPLATE = reformat(
+        """
+        <div class="header">
+            <a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;
+            <a class="dismiss" href="subl:copilot_dismiss_suggestion"><i>×</i> Dismiss</a>
+        </div>
+        ```{lang}
+        {code}
+        ```
+        """
     )
 
     def __init__(self, view: sublime.View, region: Tuple[int, int], display_text: str) -> None:
@@ -159,7 +163,7 @@ class PopupCompletion:
     def hide(view: sublime.View) -> None:
         mdpopups.hide_popup(view)
 
-    def _prepare_display_text(self):
+    def _prepare_display_text(self) -> str:
         # The returned suggestion is in the form of
         #   - the first won't be indented
         #   - the rest of lines will be indented basing on the indentation level of the current line

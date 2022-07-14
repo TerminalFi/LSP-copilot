@@ -106,4 +106,4 @@ class CopilotSignOutCommand(CopilotTextCommand):
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
         if payload.get("status") == "NotSignedIn":
             CopilotPlugin.set_has_signed_in(False)
-            sublime.message_dialog("[Copilot] Sign out OK. Bye!")
+            sublime.message_dialog("[LSP-Copilot] Sign out OK. Bye!")
