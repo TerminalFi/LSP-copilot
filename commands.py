@@ -1,10 +1,9 @@
 from abc import ABCMeta
-from LSP.plugin.core.sessions import Session
 
 import sublime
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
-from LSP.plugin.core.typing import Union, Any, Dict
+from LSP.plugin.core.typing import Union, Any
 from .utils import get_setting
 
 from .constants import (
