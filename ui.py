@@ -82,9 +82,9 @@ class PopupCompletion:
         --copilot-accept-foreground: var(--foreground);
         --copilot-accept-background: var(--background);
         --copilot-accept-border: var(--greenish);
-        --copilot-dismiss-foreground: var(--foreground);
-        --copilot-dismiss-background: var(--background);
-        --copilot-dismiss-border: var(--yellowish);
+        --copilot-reject-foreground: var(--foreground);
+        --copilot-reject-background: var(--background);
+        --copilot-reject-border: var(--yellowish);
     }}
 
     .{class_name} {{
@@ -115,14 +115,14 @@ class PopupCompletion:
         color: var(--copilot-accept-border);
     }}
 
-    .{class_name} a.dismiss {{
-        background: var(--copilot-dismiss-background);
-        border-color: var(--copilot-dismiss-border);
-        color: var(--copilot-dismiss-foreground);
+    .{class_name} a.reject {{
+        background: var(--copilot-reject-background);
+        border-color: var(--copilot-reject-border);
+        color: var(--copilot-reject-foreground);
     }}
 
-    .{class_name} a.dismiss i {{
-        color: var(--copilot-dismiss-border);
+    .{class_name} a.reject i {{
+        color: var(--copilot-reject-border);
     }}
     """.format(
         class_name=CSS_CLASS_NAME
@@ -131,7 +131,7 @@ class PopupCompletion:
         """
         <div class="header">
             <a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;
-            <a class="dismiss" href="subl:copilot_dismiss_suggestion"><i>×</i> Dismiss</a>
+            <a class="reject" href="subl:copilot_reject_suggestion"><i>×</i> Reject</a>
         </div>
         ```{lang}
         {code}

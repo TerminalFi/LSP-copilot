@@ -14,7 +14,7 @@
         "keys": [
             "escape",
         ],
-        "command": "copilot_dismiss_suggestion",
+        "command": "copilot_reject_suggestion",
         "context": [
             {
                 "key": "copilot_suggestion_visible",

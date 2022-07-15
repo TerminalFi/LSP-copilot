@@ -6,7 +6,7 @@ from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import Tuple, Union
 from .utils import get_setting
 
-from .constants import PACKAGE_NAME, REQ_CHECK_STATUS, REQ_NOTIFY_ACCEPTED, REQ_SIGN_IN_CONFIRM, REQ_SIGN_IN_INITIATE, REQ_SIGN_OUT
+from .constants import PACKAGE_NAME, REQ_CHECK_STATUS, REQ_NOTIFY_ACCEPTED, REQ_NOTIFY_REJECTED, REQ_SIGN_IN_CONFIRM, REQ_SIGN_IN_INITIATE, REQ_SIGN_OUT
 from .plugin import CopilotPlugin
 from .types import CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate, CopilotPayloadSignOut
 from .ui import Completion
@@ -19,11 +19,6 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
         return False
 
 
-class CopilotInsertAsIsCommand(CopilotTextCommand):
-    def run(self, edit: sublime.Edit, characters: str, region: Tuple[int, int]) -> None:
-        self.view.insert(edit, region[1], characters)
-
-
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit) -> None:
         completion = Completion(self.view)
@@ -33,6 +28,7 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
 
         region = completion.region
         display_text = completion.display_text or ""
+        completion_uuid = completion.uuid or ""
 
         if not region:
             return
@@ -48,14 +44,28 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
             pass
 
         session.send_request(
-            Request(REQ_NOTIFY_ACCEPTED, {}),
+            Request(REQ_NOTIFY_ACCEPTED, {"uuid": completion_uuid}),
             on_notify_accepted,
         )
 
 
-class CopilotDismissSuggestionCommand(CopilotTextCommand):
+class CopilotRejectSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
         Completion(self.view).hide()
+
+        session = self.session_by_name(self.session_name)
+        if not session:
+            return
+
+        def on_notify_rejected(result: str, failed: bool) -> None:
+            pass
+
+        # TODO: Currently we send the last shown completion UUID, however Copilot can
+        # suggest multiple UUID's. We need to return all UUID's which were not accepted
+        session.send_request(
+            Request(REQ_NOTIFY_REJECTED, {"uuids": [completion_uuid]}),
+            on_notify_rejected,
+        )
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):
