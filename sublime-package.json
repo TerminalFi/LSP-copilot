@@ -1,0 +1,136 @@
+{
+  "contributions": {
+    "settings": [
+      {
+        "file_patterns": [
+          "/LSP-copilot.sublime-settings"
+        ],
+        "schema": {
+          "$id": "sublime://settings/LSP-copilot",
+          "definitions": {
+            "PluginConfig": {
+              "properties": {
+                "initializationOptions": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {}
+                },
+                "settings": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "debug": {
+                      "default": false,
+                      "markdownDescription": "Enables debug mode fo the LSP-copilot\n",
+                      "type": "boolean"
+                    },
+                    "telemetry": {
+                      "default": false,
+                      "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` Suggestions\n",
+                      "type": "boolean"
+                    },
+                    "ui.completion": {
+                      "type": "object",
+                      "default": {},
+                      "markdownDescription": "analyses specify analyses that the user would like to enable or disable.\nA map of the names of analysis passes that should be enabled/disabled.\nA full list of analyzers that gopls uses can be found\n[here](https://github.com/golang/tools/blob/master/gopls/doc/analyzers.md).\n\nExample Usage:\n\n```json5\n...\n\"analyses\": {\n  \"unreachable\": false, // Disable the unreachable analyzer.\n  \"unusedparams\": true  // Enable the unusedparams analyzer.\n}\n...\n```\n",
+                      "properties": {
+                        "accept_suggestion": {
+                          "markdownDescription": "Controls the color of the accept button within the Completion UI",
+                          "type": "string",
+                          "enum": [
+                            "--background",
+                            "--foreground",
+                            "-–accent",
+                            "--redish",
+                            "--orangish",
+                            "--yellowish",
+                            "--greenish",
+                            "-–cyanish",
+                            "--bluish",
+                            "--purplish",
+                            "--pinkish",
+                          ],
+                          "markdownEnumDescriptions": [
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        },
+                        "reject_suggestion": {
+                          "markdownDescription": "Controls the color of the reject button within the Completion UI",
+                          "type": "string",
+                          "enum": [
+                            "--background",
+                            "--foreground",
+                            "-–accent",
+                            "--redish",
+                            "--orangish",
+                            "--yellowish",
+                            "--greenish",
+                            "-–cyanish",
+                            "--bluish",
+                            "--purplish",
+                            "--pinkish",
+                          ],
+                          "markdownEnumDescriptions": [
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "$ref": "sublime://settings/LSP-plugin-base"
+            },
+            {
+              "$ref": "sublime://settings/LSP-copilot#/definitions/PluginConfig"
+            }
+          ]
+        }
+      },
+      {
+        "file_patterns": [
+          "/*.sublime-project"
+        ],
+        "schema": {
+          "properties": {
+            "settings": {
+              "properties": {
+                "LSP": {
+                  "properties": {
+                    "LSP-copilot": {
+                      "$ref": "sublime://settings/LSP-copilot#/definitions/PluginConfig"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
