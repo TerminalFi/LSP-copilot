@@ -45,7 +45,10 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
         session = self.session_by_name(self.session_name)
         if not session:
             return
-        session.send_request(Request(REQ_CHECK_STATUS), self._on_result_check_status)
+        session.send_request(
+            Request(REQ_CHECK_STATUS, {}),
+            self._on_result_check_status,
+        )
 
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
         if payload.get("status") == "OK":
@@ -61,7 +64,10 @@ class CopilotSignInCommand(CopilotTextCommand):
         session = self.session_by_name(self.session_name)
         if not session:
             return
-        session.send_request(Request(REQ_SIGN_IN_INITIATE), self._on_result_sign_in_initiate)
+        session.send_request(
+            Request(REQ_SIGN_IN_INITIATE, {}),
+            self._on_result_sign_in_initiate,
+        )
 
     def _on_result_sign_in_initiate(
         self,
@@ -101,7 +107,10 @@ class CopilotSignOutCommand(CopilotTextCommand):
         session = self.session_by_name(self.session_name)
         if not session:
             return
-        session.send_request(Request(REQ_SIGN_OUT), self._on_result_sign_out)
+        session.send_request(
+            Request(REQ_SIGN_OUT, {}),
+            self._on_result_sign_out,
+        )
 
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
         if payload.get("status") == "NotSignedIn":
