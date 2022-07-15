@@ -40,18 +40,14 @@ CopilotPayloadCompletions = TypedDict(
 
 CopilotPayloadNotifyAccepted = TypedDict(
     "CopilotPayloadNotifyAccepted",
-    {
-        "uuid": str
-    },
+    {"uuid": str},
     total=True,
 )
 
 
 CopilotPayloadNotifyRejected = TypedDict(
     "CopilotPayloadNotifyRejected",
-    {
-        "uuids": List[str]
-    },
+    {"uuids": List[str]},
     total=True,
 )
 

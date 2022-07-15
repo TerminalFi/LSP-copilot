@@ -7,9 +7,23 @@ from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import Union, Any, Dict
 from .utils import get_setting
 
-from .constants import PACKAGE_NAME, REQ_CHECK_STATUS, REQ_NOTIFY_ACCEPTED, REQ_NOTIFY_REJECTED, REQ_SIGN_IN_CONFIRM, REQ_SIGN_IN_INITIATE, REQ_SIGN_OUT
+from .constants import (
+    PACKAGE_NAME,
+    REQ_CHECK_STATUS,
+    REQ_NOTIFY_ACCEPTED,
+    REQ_NOTIFY_REJECTED,
+    REQ_SIGN_IN_CONFIRM,
+    REQ_SIGN_IN_INITIATE,
+    REQ_SIGN_OUT,
+)
 from .plugin import CopilotPlugin
-from .types import CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected, CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate, CopilotPayloadSignOut
+from .types import (
+    CopilotPayloadNotifyAccepted,
+    CopilotPayloadNotifyRejected,
+    CopilotPayloadSignInConfirm,
+    CopilotPayloadSignInInitiate,
+    CopilotPayloadSignOut,
+)
 from .ui import Completion
 
 
@@ -19,13 +33,15 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
     def want_event(self) -> bool:
         return False
 
-    def _record_telemetry(self, request: str, payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected]) -> None:
+    def _record_telemetry(
+        self, request: str, payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected]
+    ) -> None:
         session = self.session_by_name(self.session_name)
         if not session:
             return
 
         if not get_setting(session, "telemetry", False):
-                return
+            return
 
         def on_notify(_: Any) -> None:
             pass
@@ -34,7 +50,6 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
             Request(request, payload),
             on_notify,
         )
-
 
 
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):
@@ -130,7 +145,7 @@ class CopilotSignInCommand(CopilotTextCommand):
         session = self.session_by_name(self.session_name)
         if not session:
             return not CopilotPlugin.get_has_signed_in()
-        return (not CopilotPlugin.get_has_signed_in() or get_setting(session, 'debug', False))
+        return not CopilotPlugin.get_has_signed_in() or get_setting(session, "debug", False)
 
 
 class CopilotSignOutCommand(CopilotTextCommand):
@@ -144,4 +159,3 @@ class CopilotSignOutCommand(CopilotTextCommand):
         if payload.get("status") == "NotSignedIn":
             CopilotPlugin.set_has_signed_in(False)
             sublime.message_dialog("[LSP-Copilot] Sign out OK. Bye!")
-

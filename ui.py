@@ -67,7 +67,6 @@ class Completion:
         if not display_text:
             return
 
-
         self._settings("region", region, do="set")
         self._settings("uuid", completion_uuid, do="set")
         self._settings("display_text", display_text, do="set")

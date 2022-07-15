@@ -7,7 +7,6 @@ from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.typing import Optional, Union, List, Any
 
 
-
 def get_project_relative_path(file_path: str) -> str:
     ret = file_path
     for folder in sublime.active_window().folders():
