@@ -29,12 +29,12 @@ class Completion:
         return self._settings("region")
 
     @property
-    def display_text(self) -> Optional[str]:
-        return self._settings("display_text")
+    def display_text(self) -> str:
+        return self._settings("display_text") or ""
 
     @property
-    def uuid(self):
-        return self._settings("uuid")
+    def uuid(self) -> str:
+        return self._settings("uuid") or ""
 
     def is_visible(self) -> bool:
         return bool(self.region) and bool(self.display_text)
@@ -66,7 +66,6 @@ class Completion:
         display_text = self.get_display_text(region, completions[cycle]["displayText"])
         if not display_text:
             return
-
 
         self._settings("region", region, do="set")
         self._settings("uuid", completion_uuid, do="set")
