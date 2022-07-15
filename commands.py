@@ -42,10 +42,12 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
 
         if not get_setting(session, view, "telemetry", False):
             return
-            
+
         def on_notify_accepted(result: str, failed: bool) -> None:
             pass
 
+        # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
+        # request with all other completions which weren't accepted
         session.send_request(
             Request(REQ_NOTIFY_ACCEPTED, {"uuid": completion_uuid}),
             on_notify_accepted,
