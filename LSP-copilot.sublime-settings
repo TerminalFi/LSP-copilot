@@ -11,8 +11,9 @@
 	],
 	"initializationOptions": {},
 	"settings": {
-		"debug": false
+		"debug": false,
+		"telemetry": false
 	},
 	// ST4 configuration
-	"selector": "source | text",
+	"selector": "source | text"
 }

@@ -40,6 +40,9 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
         if not session:
             return
 
+        if not get_setting(session, view, "telemetry", False):
+            return
+            
         def on_notify_accepted(result: str, failed: bool) -> None:
             pass
 
@@ -56,6 +59,9 @@ class CopilotRejectSuggestionCommand(CopilotTextCommand):
 
         session = self.session_by_name(self.session_name)
         if not session:
+            return
+        
+        if not get_setting(session, view, "telemetry", False):
             return
 
         def on_notify_rejected(result: str, failed: bool) -> None:
