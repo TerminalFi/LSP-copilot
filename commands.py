@@ -3,7 +3,7 @@ from abc import ABCMeta
 import sublime
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
-from LSP.plugin.core.typing import Union, Any
+from LSP.plugin.core.typing import Union
 from .utils import get_setting
 
 from .constants import (
@@ -33,7 +33,9 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
         return False
 
     def _record_telemetry(
-        self, request: str, payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected]
+        self,
+        request: str,
+        payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected],
     ) -> None:
         session = self.session_by_name(self.session_name)
         if not session:
@@ -42,12 +44,9 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
         if not get_setting(session, "telemetry", False):
             return
 
-        def on_notify(_: Any) -> None:
-            pass
-
         session.send_request(
             Request(request, payload),
-            on_notify,
+            lambda _: None,
         )
 
 
@@ -59,18 +58,15 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
             return
 
         region = completion.region
-        display_text = completion.display_text
-        completion_uuid = completion.uuid
-
         if not region:
             return
 
         completion.hide()
-        self.view.insert(edit, region[1], display_text)
+        self.view.insert(edit, region[1], completion.display_text)
 
         # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
         # request with all other completions which weren't accepted
-        self._record_telemetry(REQ_NOTIFY_ACCEPTED, {"uuid": completion_uuid})
+        self._record_telemetry(REQ_NOTIFY_ACCEPTED, {"uuid": completion.uuid})
 
 
 class CopilotRejectSuggestionCommand(CopilotTextCommand):
@@ -78,11 +74,9 @@ class CopilotRejectSuggestionCommand(CopilotTextCommand):
         completion = Completion(self.view)
         completion.hide()
 
-        completion_uuid = completion.uuid
-
         # TODO: Currently we send the last shown completion UUID, however Copilot can
         # suggest multiple UUID's. We need to return all UUID's which were not accepted
-        self._record_telemetry(REQ_NOTIFY_REJECTED, {"uuids": [completion_uuid]})
+        self._record_telemetry(REQ_NOTIFY_REJECTED, {"uuids": [completion.uuid]})
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):
