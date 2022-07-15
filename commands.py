@@ -52,6 +52,7 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
 class CopilotRejectSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
         Completion(self.view).hide()
+        completion_uuid = completion.uuid or ""
 
         session = self.session_by_name(self.session_name)
         if not session:
