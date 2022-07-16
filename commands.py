@@ -4,7 +4,6 @@ import sublime
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import Union
-from .utils import get_setting
 
 from .constants import (
     PACKAGE_NAME,
@@ -24,6 +23,7 @@ from .types import (
     CopilotPayloadSignOut,
 )
 from .ui import Completion
+from .utils import get_setting
 
 
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
@@ -56,7 +56,7 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
         if not completion.is_visible:
             return
 
-        self.view.insert(edit, region[1], completion.display_text)
+        self.view.insert(edit, completion.region[1], completion.display_text)
 
         # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
         # request with all other completions which weren't accepted

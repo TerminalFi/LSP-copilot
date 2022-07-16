@@ -5,12 +5,16 @@ import sublime
 from LSP.plugin.core.typing import List, Tuple
 
 from .types import CopilotPayloadCompletion
-from .utils import erase_copilot_view_setting, get_copilot_view_setting, reformat, set_copilot_view_setting
+from .utils import get_copilot_view_setting, reformat, set_copilot_view_setting
 
 
 class Completion:
     def __init__(self, view: sublime.View) -> None:
         self.view = view
+
+    @property
+    def is_visible(self) -> bool:
+        return bool(get_copilot_view_setting(self.view, "is_visible") or False)
 
     @property
     def region(self) -> Tuple[int, int]:
@@ -21,12 +25,8 @@ class Completion:
         return get_copilot_view_setting(self.view, "display_text") or ""
 
     @property
-    def display_text(self) -> str:
-        return self._settings("display_text") or ""
-
-    @property
     def uuid(self) -> str:
-        return self._settings("uuid") or ""
+        return get_copilot_view_setting(self.view, "uuid") or ""
 
     def get_display_text(self, region: Tuple[int, int], raw_display_text: str) -> str:
         if "\n" in raw_display_text:
@@ -42,7 +42,7 @@ class Completion:
         return raw_display_text[:index] if index != -1 else raw_display_text
 
     def hide(self) -> None:
-        erase_copilot_view_setting(self.view, "is_visible")
+        set_copilot_view_setting(self.view, "is_visible", False)
 
         PopupCompletion.hide(self.view)
 

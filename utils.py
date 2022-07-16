@@ -18,8 +18,9 @@ def set_copilot_view_setting(view: sublime.View, key: str, value: Any) -> None:
 def erase_copilot_view_setting(view: sublime.View, key: str) -> None:
     view.settings().erase("{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key))
 
+
 from LSP.plugin.core.sessions import Session
-from LSP.plugin.core.typing import Optional, Union, List, Any
+from LSP.plugin.core.typing import Any, List, Optional, Union
 
 
 def get_project_relative_path(file_path: str) -> str:
