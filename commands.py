@@ -4,10 +4,25 @@ import sublime
 from LSP.plugin import Request
 from LSP.plugin.core.registry import LspTextCommand
 from LSP.plugin.core.typing import Union
+from .utils import get_setting
 
-from .constants import PACKAGE_NAME, REQ_CHECK_STATUS, REQ_SIGN_IN_CONFIRM, REQ_SIGN_IN_INITIATE, REQ_SIGN_OUT
+from .constants import (
+    PACKAGE_NAME,
+    REQ_CHECK_STATUS,
+    REQ_NOTIFY_ACCEPTED,
+    REQ_NOTIFY_REJECTED,
+    REQ_SIGN_IN_CONFIRM,
+    REQ_SIGN_IN_INITIATE,
+    REQ_SIGN_OUT,
+)
 from .plugin import CopilotPlugin
-from .types import CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate, CopilotPayloadSignOut
+from .types import (
+    CopilotPayloadNotifyAccepted,
+    CopilotPayloadNotifyRejected,
+    CopilotPayloadSignInConfirm,
+    CopilotPayloadSignInInitiate,
+    CopilotPayloadSignOut,
+)
 from .ui import Completion
 
 
@@ -16,6 +31,23 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
 
     def want_event(self) -> bool:
         return False
+
+    def _record_telemetry(
+        self,
+        request: str,
+        payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected],
+    ) -> None:
+        session = self.session_by_name(self.session_name)
+        if not session:
+            return
+
+        if not get_setting(session, "telemetry", False):
+            return
+
+        session.send_request(
+            Request(request, payload),
+            lambda _: None,
+        )
 
 
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):
@@ -26,18 +58,27 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
             return
 
         region = completion.region
-        display_text = completion.display_text or ""
-
         if not region:
             return
 
+        self.view.insert(edit, region[1], completion.display_text)
+
+        # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
+        # request with all other completions which weren't accepted
+        self._record_telemetry(REQ_NOTIFY_ACCEPTED, {"uuid": completion.uuid})
+
         completion.hide()
-        self.view.insert(edit, region[1], display_text)
 
 
-class CopilotDismissSuggestionCommand(CopilotTextCommand):
+class CopilotRejectSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        Completion(self.view).hide()
+        completion = Completion(self.view)
+
+        # TODO: Currently we send the last shown completion UUID, however Copilot can
+        # suggest multiple UUID's. We need to return all UUID's which were not accepted
+        self._record_telemetry(REQ_NOTIFY_REJECTED, {"uuids": [completion.uuid]})
+
+        completion.hide()
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):
@@ -100,6 +141,12 @@ class CopilotSignInCommand(CopilotTextCommand):
         if payload.get("status") == "OK":
             CopilotPlugin.set_has_signed_in(True)
             sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
+
+    def is_enabled(self) -> bool:
+        session = self.session_by_name(self.session_name)
+        if not session:
+            return not CopilotPlugin.get_has_signed_in()
+        return not CopilotPlugin.get_has_signed_in() or get_setting(session, "debug", False)
 
 
 class CopilotSignOutCommand(CopilotTextCommand):

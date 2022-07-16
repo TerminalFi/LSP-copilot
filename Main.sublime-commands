@@ -1,14 +1,14 @@
 [
     {
         "caption": "Copilot: Check Status",
-        "command": "copilot_check_status",
+        "command": "copilot_check_status"
     },
     {
         "caption": "Copilot: Sign In",
-        "command": "copilot_sign_in",
+        "command": "copilot_sign_in"
     },
     {
         "caption": "Copilot: Sign Out",
-        "command": "copilot_sign_out",
-    },
+        "command": "copilot_sign_out"
+    }
 ]
