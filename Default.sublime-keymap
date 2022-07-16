@@ -6,7 +6,7 @@
         "command": "copilot_accept_suggestion",
         "context": [
             {
-                "key": "copilot_suggestion_visible"
+                "key": "setting.copilot.completion.is_visible"
             }
         ]
     },
@@ -17,7 +17,7 @@
         "command": "copilot_reject_suggestion",
         "context": [
             {
-                "key": "copilot_suggestion_visible"
+                "key": "setting.copilot.completion.is_visible"
             }
         ]
     }

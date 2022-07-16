@@ -53,16 +53,11 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit) -> None:
         completion = Completion(self.view)
-
-        if not completion.is_visible():
-            return
-
-        region = completion.region
-        if not region:
+        if not completion.is_visible:
             return
 
         completion.hide()
-        self.view.insert(edit, region[1], completion.display_text)
+        self.view.insert(edit, completion.region[1], completion.display_text)
 
         # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
         # request with all other completions which weren't accepted

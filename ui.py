@@ -25,8 +25,12 @@ class Completion:
             return self.view.settings().get(settings_key, default_or_new_value)
 
     @property
-    def region(self) -> Optional[Tuple[int, int]]:
-        return self._settings("region")
+    def is_visible(self) -> bool:
+        return bool(self._settings("is_visible") or False)
+
+    @property
+    def region(self) -> Tuple[int, int]:
+        return self._settings("region") or (-1, -1)
 
     @property
     def display_text(self) -> str:
@@ -35,9 +39,6 @@ class Completion:
     @property
     def uuid(self) -> str:
         return self._settings("uuid") or ""
-
-    def is_visible(self) -> bool:
-        return bool(self.region) and bool(self.display_text)
 
     def get_display_text(self, region: Tuple[int, int], raw_display_text: str) -> str:
         if "\n" in raw_display_text:
@@ -53,20 +54,22 @@ class Completion:
         return raw_display_text[:index] if index != -1 else raw_display_text
 
     def hide(self) -> None:
+        self._settings("is_visible", False, do="set")
+
         PopupCompletion.hide(self.view)
 
-        self._settings("region", do="erase")
-        self._settings("display_text", do="erase")
-
     def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0) -> None:
-        cycle %= len(completions)
+        if not completions:
+            return
 
-        completion_uuid = completions[cycle]["uuid"]
+        completion = completions[cycle % len(completions)]
 
-        display_text = self.get_display_text(region, completions[cycle]["displayText"])
+        completion_uuid = completion["uuid"]
+        display_text = self.get_display_text(region, completion["displayText"])
         if not display_text:
             return
 
+        self._settings("is_visible", True, do="set")
         self._settings("region", region, do="set")
         self._settings("uuid", completion_uuid, do="set")
         self._settings("display_text", display_text, do="set")
