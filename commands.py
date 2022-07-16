@@ -56,8 +56,8 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
         if not completion.is_visible:
             return
 
-        self.view.insert(edit, completion.region[1], completion.display_text)
         completion.hide()
+        self.view.insert(edit, completion.region[1], completion.display_text)
 
         # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
         # request with all other completions which weren't accepted
