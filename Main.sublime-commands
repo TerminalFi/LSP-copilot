@@ -4,6 +4,10 @@
         "command": "copilot_check_status"
     },
     {
+        "caption": "Copilot: Get Version",
+        "command": "copilot_get_version"
+    },
+    {
         "caption": "Copilot: Sign In",
         "command": "copilot_sign_in"
     },

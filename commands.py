@@ -9,6 +9,7 @@ from LSP.plugin.core.typing import Any, Callable, Union, cast
 from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
+    REQ_GET_VERSION,
     REQ_NOTIFY_ACCEPTED,
     REQ_NOTIFY_REJECTED,
     REQ_SIGN_IN_CONFIRM,
@@ -17,6 +18,7 @@ from .constants import (
 )
 from .plugin import CopilotPlugin
 from .types import (
+    CopilotPayloadGetVersion,
     CopilotPayloadNotifyAccepted,
     CopilotPayloadNotifyRejected,
     CopilotPayloadSignInConfirm,
@@ -61,6 +63,18 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
             Request(request, payload),
             lambda _: None,
         )
+
+
+class CopilotGetVersionCommand(CopilotTextCommand):
+    @_provide_session()
+    def run(self, session: Session, _: sublime.Edit) -> None:
+        session.send_request(
+            Request(REQ_GET_VERSION, {}),
+            self._on_result_get_version,
+        )
+
+    def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
+        sublime.message_dialog("[LSP-copilot] Server version: {}".format(payload.get("version", "unknown")))
 
 
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):

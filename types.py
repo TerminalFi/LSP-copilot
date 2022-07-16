@@ -40,6 +40,14 @@ CopilotPayloadCompletions = TypedDict(
     total=True,
 )
 
+CopilotPayloadGetVersion = TypedDict(
+    "CopilotPayloadGetVersion",
+    {
+        "version": str,
+    },
+    total=True,
+)
+
 CopilotPayloadNotifyAccepted = TypedDict(
     "CopilotPayloadNotifyAccepted",
     {
