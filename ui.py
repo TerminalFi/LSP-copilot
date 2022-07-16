@@ -43,7 +43,7 @@ class Completion:
         following_text = self.view.substr(sublime.Region(region[0], current_line.end())).strip()
         index = raw_display_text.find(following_text)
 
-        return raw_display_text[:index] if index != -1 else raw_display_text
+        return raw_display_text[:index] if following_text and index != -1 else raw_display_text
 
     def hide(self) -> None:
         set_copilot_view_setting(self.view, "is_visible", False)
