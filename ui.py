@@ -55,9 +55,6 @@ class Completion:
 
     def hide(self) -> None:
         self._settings("is_visible", False, do="set")
-        self._settings("region", do="erase")
-        self._settings("uuid", do="erase")
-        self._settings("display_text", do="erase")
 
         PopupCompletion.hide(self.view)
 
