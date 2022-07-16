@@ -1,9 +1,10 @@
 from abc import ABCMeta
+from functools import partial, wraps
 
 import sublime
-from LSP.plugin import Request
+from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand
-from LSP.plugin.core.typing import Union
+from LSP.plugin.core.typing import Any, Union, cast
 
 from .constants import (
     PACKAGE_NAME,
@@ -21,9 +22,21 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadSignInInitiate,
     CopilotPayloadSignOut,
+    T_Callable,
 )
 from .ui import Completion
 from .utils import get_setting
+
+
+def _provide_session(func: T_Callable) -> T_Callable:
+    @wraps(func)
+    def wrap(self, *arg, **kwargs) -> Any:
+        session = self.session_by_name(self.session_name)
+        if not session:
+            return
+        return func(self, session, *arg, **kwargs)
+
+    return cast(T_Callable, wrap)
 
 
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
@@ -34,13 +47,10 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
 
     def _record_telemetry(
         self,
+        session: Session,
         request: str,
         payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected],
     ) -> None:
-        session = self.session_by_name(self.session_name)
-        if not session:
-            return
-
         if not get_setting(session, "telemetry", False):
             return
 
@@ -51,7 +61,8 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
 
 
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):
-    def run(self, edit: sublime.Edit) -> None:
+    @_provide_session
+    def run(self, session: Session, edit: sublime.Edit) -> None:
         completion = Completion(self.view)
         if not completion.is_visible:
             return
@@ -61,25 +72,24 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
 
         # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
         # request with all other completions which weren't accepted
-        self._record_telemetry(REQ_NOTIFY_ACCEPTED, {"uuid": completion.uuid})
+        self._record_telemetry(session, REQ_NOTIFY_ACCEPTED, {"uuid": completion.uuid})
 
 
 class CopilotRejectSuggestionCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
+    @_provide_session
+    def run(self, session: Session, _: sublime.Edit) -> None:
         completion = Completion(self.view)
         completion.hide()
 
         # TODO: Currently we send the last shown completion UUID, however Copilot can
         # suggest multiple UUID's. We need to return all UUID's which were not accepted
-        self._record_telemetry(REQ_NOTIFY_REJECTED, {"uuids": [completion.uuid]})
+        self._record_telemetry(session, REQ_NOTIFY_REJECTED, {"uuids": [completion.uuid]})
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
-        session = self.session_by_name(self.session_name)
-        if not session:
-            return
-        session.send_request(Request(REQ_CHECK_STATUS), self._on_result_check_status)
+    @_provide_session
+    def run(self, session: Session, _: sublime.Edit) -> None:
+        session.send_request(Request(REQ_CHECK_STATUS, {}), self._on_result_check_status)
 
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
         if payload.get("status") == "OK":
@@ -91,14 +101,16 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
 
 class CopilotSignInCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
-        session = self.session_by_name(self.session_name)
-        if not session:
-            return
-        session.send_request(Request(REQ_SIGN_IN_INITIATE), self._on_result_sign_in_initiate)
+    @_provide_session
+    def run(self, session: Session, _: sublime.Edit) -> None:
+        session.send_request(
+            Request(REQ_SIGN_IN_INITIATE, {}),
+            partial(self._on_result_sign_in_initiate, session),
+        )
 
     def _on_result_sign_in_initiate(
         self,
+        session: Session,
         payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate],
     ) -> None:
         CopilotPlugin.set_has_signed_in(False)
@@ -115,9 +127,6 @@ class CopilotSignInCommand(CopilotTextCommand):
             "[LSP-Copilot] The device activation code has been copied."
             + " Please paste it in the popup GitHub page. Press OK when completed."
         ):
-            return
-        session = self.session_by_name(self.session_name)
-        if not session:
             return
         session.send_request(
             Request(REQ_SIGN_IN_CONFIRM, {"userCode": user_code}),
@@ -137,11 +146,9 @@ class CopilotSignInCommand(CopilotTextCommand):
 
 
 class CopilotSignOutCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
-        session = self.session_by_name(self.session_name)
-        if not session:
-            return
-        session.send_request(Request(REQ_SIGN_OUT), self._on_result_sign_out)
+    @_provide_session
+    def run(self, session: Session, _: sublime.Edit) -> None:
+        session.send_request(Request(REQ_SIGN_OUT, {}), self._on_result_sign_out)
 
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
         if payload.get("status") == "NotSignedIn":

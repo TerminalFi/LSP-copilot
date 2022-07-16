@@ -23,7 +23,7 @@ from .types import (
     CopilotPayloadStatusNotification,
 )
 from .ui import Completion
-from .utils import get_copilot_view_setting, get_project_relative_path, set_copilot_view_setting
+from .utils import get_project_relative_path, set_copilot_view_setting
 
 
 def plugin_loaded() -> None:
@@ -108,14 +108,6 @@ class CopilotPlugin(NpmClientHandler):
             return None
         return self
 
-    @staticmethod
-    def is_waiting_completion(view: sublime.View) -> bool:
-        return get_copilot_view_setting(view, "is_waiting", False)
-
-    @staticmethod
-    def _set_is_waiting_completion(view: sublime.View, is_waiting: bool) -> None:
-        set_copilot_view_setting(view, "is_waiting", is_waiting)
-
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()
         return bool(session and session.session_view_for_view_async(view))
@@ -154,7 +146,7 @@ class CopilotPlugin(NpmClientHandler):
             }
         }
 
-        self._set_is_waiting_completion(view, True)
+        set_copilot_view_setting(view, "is_waiting", True)
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),
             functools.partial(self._on_get_completions, view, region=cursor.to_tuple()),
@@ -166,7 +158,7 @@ class CopilotPlugin(NpmClientHandler):
         payload: CopilotPayloadCompletions,
         region: Tuple[int, int],
     ) -> None:
-        self._set_is_waiting_completion(view, False)
+        set_copilot_view_setting(view, "is_waiting", False)
 
         # re-request completions because the cursor position changed during awaiting Copilot's response
         if view.sel()[0].to_tuple() != region:

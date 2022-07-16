@@ -1,4 +1,6 @@
-from LSP.plugin.core.typing import List, Literal, TypedDict
+from LSP.plugin.core.typing import Any, Callable, List, Literal, TypedDict, TypeVar
+
+T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 CopilotPayloadCompletionPosition = TypedDict(
     "CopilotPayloadCompletionPosition",
