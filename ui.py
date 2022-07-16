@@ -21,6 +21,10 @@ class Completion:
         return get_copilot_view_setting(self.view, "region") or (-1, -1)
 
     @property
+    def text(self) -> str:
+        return get_copilot_view_setting(self.view, "text") or ""
+
+    @property
     def display_text(self) -> str:
         return get_copilot_view_setting(self.view, "display_text") or ""
 
@@ -52,14 +56,14 @@ class Completion:
 
         completion = completions[cycle % len(completions)]
 
-        completion_uuid = completion["uuid"]
         display_text = self.get_display_text(region, completion["displayText"])
         if not display_text:
             return
 
         set_copilot_view_setting(self.view, "is_visible", True)
         set_copilot_view_setting(self.view, "region", region)
-        set_copilot_view_setting(self.view, "uuid", completion_uuid)
+        set_copilot_view_setting(self.view, "uuid", completion["uuid"])
+        set_copilot_view_setting(self.view, "text", completion["text"])
         set_copilot_view_setting(self.view, "display_text", display_text)
 
         PopupCompletion(self.view, region, display_text).show()

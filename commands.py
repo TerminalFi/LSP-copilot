@@ -85,7 +85,12 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
             return
 
         completion.hide()
-        self.view.insert(edit, completion.region[1], completion.display_text)
+
+        # Remove the current line and then insert full text.
+        # We don't have to care whether it's an inline completion or not.
+        source_line_region = self.view.line(completion.region[1])
+        self.view.erase(edit, source_line_region)
+        self.view.insert(edit, source_line_region.begin(), completion.text)
 
         # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
         # request with all other completions which weren't accepted
