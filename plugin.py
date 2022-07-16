@@ -56,6 +56,12 @@ class CopilotPlugin(NpmClientHandler):
         if sess:
             self.plugin_mapping[sess.window.id()] = self
 
+        # ST persists view setting after getting closed so we have to reset some status
+        for window in sublime.windows():
+            for view in window.views(include_transient=True):
+                set_copilot_view_setting(view, "is_visible", False)
+                set_copilot_view_setting(view, "is_waiting", False)
+
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
             self.set_has_signed_in(result.get("status") == "OK")
