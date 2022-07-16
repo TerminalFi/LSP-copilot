@@ -2,35 +2,23 @@ import textwrap
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import Any, List, Optional, Tuple
+from LSP.plugin.core.typing import List, Tuple
 
-from .constants import COPILOT_VIEW_SETTINGS_PREFIX
 from .types import CopilotPayloadCompletion
-from .utils import reformat
+from .utils import erase_copilot_view_setting, get_copilot_view_setting, reformat, set_copilot_view_setting
 
 
 class Completion:
     def __init__(self, view: sublime.View) -> None:
         self.view = view
 
-    # This is not good for analysis. Refactor it into three functions: getter, setter, eraser?
-    def _settings(self, key: str, default_or_new_value: Optional[Any] = None, do: str = "get") -> Optional[Any]:
-        settings_key = "{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key)
-
-        if do == "set":
-            return self.view.settings().set(settings_key, default_or_new_value)
-        elif do == "erase":
-            return self.view.settings().erase(settings_key)
-        else:
-            return self.view.settings().get(settings_key, default_or_new_value)
+    @property
+    def region(self) -> Tuple[int, int]:
+        return get_copilot_view_setting(self.view, "region") or (-1, -1)
 
     @property
-    def region(self) -> Optional[Tuple[int, int]]:
-        return self._settings("region")
-
-    @property
-    def display_text(self) -> Optional[str]:
-        return self._settings("display_text")
+    def display_text(self) -> str:
+        return get_copilot_view_setting(self.view, "display_text") or ""
 
     def is_visible(self) -> bool:
         return bool(self.region) and bool(self.display_text)
@@ -51,8 +39,8 @@ class Completion:
     def hide(self) -> None:
         PopupCompletion.hide(self.view)
 
-        self._settings("region", do="erase")
-        self._settings("display_text", do="erase")
+        erase_copilot_view_setting(self.view, "region")
+        erase_copilot_view_setting(self.view, "display_text")
 
     def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0) -> None:
         cycle %= len(completions)
@@ -61,8 +49,8 @@ class Completion:
         if not display_text:
             return
 
-        self._settings("region", region, do="set")
-        self._settings("display_text", display_text, do="set")
+        set_copilot_view_setting(self.view, "region", region)
+        set_copilot_view_setting(self.view, "display_text", display_text)
 
         PopupCompletion(self.view, region, display_text).show()
 
