@@ -53,12 +53,7 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit) -> None:
         completion = Completion(self.view)
-
-        if not completion.is_visible():
-            return
-
-        region = completion.region
-        if not region:
+        if not completion.is_visible:
             return
 
         self.view.insert(edit, region[1], completion.display_text)
