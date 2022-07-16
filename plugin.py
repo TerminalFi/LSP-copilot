@@ -8,7 +8,6 @@ from LSP.plugin.core.typing import Optional, Tuple
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
-    COPILOT_WAITING_COMPLETION_KEY,
     NTFY_LOG_MESSAGE,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
@@ -24,7 +23,7 @@ from .types import (
     CopilotPayloadStatusNotification,
 )
 from .ui import Completion
-from .utils import get_project_relative_path
+from .utils import get_copilot_view_setting, get_project_relative_path, set_copilot_view_setting
 
 
 def plugin_loaded() -> None:
@@ -111,11 +110,11 @@ class CopilotPlugin(NpmClientHandler):
 
     @staticmethod
     def is_waiting_completion(view: sublime.View) -> bool:
-        return bool(getattr(view, COPILOT_WAITING_COMPLETION_KEY, False))
+        return get_copilot_view_setting(view, "is_waiting", False)
 
     @staticmethod
     def _set_is_waiting_completion(view: sublime.View, is_waiting: bool) -> None:
-        setattr(view, COPILOT_WAITING_COMPLETION_KEY, is_waiting)
+        set_copilot_view_setting(view, "is_waiting", is_waiting)
 
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()

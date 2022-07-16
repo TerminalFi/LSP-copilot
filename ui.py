@@ -2,43 +2,31 @@ import textwrap
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import Any, List, Optional, Tuple
+from LSP.plugin.core.typing import List, Tuple
 
-from .constants import COPILOT_VIEW_SETTINGS_PREFIX
 from .types import CopilotPayloadCompletion
-from .utils import reformat
+from .utils import get_copilot_view_setting, reformat, set_copilot_view_setting
 
 
 class Completion:
     def __init__(self, view: sublime.View) -> None:
         self.view = view
 
-    # This is not good for analysis. Refactor it into three functions: getter, setter, eraser?
-    def _settings(self, key: str, default_or_new_value: Optional[Any] = None, do: str = "get") -> Optional[Any]:
-        settings_key = "{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key)
-
-        if do == "set":
-            return self.view.settings().set(settings_key, default_or_new_value)
-        elif do == "erase":
-            return self.view.settings().erase(settings_key)
-        else:
-            return self.view.settings().get(settings_key, default_or_new_value)
-
     @property
     def is_visible(self) -> bool:
-        return bool(self._settings("is_visible") or False)
+        return bool(get_copilot_view_setting(self.view, "is_visible") or False)
 
     @property
     def region(self) -> Tuple[int, int]:
-        return self._settings("region") or (-1, -1)
+        return get_copilot_view_setting(self.view, "region") or (-1, -1)
 
     @property
     def display_text(self) -> str:
-        return self._settings("display_text") or ""
+        return get_copilot_view_setting(self.view, "display_text") or ""
 
     @property
     def uuid(self) -> str:
-        return self._settings("uuid") or ""
+        return get_copilot_view_setting(self.view, "uuid") or ""
 
     def get_display_text(self, region: Tuple[int, int], raw_display_text: str) -> str:
         if "\n" in raw_display_text:
@@ -54,7 +42,7 @@ class Completion:
         return raw_display_text[:index] if index != -1 else raw_display_text
 
     def hide(self) -> None:
-        self._settings("is_visible", False, do="set")
+        set_copilot_view_setting(self.view, "is_visible", False)
 
         PopupCompletion.hide(self.view)
 
@@ -69,10 +57,10 @@ class Completion:
         if not display_text:
             return
 
-        self._settings("is_visible", True, do="set")
-        self._settings("region", region, do="set")
-        self._settings("uuid", completion_uuid, do="set")
-        self._settings("display_text", display_text, do="set")
+        set_copilot_view_setting(self.view, "is_visible", True)
+        set_copilot_view_setting(self.view, "region", region)
+        set_copilot_view_setting(self.view, "uuid", completion_uuid)
+        set_copilot_view_setting(self.view, "display_text", display_text)
 
         PopupCompletion(self.view, region, display_text).show()
 
