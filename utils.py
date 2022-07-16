@@ -7,7 +7,7 @@ from LSP.plugin.core.typing import Any, Optional
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
 
 
-def get_copilot_view_setting(view: sublime.View, key: str, default: Optional[Any] = None) -> Any:
+def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
     return view.settings().get("{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key), default)
 
 
