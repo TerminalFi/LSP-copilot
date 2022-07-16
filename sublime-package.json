@@ -1,0 +1,69 @@
+{
+  "contributions": {
+    "settings": [
+      {
+        "file_patterns": [
+          "/LSP-copilot.sublime-settings"
+        ],
+        "schema": {
+          "$id": "sublime://settings/LSP-copilot",
+          "definitions": {
+            "PluginConfig": {
+              "properties": {
+                "initializationOptions": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {}
+                },
+                "settings": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "debug": {
+                      "default": false,
+                      "markdownDescription": "Enables debug mode fo the LSP-copilot\n",
+                      "type": "boolean"
+                    },
+                    "telemetry": {
+                      "default": false,
+                      "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` Suggestions\n",
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "$ref": "sublime://settings/LSP-plugin-base"
+            },
+            {
+              "$ref": "sublime://settings/LSP-copilot#/definitions/PluginConfig"
+            }
+          ]
+        }
+      },
+      {
+        "file_patterns": [
+          "/*.sublime-project"
+        ],
+        "schema": {
+          "properties": {
+            "settings": {
+              "properties": {
+                "LSP": {
+                  "properties": {
+                    "LSP-copilot": {
+                      "$ref": "sublime://settings/LSP-copilot#/definitions/PluginConfig"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

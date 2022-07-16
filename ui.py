@@ -20,8 +20,13 @@ class Completion:
     def display_text(self) -> str:
         return get_copilot_view_setting(self.view, "display_text") or ""
 
-    def is_visible(self) -> bool:
-        return bool(self.region) and bool(self.display_text)
+    @property
+    def display_text(self) -> str:
+        return self._settings("display_text") or ""
+
+    @property
+    def uuid(self) -> str:
+        return self._settings("uuid") or ""
 
     def get_display_text(self, region: Tuple[int, int], raw_display_text: str) -> str:
         if "\n" in raw_display_text:
@@ -37,19 +42,24 @@ class Completion:
         return raw_display_text[:index] if index != -1 else raw_display_text
 
     def hide(self) -> None:
+        erase_copilot_view_setting(self.view, "is_visible")
+
         PopupCompletion.hide(self.view)
 
-        erase_copilot_view_setting(self.view, "region")
-        erase_copilot_view_setting(self.view, "display_text")
-
     def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0) -> None:
-        cycle %= len(completions)
-        display_text = self.get_display_text(region, completions[cycle]["displayText"])
+        if not completions:
+            return
 
+        completion = completions[cycle % len(completions)]
+
+        completion_uuid = completion["uuid"]
+        display_text = self.get_display_text(region, completion["displayText"])
         if not display_text:
             return
 
+        set_copilot_view_setting(self.view, "is_visible", True)
         set_copilot_view_setting(self.view, "region", region)
+        set_copilot_view_setting(self.view, "uuid", completion_uuid)
         set_copilot_view_setting(self.view, "display_text", display_text)
 
         PopupCompletion(self.view, region, display_text).show()
@@ -62,9 +72,9 @@ class PopupCompletion:
         --copilot-accept-foreground: var(--foreground);
         --copilot-accept-background: var(--background);
         --copilot-accept-border: var(--greenish);
-        --copilot-dismiss-foreground: var(--foreground);
-        --copilot-dismiss-background: var(--background);
-        --copilot-dismiss-border: var(--yellowish);
+        --copilot-reject-foreground: var(--foreground);
+        --copilot-reject-background: var(--background);
+        --copilot-reject-border: var(--yellowish);
     }}
 
     .{class_name} {{
@@ -95,14 +105,14 @@ class PopupCompletion:
         color: var(--copilot-accept-border);
     }}
 
-    .{class_name} a.dismiss {{
-        background: var(--copilot-dismiss-background);
-        border-color: var(--copilot-dismiss-border);
-        color: var(--copilot-dismiss-foreground);
+    .{class_name} a.reject {{
+        background: var(--copilot-reject-background);
+        border-color: var(--copilot-reject-border);
+        color: var(--copilot-reject-foreground);
     }}
 
-    .{class_name} a.dismiss i {{
-        color: var(--copilot-dismiss-border);
+    .{class_name} a.reject i {{
+        color: var(--copilot-reject-border);
     }}
     """.format(
         class_name=CSS_CLASS_NAME
@@ -111,7 +121,7 @@ class PopupCompletion:
         """
         <div class="header">
             <a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;
-            <a class="dismiss" href="subl:copilot_dismiss_suggestion"><i>×</i> Dismiss</a>
+            <a class="reject" href="subl:copilot_reject_suggestion"><i>×</i> Reject</a>
         </div>
         ```{lang}
         {code}

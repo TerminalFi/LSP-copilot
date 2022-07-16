@@ -1,8 +1,19 @@
 {
-	"command": ["${node_bin}", "${server_path}", "--stdio"],
-	"schemes": ["file", "buffer", "res"],
+	"command": [
+		"${node_bin}",
+		"${server_path}",
+		"--stdio"
+	],
+	"schemes": [
+		"file",
+		"buffer",
+		"res"
+	],
 	"initializationOptions": {},
-	"settings": {},
+	"settings": {
+		"debug": false,
+		"telemetry": false
+	},
 	// ST4 configuration
-	"selector": "source | text",
+	"selector": "source | text"
 }

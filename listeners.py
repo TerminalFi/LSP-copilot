@@ -1,9 +1,7 @@
 import functools
 
-import sublime
 import sublime_plugin
 from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
-from LSP.plugin.core.typing import Optional
 
 from .plugin import CopilotPlugin
 from .ui import Completion
@@ -24,19 +22,6 @@ class EventListener(sublime_plugin.ViewEventListener):
             lambda: not plugin.is_waiting_completion(self.view),
             async_thread=True,
         )
-
-    def on_query_context(self, key: str, operator: int, operand: str, _: bool) -> Optional[bool]:
-        if key != self.COPILOT_SUGGESTION_VISIBLE:
-            return None
-
-        completion = Completion(self.view)
-
-        if operator == sublime.OP_EQUAL:
-            return completion.is_visible() == operand
-        if operator == sublime.OP_NOT_EQUAL:
-            return completion.is_visible() != operand
-
-        return None
 
     def on_deactivated_async(self) -> None:
         Completion(self.view).hide()

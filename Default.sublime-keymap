@@ -1,24 +1,24 @@
 [
     {
         "keys": [
-            "tab",
+            "tab"
         ],
         "command": "copilot_accept_suggestion",
         "context": [
             {
-                "key": "copilot_suggestion_visible",
-            },
-        ],
+                "key": "setting.copilot.completion.is_visible"
+            }
+        ]
     },
     {
         "keys": [
-            "escape",
+            "escape"
         ],
-        "command": "copilot_dismiss_suggestion",
+        "command": "copilot_reject_suggestion",
         "context": [
             {
-                "key": "copilot_suggestion_visible",
-            },
-        ],
-    },
+                "key": "setting.copilot.completion.is_visible"
+            }
+        ]
+    }
 ]
