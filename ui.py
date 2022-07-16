@@ -56,6 +56,7 @@ class Completion:
         PopupCompletion.hide(self.view)
 
         self._settings("region", do="erase")
+        self._settings("uuid", do="erase")
         self._settings("display_text", do="erase")
 
     def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0) -> None:

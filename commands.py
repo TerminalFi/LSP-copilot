@@ -61,22 +61,24 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
         if not region:
             return
 
-        completion.hide()
         self.view.insert(edit, region[1], completion.display_text)
 
         # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
         # request with all other completions which weren't accepted
         self._record_telemetry(REQ_NOTIFY_ACCEPTED, {"uuid": completion.uuid})
 
+        completion.hide()
+
 
 class CopilotRejectSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
         completion = Completion(self.view)
-        completion.hide()
 
         # TODO: Currently we send the last shown completion UUID, however Copilot can
         # suggest multiple UUID's. We need to return all UUID's which were not accepted
         self._record_telemetry(REQ_NOTIFY_REJECTED, {"uuids": [completion.uuid]})
+
+        completion.hide()
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):
