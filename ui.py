@@ -25,7 +25,7 @@ class ViewCompletionManager:
 
     @property
     def completion_index(self) -> int:
-        """The current index of the chosen completion."""
+        """The index of the current chosen completion."""
         return get_copilot_view_setting(self.view, "completion_index", 0)
 
     @property
@@ -34,7 +34,7 @@ class ViewCompletionManager:
         return self.completions[self.completion_index] if self.completions else None
 
     def show_previous_completion(self) -> None:
-        """Set `completion_index` to be for the previous completion."""
+        """Show the previous completion."""
         self.show(
             None,
             self.completion_index - 1,
@@ -42,7 +42,7 @@ class ViewCompletionManager:
         )
 
     def show_next_completion(self) -> None:
-        """Set `completion_index` to be for the next completion."""
+        """Show the next completion."""
         self.show(
             None,
             self.completion_index + 1,
@@ -51,7 +51,7 @@ class ViewCompletionManager:
 
     def hide(self) -> None:
         """Hide Copilot's completion popup."""
-        # to prevent from hiding other plugin's popup
+        # prevent from hiding other plugin's popup
         if self.is_visible:
             _PopupCompletion.hide(self.view)
 
