@@ -10,10 +10,15 @@ Uses [Copilot][gopls-repo] Distribution which uses OpenAI Codex to suggest code 
 
 ### Installation
 
-* Install [LSP][lsp-repo] and `LSP-gopls` from Package Control.
+* Install [LSP][lsp-repo] and `LSP-copilot` from Package Control.
 * Restart Sublime.
-
 
 ### Setup
 
-On initial use,
+On initial use, follow the steps below:
+
+1. Launch `Copilot: Sign In` from the `Command Pallete`
+1. Follow the prompts to Authenticate your Copilot extension
+    1. Paste `User Code` into Github's authentication flow
+    1. Return to `Sublime Text` and press `Ok` on the dialog
+1. Use `LSP-copilot`
