@@ -36,8 +36,10 @@ class ViewCompletionManager:
         self._set_cycle(self.cycle + 1)
 
     def hide(self) -> None:
-        set_copilot_view_setting(self.view, "is_visible", False)
-        _PopupCompletion.hide(self.view)
+        # to prevent from hiding other plugin's popup
+        if self.is_visible:
+            set_copilot_view_setting(self.view, "is_visible", False)
+            _PopupCompletion.hide(self.view)
 
     def show(self) -> None:
         completion = self.current_completion
