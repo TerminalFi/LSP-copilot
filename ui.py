@@ -36,16 +36,14 @@ class ViewCompletionManager:
     def show_previous_completion(self) -> None:
         """Show the previous completion."""
         self.show(
-            None,
-            self.completion_index - 1,
+            completion_index=self.completion_index - 1,
             do_clamp=not self.view.settings().get("auto_complete_cycle", False),
         )
 
     def show_next_completion(self) -> None:
         """Show the next completion."""
         self.show(
-            None,
-            self.completion_index + 1,
+            completion_index=self.completion_index + 1,
             do_clamp=not self.view.settings().get("auto_complete_cycle", False),
         )
 
