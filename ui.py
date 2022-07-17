@@ -225,8 +225,6 @@ class _PopupCompletion:
         return display_text[:index] if following_text and index != -1 else display_text
 
     def show(self) -> None:
-        self.hide(self.view)
-
         set_copilot_view_setting(self.view, "is_visible", True)
         mdpopups.show_popup(
             view=self.view,
