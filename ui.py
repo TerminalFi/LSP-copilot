@@ -66,7 +66,7 @@ class ViewCompletionManager:
         # update completion index
         if completion_index is not None:
             set_copilot_view_setting(self.view, "completion_index", completion_index)
-        self._tidy_completion_index(do_clamp=do_clamp)
+        self._tidy_completion_index(do_clamp)
 
         completion = self.current_completion
         if not completion:
