@@ -5,7 +5,7 @@ import sublime
 from LSP.plugin.core.typing import List, Optional
 
 from .types import CopilotPayloadCompletion
-from .utils import get_copilot_view_setting, reformat, set_copilot_view_setting
+from .utils import clamp, get_copilot_view_setting, reformat, set_copilot_view_setting
 
 
 class ViewCompletionManager:
@@ -30,10 +30,10 @@ class ViewCompletionManager:
         return completions[self.cycle] if completions else None
 
     def cycle_previous(self) -> Optional[CopilotPayloadCompletion]:
-        self._set_cycle(self.cycle - 1)
+        self._set_cycle(self.cycle - 1, wrap=self.view.settings().get("auto_complete_cycle", False))
 
     def cycle_next(self) -> Optional[CopilotPayloadCompletion]:
-        self._set_cycle(self.cycle + 1)
+        self._set_cycle(self.cycle + 1, wrap=self.view.settings().get("auto_complete_cycle", False))
 
     def hide(self) -> None:
         # to prevent from hiding other plugin's popup
@@ -54,8 +54,13 @@ class ViewCompletionManager:
         set_copilot_view_setting(self.view, "is_visible", True)
         _PopupCompletion(self.view).show()
 
-    def _set_cycle(self, value: int) -> None:
-        set_copilot_view_setting(self.view, "cycle", value % len(self.completions) if self.completions else 0)
+    def _set_cycle(self, value: int, wrap: bool = False) -> None:
+        completions_cnt = len(self.completions)
+        if completions_cnt:
+            new_cycle = value % completions_cnt if wrap else clamp(value, 0, completions_cnt - 1)
+        else:
+            new_cycle = 0
+        set_copilot_view_setting(self.view, "cycle", new_cycle)
 
 
 class _PopupCompletion:
