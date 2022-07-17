@@ -36,6 +36,11 @@ def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_C
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrap(self, *arg, **kwargs) -> Any:
+            """
+            The first argument is always `self` for a decorated method.
+            We want to provide `session` right after it. If we failed to find a `session`,
+            then it will be early failed and return `failed_return`.
+            """
             session = self.session_by_name(self.session_name)
             if not session:
                 return failed_return
