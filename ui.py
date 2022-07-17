@@ -14,34 +14,42 @@ class ViewCompletionManager:
 
     @property
     def is_visible(self) -> bool:
+        """Whether Copilot's completion popup is visible."""
         return get_copilot_view_setting(self.view, "is_visible", False)
 
     @property
     def completions(self) -> List[CopilotPayloadCompletion]:
+        """All `completions` in the view."""
         return get_copilot_view_setting(self.view, "completions", [])
 
     @property
     def cycle(self) -> int:
+        """The current `cycle` of `completions`."""
         return get_copilot_view_setting(self.view, "cycle", 0)
 
     @property
     def current_completion(self) -> Optional[CopilotPayloadCompletion]:
+        """The current chosen `completion`."""
         completions = self.completions
         return completions[self.cycle] if completions else None
 
     def cycle_previous(self) -> Optional[CopilotPayloadCompletion]:
-        self._set_cycle(self.cycle - 1, wrap=self.view.settings().get("auto_complete_cycle", False))
+        """Set the `cycle` to be for the previous completion."""
+        self._set_cycle(self.cycle - 1, do_clamp=not self.view.settings().get("auto_complete_cycle", False))
 
     def cycle_next(self) -> Optional[CopilotPayloadCompletion]:
-        self._set_cycle(self.cycle + 1, wrap=self.view.settings().get("auto_complete_cycle", False))
+        """Set the `cycle` to be for the next completion."""
+        self._set_cycle(self.cycle + 1, do_clamp=not self.view.settings().get("auto_complete_cycle", False))
 
     def hide(self) -> None:
+        """Hide Copilot's completion popup."""
         # to prevent from hiding other plugin's popup
         if self.is_visible:
             set_copilot_view_setting(self.view, "is_visible", False)
             _PopupCompletion.hide(self.view)
 
     def show(self) -> None:
+        """Show Copilot's completion popup."""
         completion = self.current_completion
         if not completion:
             return
@@ -54,10 +62,17 @@ class ViewCompletionManager:
         set_copilot_view_setting(self.view, "is_visible", True)
         _PopupCompletion(self.view).show()
 
-    def _set_cycle(self, value: int, wrap: bool = False) -> None:
+    def _set_cycle(self, value: int, do_clamp: bool = False) -> None:
+        """
+        Sets the cycle.
+
+        :param      value:     The wanted new cycle value
+        :param      do_clamp:  Should the `value` be clamped if it's
+                               out-of-bound? Otherwise, treat it as circular.
+        """
         completions_cnt = len(self.completions)
         if completions_cnt:
-            new_cycle = value % completions_cnt if wrap else clamp(value, 0, completions_cnt - 1)
+            new_cycle = clamp(value, 0, completions_cnt - 1) if do_clamp else value % completions_cnt
         else:
             new_cycle = 0
         set_copilot_view_setting(self.view, "cycle", new_cycle)
