@@ -23,23 +23,29 @@ class ViewCompletionManager:
         return get_copilot_view_setting(self.view, "completions", [])
 
     @property
-    def cycle(self) -> int:
-        """The current `cycle` of `completions`."""
-        return get_copilot_view_setting(self.view, "cycle", 0)
+    def completion_index(self) -> int:
+        """The current index of the chosen completion."""
+        return get_copilot_view_setting(self.view, "completion_index", 0)
 
     @property
     def current_completion(self) -> Optional[CopilotPayloadCompletion]:
         """The current chosen `completion`."""
         completions = self.completions
-        return completions[self.cycle] if completions else None
+        return completions[self.completion_index] if completions else None
 
-    def cycle_previous(self) -> Optional[CopilotPayloadCompletion]:
-        """Set the `cycle` to be for the previous completion."""
-        self._set_cycle(self.cycle - 1, do_clamp=not self.view.settings().get("auto_complete_cycle", False))
+    def choose_previous_completion(self) -> None:
+        """Set `completion_index` to be for the previous completion."""
+        self._set_completion_index(
+            self.completion_index - 1,
+            do_clamp=not self.view.settings().get("auto_complete_cycle", False),
+        )
 
-    def cycle_next(self) -> Optional[CopilotPayloadCompletion]:
-        """Set the `cycle` to be for the next completion."""
-        self._set_cycle(self.cycle + 1, do_clamp=not self.view.settings().get("auto_complete_cycle", False))
+    def choose_next_completion(self) -> None:
+        """Set `completion_index` to be for the next completion."""
+        self._set_completion_index(
+            self.completion_index + 1,
+            do_clamp=not self.view.settings().get("auto_complete_cycle", False),
+        )
 
     def hide(self) -> None:
         """Hide Copilot's completion popup."""
@@ -62,20 +68,20 @@ class ViewCompletionManager:
         set_copilot_view_setting(self.view, "is_visible", True)
         _PopupCompletion(self.view).show()
 
-    def _set_cycle(self, value: int, do_clamp: bool = False) -> None:
+    def _set_completion_index(self, value: int, do_clamp: bool = False) -> None:
         """
-        Sets the cycle.
+        Set `completion_index`.
 
-        :param      value:     The wanted new cycle value
+        :param      value:     The wanted new completion index.
         :param      do_clamp:  Should the `value` be clamped if it's
                                out-of-bound? Otherwise, treat it as circular.
         """
         completions_cnt = len(self.completions)
         if completions_cnt:
-            new_cycle = clamp(value, 0, completions_cnt - 1) if do_clamp else value % completions_cnt
+            value = clamp(value, 0, completions_cnt - 1) if do_clamp else value % completions_cnt
         else:
-            new_cycle = 0
-        set_copilot_view_setting(self.view, "cycle", new_cycle)
+            value = 0
+        set_copilot_view_setting(self.view, "completion_index", value)
 
 
 class _PopupCompletion:
@@ -163,8 +169,8 @@ class _PopupCompletion:
             header_items.append('<a class="previous" href="subl:copilot_previous_suggestion">▲ Previous</a>')
             header_items.append('<a class="next" href="subl:copilot_next_suggestion">▼ Next</a>')
             header_items.append(
-                "({cycle} of {completions_cnt})".format(
-                    cycle=self.completion_manager.cycle + 1,  # 1-base index
+                "({completion_index_1} of {completions_cnt})".format(
+                    completion_index_1=self.completion_manager.completion_index + 1,  # 1-base index
                     completions_cnt=completions_cnt,
                 )
             )
