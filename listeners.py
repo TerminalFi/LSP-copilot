@@ -2,7 +2,7 @@ import sublime_plugin
 
 from .plugin import CopilotPlugin
 from .ui import ViewCompletionManager
-from .utils import get_copilot_view_setting, get_setting
+from .utils import get_setting
 
 
 class EventListener(sublime_plugin.ViewEventListener):
