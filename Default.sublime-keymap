@@ -21,6 +21,28 @@
             }
         ]
     },
+    {
+        "keys": [
+            "alt+["
+        ],
+        "command": "copilot_previous_suggestion",
+        "context": [
+            {
+                "key": "setting.copilot.completion.is_visible",
+            }
+        ]
+    },
+    {
+        "keys": [
+            "alt+]"
+        ],
+        "command": "copilot_next_suggestion",
+        "context": [
+            {
+                "key": "setting.copilot.completion.is_visible"
+            }
+        ]
+    },
     // {
     //     "keys": [
     //         "UNBOUND"
@@ -29,28 +51,6 @@
     //     "context": [
     //         {
     //             "key": "setting.lsp_active",
-    //         }
-    //     ]
-    // },
-    // {
-    //     "keys": [
-    //         "UNBOUND"
-    //     ],
-    //     "command": "copilot_previous_suggestion",
-    //     "context": [
-    //         {
-    //             "key": "setting.copilot.completion.is_visible",
-    //         }
-    //     ]
-    // },
-    // {
-    //     "keys": [
-    //         "UNBOUND"
-    //     ],
-    //     "command": "copilot_next_suggestion",
-    //     "context": [
-    //         {
-    //             "key": "setting.copilot.completion.is_visible"
     //         }
     //     ]
     // },
