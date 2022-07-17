@@ -1,4 +1,5 @@
 import textwrap
+from functools import partial
 
 import mdpopups
 import sublime
@@ -51,7 +52,6 @@ class ViewCompletionManager:
         """Hide Copilot's completion popup."""
         # to prevent from hiding other plugin's popup
         if self.is_visible:
-            set_copilot_view_setting(self.view, "is_visible", False)
             _PopupCompletion.hide(self.view)
 
     def show(self) -> None:
@@ -65,7 +65,6 @@ class ViewCompletionManager:
         if completion["text"] == self.view.substr(current_line):
             return
 
-        set_copilot_view_setting(self.view, "is_visible", True)
         _PopupCompletion(self.view).show()
 
     def _set_completion_index(self, value: int, do_clamp: bool = False) -> None:
@@ -197,9 +196,9 @@ class _PopupCompletion:
     def show(self) -> None:
         self.hide(self.view)
 
+        set_copilot_view_setting(self.view, "is_visible", True)
         mdpopups.show_popup(
             view=self.view,
-            # multiple lines are not supported
             content=self.popup_content,
             md=True,
             css=self.CSS,
@@ -207,6 +206,7 @@ class _PopupCompletion:
             flags=sublime.COOPERATE_WITH_AUTO_COMPLETE,
             max_width=640,
             wrapper_class=self.CSS_CLASS_NAME,
+            on_hide=partial(set_copilot_view_setting, self.view, "is_visible", False),
         )
 
     @staticmethod
