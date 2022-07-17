@@ -31,8 +31,7 @@ class ViewCompletionManager:
     @property
     def current_completion(self) -> Optional[CopilotPayloadCompletion]:
         """The current chosen `completion`."""
-        completions = self.completions
-        return completions[self.completion_index] if completions else None
+        return self.completions[self.completion_index] if self.completions else None
 
     def show_previous_completion(self) -> None:
         """Set `completion_index` to be for the previous completion."""
