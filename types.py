@@ -28,7 +28,7 @@ CopilotPayloadCompletion = TypedDict(
         "uuid": str,
         "range": CopilotPayloadCompletionRange,
         "displayText": str,
-        # # injected for convenience
+        # injected for convenience
         "positionSt": int,
     },
     total=True,
