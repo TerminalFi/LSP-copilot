@@ -67,7 +67,7 @@ class ViewCompletionManager:
 
         _PopupCompletion(self.view).show()
 
-    def _set_completion_index(self, value: int, do_clamp: bool = False) -> None:
+    def _set_completion_index(self, value: int, do_clamp: bool = True) -> None:
         """
         Set `completion_index`.
 
