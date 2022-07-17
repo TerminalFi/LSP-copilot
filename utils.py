@@ -6,6 +6,7 @@ from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.typing import Any, List, Optional, Union
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
+from .types import CopilotPayloadCompletion
 
 
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
@@ -35,6 +36,14 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     if value is None:
         return default
     return value
+
+
+def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadCompletion]) -> None:
+    for completion in completions:
+        completion["positionSt"] = view.text_point(
+            completion["position"]["line"],
+            completion["position"]["character"],
+        )
 
 
 def reformat(text: str) -> str:

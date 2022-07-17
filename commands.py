@@ -26,7 +26,7 @@ from .types import (
     CopilotPayloadSignOut,
     T_Callable,
 )
-from .ui import Completion
+from .ui import ViewCompletionManager
 from .utils import get_setting
 
 
@@ -80,32 +80,58 @@ class CopilotGetVersionCommand(CopilotTextCommand):
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, edit: sublime.Edit) -> None:
-        completion = Completion(self.view)
-        if not completion.is_visible:
+        completion_manager = ViewCompletionManager(self.view)
+        if not completion_manager.is_visible:
             return
 
-        completion.hide()
+        completion_manager.hide()
+
+        completion = completion_manager.current_completion
+        if not completion:
+            return
 
         # Remove the current line and then insert full text.
         # We don't have to care whether it's an inline completion or not.
-        source_line_region = self.view.line(completion.region[1])
+        source_line_region = self.view.line(completion["positionSt"])
         self.view.erase(edit, source_line_region)
-        self.view.insert(edit, source_line_region.begin(), completion.text)
+        self.view.insert(edit, source_line_region.begin(), completion["text"])
 
-        # TODO: When a suggestion is accept, we need to send a REQ_NOTIFY_REJECTED
-        # request with all other completions which weren't accepted
-        self._record_telemetry(session, REQ_NOTIFY_ACCEPTED, {"uuid": completion.uuid})
+        # notify the current completion as accepted
+        self._record_telemetry(session, REQ_NOTIFY_ACCEPTED, {"uuid": completion["uuid"]})
+
+        # notify all other completions as rejected
+        other_uuids = [completion["uuid"] for completion in completion_manager.completions]
+        other_uuids.remove(completion["uuid"])
+        if other_uuids:
+            self._record_telemetry(session, REQ_NOTIFY_REJECTED, {"uuids": other_uuids})
 
 
 class CopilotRejectSuggestionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
-        completion = Completion(self.view)
-        completion.hide()
+        completion_manager = ViewCompletionManager(self.view)
+        completion_manager.hide()
 
-        # TODO: Currently we send the last shown completion UUID, however Copilot can
-        # suggest multiple UUID's. We need to return all UUID's which were not accepted
-        self._record_telemetry(session, REQ_NOTIFY_REJECTED, {"uuids": [completion.uuid]})
+        # notify all completions as rejected
+        self._record_telemetry(
+            session,
+            REQ_NOTIFY_REJECTED,
+            {"uuids": [completion["uuid"] for completion in completion_manager.completions]},
+        )
+
+
+class CopilotPreviousSuggestionCommand(CopilotTextCommand):
+    def run(self, _: sublime.Edit) -> None:
+        completion_manager = ViewCompletionManager(self.view)
+        completion_manager.cycle_previous()
+        completion_manager.show()
+
+
+class CopilotNextSuggestionCommand(CopilotTextCommand):
+    def run(self, _: sublime.Edit) -> None:
+        completion_manager = ViewCompletionManager(self.view)
+        completion_manager.cycle_next()
+        completion_manager.show()
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):

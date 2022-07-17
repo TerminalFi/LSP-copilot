@@ -2,74 +2,61 @@ import textwrap
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import List, Tuple
+from LSP.plugin.core.typing import List, Optional
 
 from .types import CopilotPayloadCompletion
 from .utils import get_copilot_view_setting, reformat, set_copilot_view_setting
 
 
-class Completion:
+class ViewCompletionManager:
     def __init__(self, view: sublime.View) -> None:
         self.view = view
 
     @property
     def is_visible(self) -> bool:
-        return bool(get_copilot_view_setting(self.view, "is_visible") or False)
+        return get_copilot_view_setting(self.view, "is_visible", False)
 
     @property
-    def region(self) -> Tuple[int, int]:
-        return get_copilot_view_setting(self.view, "region") or (-1, -1)
+    def completions(self) -> List[CopilotPayloadCompletion]:
+        return get_copilot_view_setting(self.view, "completions", [])
 
     @property
-    def text(self) -> str:
-        return get_copilot_view_setting(self.view, "text") or ""
+    def cycle(self) -> int:
+        return get_copilot_view_setting(self.view, "cycle", 0)
 
     @property
-    def display_text(self) -> str:
-        return get_copilot_view_setting(self.view, "display_text") or ""
+    def current_completion(self) -> Optional[CopilotPayloadCompletion]:
+        completions = self.completions
+        return completions[self.cycle] if completions else None
 
-    @property
-    def uuid(self) -> str:
-        return get_copilot_view_setting(self.view, "uuid") or ""
+    def cycle_previous(self) -> Optional[CopilotPayloadCompletion]:
+        self._set_cycle(self.cycle - 1)
 
-    def get_display_text(self, region: Tuple[int, int], raw_display_text: str) -> str:
-        if "\n" in raw_display_text:
-            return raw_display_text
-
-        if self.view.classify(region[1]) & sublime.CLASS_LINE_END:
-            return raw_display_text
-
-        current_line = self.view.line(region[1])
-        following_text = self.view.substr(sublime.Region(region[0], current_line.end())).strip()
-        index = raw_display_text.find(following_text)
-
-        return raw_display_text[:index] if following_text and index != -1 else raw_display_text
+    def cycle_next(self) -> Optional[CopilotPayloadCompletion]:
+        self._set_cycle(self.cycle + 1)
 
     def hide(self) -> None:
         set_copilot_view_setting(self.view, "is_visible", False)
+        _PopupCompletion.hide(self.view)
 
-        PopupCompletion.hide(self.view)
-
-    def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0) -> None:
-        if not completions:
+    def show(self) -> None:
+        completion = self.current_completion
+        if not completion:
             return
 
-        completion = completions[cycle % len(completions)]
-
-        display_text = self.get_display_text(region, completion["displayText"])
-        if not display_text:
+        # the text after completion is the same
+        current_line = self.view.line(completion["positionSt"])
+        if completion["text"] == self.view.substr(current_line):
             return
 
         set_copilot_view_setting(self.view, "is_visible", True)
-        set_copilot_view_setting(self.view, "region", region)
-        set_copilot_view_setting(self.view, "uuid", completion["uuid"])
-        set_copilot_view_setting(self.view, "text", completion["text"])
-        set_copilot_view_setting(self.view, "display_text", display_text)
+        _PopupCompletion(self.view).show()
 
-        PopupCompletion(self.view, region, display_text).show()
+    def _set_cycle(self, value: int) -> None:
+        set_copilot_view_setting(self.view, "cycle", value % len(self.completions) if self.completions else 0)
 
 
-class PopupCompletion:
+class _PopupCompletion:
     CSS_CLASS_NAME = "copilot-suggestion-popup"
     CSS = """
     html {{
@@ -123,36 +110,69 @@ class PopupCompletion:
     )
     COMPLETION_TEMPLATE = reformat(
         """
-        <div class="header">
-            <a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;
-            <a class="reject" href="subl:copilot_reject_suggestion"><i>×</i> Reject</a>
-        </div>
+        <div class="header">{header_items}</div>
         ```{lang}
         {code}
         ```
         """
     )
 
-    def __init__(self, view: sublime.View, region: Tuple[int, int], display_text: str) -> None:
+    def __init__(self, view: sublime.View) -> None:
         self.view = view
-        self.region = region
-        self.display_text = display_text
-        self.syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
+        self.completion_manager = ViewCompletionManager(view)
 
     @property
-    def content(self) -> str:
+    def popup_content(self) -> str:
+        syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
         return self.COMPLETION_TEMPLATE.format(
-            lang=self.syntax.scope.rpartition(".")[2],
-            code=self._prepare_display_text(),
+            header_items=" &nbsp;".join(self.popup_header_items),
+            lang=syntax.scope.rpartition(".")[2],
+            code=self.popup_code,
         )
+
+    @property
+    def popup_header_items(self) -> List[str]:
+        completions_cnt = len(self.completion_manager.completions)
+        header_items = [
+            '<a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>',
+            '<a class="reject" href="subl:copilot_reject_suggestion"><i>×</i> Reject</a>',
+        ]
+        if completions_cnt > 1:
+            header_items.append('<a class="previous" href="subl:copilot_previous_suggestion">▲ Previous</a>')
+            header_items.append('<a class="next" href="subl:copilot_next_suggestion">▼ Next</a>')
+            header_items.append(
+                "({cycle} of {completions_cnt})".format(
+                    cycle=self.completion_manager.cycle + 1,  # 1-base index
+                    completions_cnt=completions_cnt,
+                )
+            )
+        return header_items
+
+    @property
+    def popup_code(self) -> str:
+        self.completion = self.completion_manager.current_completion
+        assert self.completion  # out code flow guarantees this
+
+        display_text = self.completion["displayText"]
+        position_st = self.completion["positionSt"]
+
+        # multiple lines are not supported
+        if ("\n" in display_text) or (self.view.classify(position_st) & sublime.CLASS_LINE_END):
+            return self._prepare_popup_code_display_text(display_text)
+
+        # inline completion
+        current_line = self.view.line(position_st)
+        following_text = self.view.substr(sublime.Region(position_st, current_line.end())).strip()
+        index = display_text.find(following_text)
+        return display_text[:index] if following_text and index != -1 else display_text
 
     def show(self) -> None:
         self.hide(self.view)
 
         mdpopups.show_popup(
             view=self.view,
-            region=sublime.Region(max(self.region)),
-            content=self.content,
+            # multiple lines are not supported
+            content=self.popup_content,
             md=True,
             css=self.CSS,
             layout=sublime.LAYOUT_INLINE,
@@ -165,15 +185,16 @@ class PopupCompletion:
     def hide(view: sublime.View) -> None:
         mdpopups.hide_popup(view)
 
-    def _prepare_display_text(self) -> str:
+    @staticmethod
+    def _prepare_popup_code_display_text(display_text: str) -> str:
         # The returned suggestion is in the form of
         #   - the first won't be indented
         #   - the rest of lines will be indented basing on the indentation level of the current line
         # The rest of lines don't visually look good if the current line is deeply indented.
         # Hence we modify the rest of lines into always indented by one level if it's originally indented.
-        first_line, sep, rest = self.display_text.partition("\n")
+        first_line, sep, rest = display_text.partition("\n")
 
         if rest.startswith("\t"):
             return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
 
-        return self.display_text
+        return display_text

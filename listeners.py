@@ -4,7 +4,7 @@ import sublime_plugin
 from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
 
 from .plugin import CopilotPlugin
-from .ui import Completion
+from .ui import ViewCompletionManager
 from .utils import get_copilot_view_setting
 
 
@@ -22,4 +22,4 @@ class EventListener(sublime_plugin.ViewEventListener):
         )
 
     def on_deactivated_async(self) -> None:
-        Completion(self.view).hide()
+        ViewCompletionManager(self.view).hide()
