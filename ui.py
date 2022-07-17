@@ -216,7 +216,7 @@ class _PopupCompletion:
         # Hence we modify the rest of lines into always indented by one level if it's originally indented.
         first_line, sep, rest = display_text.partition("\n")
 
-        if rest.startswith("\t"):
+        if rest.startswith((" ", "\t")):
             return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
 
         return display_text
