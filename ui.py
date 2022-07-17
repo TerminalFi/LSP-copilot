@@ -36,19 +36,19 @@ class ViewCompletionManager:
 
     def show_previous_completion(self) -> None:
         """Set `completion_index` to be for the previous completion."""
-        self._set_completion_index(
+        self.show(
+            None,
             self.completion_index - 1,
             do_clamp=not self.view.settings().get("auto_complete_cycle", False),
         )
-        self.show()
 
     def show_next_completion(self) -> None:
         """Set `completion_index` to be for the next completion."""
-        self._set_completion_index(
+        self.show(
+            None,
             self.completion_index + 1,
             do_clamp=not self.view.settings().get("auto_complete_cycle", False),
         )
-        self.show()
 
     def hide(self) -> None:
         """Hide Copilot's completion popup."""
@@ -56,8 +56,21 @@ class ViewCompletionManager:
         if self.is_visible:
             _PopupCompletion.hide(self.view)
 
-    def show(self) -> None:
+    def show(
+        self,
+        completions: Optional[List[CopilotPayloadCompletion]] = None,
+        completion_index: Optional[int] = None,
+        do_clamp: bool = True,
+    ) -> None:
         """Show Copilot's completion popup."""
+        # update completions
+        if completions is not None:
+            set_copilot_view_setting(self.view, "completions", completions)
+        # update completion index
+        if completion_index is not None:
+            set_copilot_view_setting(self.view, "completion_index", completion_index)
+        self._tidy_completion_index(do_clamp=do_clamp)
+
         completion = self.current_completion
         if not completion:
             return
@@ -69,20 +82,21 @@ class ViewCompletionManager:
 
         _PopupCompletion(self.view).show()
 
-    def _set_completion_index(self, value: int, do_clamp: bool = True) -> None:
+    def _tidy_completion_index(self, do_clamp: bool = True) -> None:
         """
-        Set `completion_index`.
+        Revise `completion_index` to a valid value, or `0` if `self.completions` is empty.
 
-        :param      value:     The wanted new completion index.
-        :param      do_clamp:  Should the `value` be clamped if it's
-                               out-of-bound? Otherwise, treat it as cyclic.
+        :param      do_clamp:  Do clamped if `completion_index` is out-of-bound? Otherwise, treat it as cyclic.
         """
         completions_cnt = len(self.completions)
         if completions_cnt:
-            value = clamp(value, 0, completions_cnt - 1) if do_clamp else value % completions_cnt
+            if do_clamp:
+                new_index = clamp(self.completion_index, 0, completions_cnt - 1)
+            else:
+                new_index = self.completion_index % completions_cnt
         else:
-            value = 0
-        set_copilot_view_setting(self.view, "completion_index", value)
+            new_index = 0
+        set_copilot_view_setting(self.view, "completion_index", new_index)
 
 
 class _PopupCompletion:

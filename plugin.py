@@ -177,6 +177,4 @@ class CopilotPlugin(NpmClientHandler):
 
         preprocess_completions(view, completions)
 
-        set_copilot_view_setting(view, "completions", completions)
-        set_copilot_view_setting(view, "completion_index", 0)
-        ViewCompletionManager(view).show()
+        ViewCompletionManager(view).show(completions, 0)
