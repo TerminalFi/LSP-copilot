@@ -2,7 +2,7 @@
 
 Github Copilot support for Sublime's LSP plugin.
 
-Uses [Copilot][gopls-repo] Distribution which uses OpenAI Codex to suggest code and entire functions in real-time right from your editor.
+Uses [Copilot][] Distribution which uses OpenAI Codex to suggest code and entire functions in real-time right from your editor.
 
 ### Prerequisites
 
@@ -10,7 +10,7 @@ Uses [Copilot][gopls-repo] Distribution which uses OpenAI Codex to suggest code 
 
 ### Installation
 
-* Install [LSP][lsp-repo] and `LSP-copilot` from Package Control.
+* Install [LSP][] and `LSP-copilot` from Package Control.
 * Restart Sublime.
 
 ### Setup
@@ -22,3 +22,7 @@ On initial use, follow the steps below:
     1. Paste `User Code` into Github's authentication flow
     1. Return to `Sublime Text` and press `Ok` on the dialog
 1. Use `LSP-copilot`
+
+
+[Copilot]: https://github.com/features/copilot
+[LSP]: https://github.com/sublimelsp/LSP
