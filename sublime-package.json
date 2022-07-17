@@ -19,14 +19,19 @@
                   "additionalProperties": false,
                   "type": "object",
                   "properties": {
+                    "auto_ask_completions": {
+                      "default": true,
+                      "description": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
+                      "type": "boolean"
+                    },
                     "debug": {
                       "default": false,
-                      "markdownDescription": "Enables debug mode fo the LSP-copilot\n",
+                      "description": "Enables debug mode fo the LSP-copilot.",
                       "type": "boolean"
                     },
                     "telemetry": {
                       "default": false,
-                      "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` Suggestions\n",
+                      "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` Suggestions.",
                       "type": "boolean"
                     }
                   }

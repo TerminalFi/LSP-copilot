@@ -1,9 +1,11 @@
+import functools
 from abc import ABCMeta
 from functools import partial, wraps
 
 import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand
+from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
 from LSP.plugin.core.typing import Any, Callable, Union, cast
 
 from .constants import (
@@ -27,7 +29,7 @@ from .types import (
     T_Callable,
 )
 from .ui import Completion
-from .utils import get_setting
+from .utils import get_copilot_view_setting, get_setting
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -75,6 +77,20 @@ class CopilotGetVersionCommand(CopilotTextCommand):
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
         sublime.message_dialog("[LSP-copilot] Server version: {}".format(payload.get("version", "unknown")))
+
+
+class CopilotAskCompletionsCommand(CopilotTextCommand):
+    def run(self, _: sublime.Edit) -> None:
+        plugin = CopilotPlugin.plugin_from_view(self.view)
+        if not plugin:
+            return
+
+        debounced(
+            functools.partial(plugin.request_get_completions, self.view),
+            FEATURES_TIMEOUT,
+            lambda: not get_copilot_view_setting(self.view, "is_waiting", False),
+            async_thread=True,
+        )
 
 
 class CopilotAcceptSuggestionCommand(CopilotTextCommand):

@@ -20,5 +20,16 @@
                 "key": "setting.copilot.completion.is_visible"
             }
         ]
-    }
+    },
+    // {
+    //     "keys": [
+    //         "UNBOUND"
+    //     ],
+    //     "command": "copilot_ask_completions",
+    //     "context": [
+    //         {
+    //             "key": "setting.lsp_active",
+    //         }
+    //     ]
+    // },
 ]
