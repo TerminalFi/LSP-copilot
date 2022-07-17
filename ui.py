@@ -34,19 +34,21 @@ class ViewCompletionManager:
         completions = self.completions
         return completions[self.completion_index] if completions else None
 
-    def choose_previous_completion(self) -> None:
+    def show_previous_completion(self) -> None:
         """Set `completion_index` to be for the previous completion."""
         self._set_completion_index(
             self.completion_index - 1,
             do_clamp=not self.view.settings().get("auto_complete_cycle", False),
         )
+        self.show()
 
-    def choose_next_completion(self) -> None:
+    def show_next_completion(self) -> None:
         """Set `completion_index` to be for the next completion."""
         self._set_completion_index(
             self.completion_index + 1,
             do_clamp=not self.view.settings().get("auto_complete_cycle", False),
         )
+        self.show()
 
     def hide(self) -> None:
         """Hide Copilot's completion popup."""

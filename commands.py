@@ -138,16 +138,12 @@ class CopilotRejectSuggestionCommand(CopilotTextCommand):
 
 class CopilotPreviousSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        completion_manager = ViewCompletionManager(self.view)
-        completion_manager.choose_previous_completion()
-        completion_manager.show()
+        ViewCompletionManager(self.view).show_previous_completion()
 
 
 class CopilotNextSuggestionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        completion_manager = ViewCompletionManager(self.view)
-        completion_manager.choose_next_completion()
-        completion_manager.show()
+        ViewCompletionManager(self.view).show_next_completion()
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):
