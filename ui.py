@@ -97,7 +97,7 @@ class ViewCompletionManager:
 
 
 class _PopupCompletion:
-    CSS_CLASS_NAME = "copilot-suggestion-popup"
+    CSS_CLASS_NAME = "copilot-completion-popup"
     CSS = """
     html {{
         --copilot-accept-foreground: var(--foreground);
@@ -186,13 +186,13 @@ class _PopupCompletion:
     def popup_header_items(self) -> List[str]:
         completions_cnt = len(self.completion_manager.completions)
         header_items = [
-            '<a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>',
-            '<a class="reject" href="subl:copilot_reject_suggestion"><i>×</i> Reject</a>',
+            '<a class="accept" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
+            '<a class="reject" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
         ]
         if completions_cnt > 1:
             header_items.append(
-                '<a class="prev" href="subl:copilot_previous_suggestion">◀</a>'
-                + '<a class="next" href="subl:copilot_next_suggestion">▶</a>'
+                '<a class="prev" href="subl:copilot_previous_completion">◀</a>'
+                + '<a class="next" href="subl:copilot_next_completion">▶</a>'
             )
             header_items.append(
                 "({completion_index_1} of {completions_cnt})".format(
@@ -242,7 +242,7 @@ class _PopupCompletion:
 
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:
-        # The returned suggestion is in the form of
+        # The returned completion is in the form of
         #   - the first won't be indented
         #   - the rest of lines will be indented basing on the indentation level of the current line
         # The rest of lines don't visually look good if the current line is deeply indented.

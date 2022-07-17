@@ -93,7 +93,7 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         )
 
 
-class CopilotAcceptSuggestionCommand(CopilotTextCommand):
+class CopilotAcceptCompletionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, edit: sublime.Edit) -> None:
         completion_manager = ViewCompletionManager(self.view)
@@ -122,7 +122,7 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
             self._record_telemetry(session, REQ_NOTIFY_REJECTED, {"uuids": other_uuids})
 
 
-class CopilotRejectSuggestionCommand(CopilotTextCommand):
+class CopilotRejectCompletionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
         completion_manager = ViewCompletionManager(self.view)
@@ -136,12 +136,12 @@ class CopilotRejectSuggestionCommand(CopilotTextCommand):
         )
 
 
-class CopilotPreviousSuggestionCommand(CopilotTextCommand):
+class CopilotPreviousCompletionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
         ViewCompletionManager(self.view).show_previous_completion()
 
 
-class CopilotNextSuggestionCommand(CopilotTextCommand):
+class CopilotNextCompletionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
         ViewCompletionManager(self.view).show_next_completion()
 
