@@ -22,8 +22,8 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
 )
-from .ui import Completion
-from .utils import get_project_relative_path, set_copilot_view_setting
+from .ui import ViewCompletionManager
+from .utils import get_project_relative_path, preprocess_completions, set_copilot_view_setting
 
 
 def plugin_loaded() -> None:
@@ -127,7 +127,7 @@ class CopilotPlugin(NpmClientHandler):
         pass
 
     def request_get_completions(self, view: sublime.View) -> None:
-        Completion(view).hide()
+        ViewCompletionManager(view).hide()
 
         session = self.weaksession()
         syntax = view.syntax()
@@ -143,7 +143,7 @@ class CopilotPlugin(NpmClientHandler):
                 "source": view.substr(sublime.Region(0, view.size())),
                 "tabSize": view.settings().get("tab_size", 4),
                 "indentSize": 1,  # there is no such concept in ST
-                "insertSpaces": False,  # always use TAB and let ST auto converts it accordingly
+                "insertSpaces": view.settings().get("translate_tabs_to_spaces", False),
                 "path": file_path,
                 "uri": file_path and filename_to_uri(file_path),
                 "relativePath": get_project_relative_path(file_path),
@@ -175,4 +175,6 @@ class CopilotPlugin(NpmClientHandler):
         if not completions:
             return
 
-        Completion(view).show(region, completions)
+        preprocess_completions(view, completions)
+
+        ViewCompletionManager(view).show(completions, 0)

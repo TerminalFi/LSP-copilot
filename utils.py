@@ -3,9 +3,21 @@ import textwrap
 
 import sublime
 from LSP.plugin.core.sessions import Session
-from LSP.plugin.core.typing import Any, List, Optional, Union
+from LSP.plugin.core.typing import Any, List, Optional, TypeVar, Union
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
+from .types import CopilotPayloadCompletion
+
+T_Number = TypeVar("T_Number", bound=Union[int, float])
+
+
+def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T_Number] = None) -> T_Number:
+    """Returns the bounded value of `val` in the range of `[min_val, max_val]`."""
+    if min_val is not None and val < min_val:  # type: ignore
+        return min_val
+    if max_val is not None and val > max_val:  # type: ignore
+        return max_val
+    return val
 
 
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
@@ -35,6 +47,14 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     if value is None:
         return default
     return value
+
+
+def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadCompletion]) -> None:
+    for completion in completions:
+        completion["positionSt"] = view.text_point(
+            completion["position"]["line"],
+            completion["position"]["character"],
+        )
 
 
 def reformat(text: str) -> str:

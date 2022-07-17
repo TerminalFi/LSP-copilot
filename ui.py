@@ -1,76 +1,103 @@
 import textwrap
+from functools import partial
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import List, Tuple
+from LSP.plugin.core.typing import List, Optional
 
 from .types import CopilotPayloadCompletion
-from .utils import get_copilot_view_setting, reformat, set_copilot_view_setting
+from .utils import clamp, get_copilot_view_setting, reformat, set_copilot_view_setting
 
 
-class Completion:
+class ViewCompletionManager:
     def __init__(self, view: sublime.View) -> None:
         self.view = view
 
     @property
     def is_visible(self) -> bool:
-        return bool(get_copilot_view_setting(self.view, "is_visible") or False)
+        """Whether Copilot's completion popup is visible."""
+        return get_copilot_view_setting(self.view, "is_visible", False)
 
     @property
-    def region(self) -> Tuple[int, int]:
-        return get_copilot_view_setting(self.view, "region") or (-1, -1)
+    def completions(self) -> List[CopilotPayloadCompletion]:
+        """All `completions` in the view."""
+        return get_copilot_view_setting(self.view, "completions", [])
 
     @property
-    def text(self) -> str:
-        return get_copilot_view_setting(self.view, "text") or ""
+    def completion_index(self) -> int:
+        """The index of the current chosen completion."""
+        return get_copilot_view_setting(self.view, "completion_index", 0)
 
     @property
-    def display_text(self) -> str:
-        return get_copilot_view_setting(self.view, "display_text") or ""
+    def current_completion(self) -> Optional[CopilotPayloadCompletion]:
+        """The current chosen `completion`."""
+        return self.completions[self.completion_index] if self.completions else None
 
-    @property
-    def uuid(self) -> str:
-        return get_copilot_view_setting(self.view, "uuid") or ""
+    def show_previous_completion(self) -> None:
+        """Show the previous completion."""
+        self.show(
+            completion_index=self.completion_index - 1,
+            do_clamp=not self.view.settings().get("auto_complete_cycle", False),
+        )
 
-    def get_display_text(self, region: Tuple[int, int], raw_display_text: str) -> str:
-        if "\n" in raw_display_text:
-            return raw_display_text
-
-        if self.view.classify(region[1]) & sublime.CLASS_LINE_END:
-            return raw_display_text
-
-        current_line = self.view.line(region[1])
-        following_text = self.view.substr(sublime.Region(region[0], current_line.end())).strip()
-        index = raw_display_text.find(following_text)
-
-        return raw_display_text[:index] if following_text and index != -1 else raw_display_text
+    def show_next_completion(self) -> None:
+        """Show the next completion."""
+        self.show(
+            completion_index=self.completion_index + 1,
+            do_clamp=not self.view.settings().get("auto_complete_cycle", False),
+        )
 
     def hide(self) -> None:
-        set_copilot_view_setting(self.view, "is_visible", False)
+        """Hide Copilot's completion popup."""
+        # prevent from hiding other plugin's popup
+        if self.is_visible:
+            _PopupCompletion.hide(self.view)
 
-        PopupCompletion.hide(self.view)
+    def show(
+        self,
+        completions: Optional[List[CopilotPayloadCompletion]] = None,
+        completion_index: Optional[int] = None,
+        do_clamp: bool = True,
+    ) -> None:
+        """Show Copilot's completion popup."""
+        # update completions
+        if completions is not None:
+            set_copilot_view_setting(self.view, "completions", completions)
+        # update completion index
+        if completion_index is not None:
+            set_copilot_view_setting(self.view, "completion_index", completion_index)
+        self._tidy_completion_index(do_clamp)
 
-    def show(self, region: Tuple[int, int], completions: List[CopilotPayloadCompletion], cycle: int = 0) -> None:
-        if not completions:
+        completion = self.current_completion
+        if not completion:
             return
 
-        completion = completions[cycle % len(completions)]
-
-        display_text = self.get_display_text(region, completion["displayText"])
-        if not display_text:
+        # the text after completion is the same
+        current_line = self.view.line(completion["positionSt"])
+        if completion["text"] == self.view.substr(current_line):
             return
 
-        set_copilot_view_setting(self.view, "is_visible", True)
-        set_copilot_view_setting(self.view, "region", region)
-        set_copilot_view_setting(self.view, "uuid", completion["uuid"])
-        set_copilot_view_setting(self.view, "text", completion["text"])
-        set_copilot_view_setting(self.view, "display_text", display_text)
+        _PopupCompletion(self.view).show()
 
-        PopupCompletion(self.view, region, display_text).show()
+    def _tidy_completion_index(self, do_clamp: bool = True) -> None:
+        """
+        Revise `completion_index` to a valid value, or `0` if `self.completions` is empty.
+
+        :param      do_clamp:  Clamp `completion_index` if it's out-of-bounds. Otherwise, treat it as cyclic.
+        """
+        completions_cnt = len(self.completions)
+        if completions_cnt:
+            if do_clamp:
+                new_index = clamp(self.completion_index, 0, completions_cnt - 1)
+            else:
+                new_index = self.completion_index % completions_cnt
+        else:
+            new_index = 0
+        set_copilot_view_setting(self.view, "completion_index", new_index)
 
 
-class PopupCompletion:
-    CSS_CLASS_NAME = "copilot-suggestion-popup"
+class _PopupCompletion:
+    CSS_CLASS_NAME = "copilot-completion-popup"
     CSS = """
     html {{
         --copilot-accept-foreground: var(--foreground);
@@ -118,62 +145,113 @@ class PopupCompletion:
     .{class_name} a.reject i {{
         color: var(--copilot-reject-border);
     }}
+
+    .{class_name} a.prev {{
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right-width: 0;
+        padding-left: 8px;
+        padding-right: 8px;
+    }}
+
+    .{class_name} a.next {{
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left-width: 0;
+        padding-left: 8px;
+        padding-right: 8px;
+    }}
     """.format(
         class_name=CSS_CLASS_NAME
     )
     COMPLETION_TEMPLATE = reformat(
         """
-        <div class="header">
-            <a class="accept" href="subl:copilot_accept_suggestion"><i>✓</i> Accept</a>&nbsp;
-            <a class="reject" href="subl:copilot_reject_suggestion"><i>×</i> Reject</a>
-        </div>
+        <div class="header">{header_items}</div>
         ```{lang}
         {code}
         ```
         """
     )
 
-    def __init__(self, view: sublime.View, region: Tuple[int, int], display_text: str) -> None:
+    def __init__(self, view: sublime.View) -> None:
         self.view = view
-        self.region = region
-        self.display_text = display_text
-        self.syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
+        self.completion_manager = ViewCompletionManager(view)
 
     @property
-    def content(self) -> str:
+    def popup_content(self) -> str:
+        syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
         return self.COMPLETION_TEMPLATE.format(
-            lang=self.syntax.scope.rpartition(".")[2],
-            code=self._prepare_display_text(),
+            header_items=" &nbsp;".join(self.popup_header_items),
+            lang=syntax.scope.rpartition(".")[2],
+            code=self.popup_code,
         )
 
-    def show(self) -> None:
-        self.hide(self.view)
+    @property
+    def popup_header_items(self) -> List[str]:
+        completions_cnt = len(self.completion_manager.completions)
+        header_items = [
+            '<a class="accept" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
+            '<a class="reject" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
+        ]
+        if completions_cnt > 1:
+            header_items.append(
+                '<a class="prev" href="subl:copilot_previous_completion">◀</a>'
+                + '<a class="next" href="subl:copilot_next_completion">▶</a>'
+            )
+            header_items.append(
+                "({completion_index_1} of {completions_cnt})".format(
+                    completion_index_1=self.completion_manager.completion_index + 1,  # 1-based index
+                    completions_cnt=completions_cnt,
+                )
+            )
+        return header_items
 
+    @property
+    def popup_code(self) -> str:
+        self.completion = self.completion_manager.current_completion
+        assert self.completion  # out code flow guarantees this
+
+        display_text = self.completion["displayText"]
+        position_st = self.completion["positionSt"]
+
+        # multiple lines are not supported
+        if ("\n" in display_text) or (self.view.classify(position_st) & sublime.CLASS_LINE_END):
+            return self._prepare_popup_code_display_text(display_text)
+
+        # inline completion
+        current_line = self.view.line(position_st)
+        following_text = self.view.substr(sublime.Region(position_st, current_line.end())).strip()
+        index = display_text.find(following_text)
+        return display_text[:index] if following_text and index != -1 else display_text
+
+    def show(self) -> None:
+        set_copilot_view_setting(self.view, "is_visible", True)
         mdpopups.show_popup(
             view=self.view,
-            region=sublime.Region(max(self.region)),
-            content=self.content,
+            content=self.popup_content,
             md=True,
             css=self.CSS,
             layout=sublime.LAYOUT_INLINE,
             flags=sublime.COOPERATE_WITH_AUTO_COMPLETE,
             max_width=640,
             wrapper_class=self.CSS_CLASS_NAME,
+            on_hide=partial(set_copilot_view_setting, self.view, "is_visible", False),
         )
 
     @staticmethod
     def hide(view: sublime.View) -> None:
         mdpopups.hide_popup(view)
 
-    def _prepare_display_text(self) -> str:
-        # The returned suggestion is in the form of
+    @staticmethod
+    def _prepare_popup_code_display_text(display_text: str) -> str:
+        # The returned completion is in the form of
         #   - the first won't be indented
         #   - the rest of lines will be indented basing on the indentation level of the current line
         # The rest of lines don't visually look good if the current line is deeply indented.
         # Hence we modify the rest of lines into always indented by one level if it's originally indented.
-        first_line, sep, rest = self.display_text.partition("\n")
+        first_line, sep, rest = display_text.partition("\n")
 
-        if rest.startswith("\t"):
+        if rest.startswith((" ", "\t")):
             return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
 
-        return self.display_text
+        return display_text

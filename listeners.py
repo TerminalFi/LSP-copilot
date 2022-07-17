@@ -1,7 +1,7 @@
 import sublime_plugin
 
 from .plugin import CopilotPlugin
-from .ui import Completion
+from .ui import ViewCompletionManager
 from .utils import get_setting
 
 
@@ -19,4 +19,4 @@ class EventListener(sublime_plugin.ViewEventListener):
             self.view.run_command("copilot_ask_completions")
 
     def on_deactivated_async(self) -> None:
-        Completion(self.view).hide()
+        ViewCompletionManager(self.view).hide()
