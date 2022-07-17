@@ -74,7 +74,7 @@ class ViewCompletionManager:
 
         :param      value:     The wanted new completion index.
         :param      do_clamp:  Should the `value` be clamped if it's
-                               out-of-bound? Otherwise, treat it as circular.
+                               out-of-bound? Otherwise, treat it as cyclic.
         """
         completions_cnt = len(self.completions)
         if completions_cnt:
