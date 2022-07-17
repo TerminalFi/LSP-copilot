@@ -166,8 +166,8 @@ class _PopupCompletion:
             '<a class="reject" href="subl:copilot_reject_suggestion"><i>×</i> Reject</a>',
         ]
         if completions_cnt > 1:
-            header_items.append('<a class="previous" href="subl:copilot_previous_suggestion">▲ Previous</a>')
-            header_items.append('<a class="next" href="subl:copilot_next_suggestion">▼ Next</a>')
+            header_items.append('<a class="previous" href="subl:copilot_previous_suggestion">◀ Previous</a>')
+            header_items.append('<a class="next" href="subl:copilot_next_suggestion">▶ Next</a>')
             header_items.append(
                 "({completion_index_1} of {completions_cnt})".format(
                     completion_index_1=self.completion_manager.completion_index + 1,  # 1-base index
