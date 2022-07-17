@@ -83,7 +83,7 @@ class ViewCompletionManager:
         """
         Revise `completion_index` to a valid value, or `0` if `self.completions` is empty.
 
-        :param      do_clamp:  Do clamped if `completion_index` is out-of-bound? Otherwise, treat it as cyclic.
+        :param      do_clamp:  Clamp `completion_index` if it's out-of-bounds. Otherwise, treat it as cyclic.
         """
         completions_cnt = len(self.completions)
         if completions_cnt:
