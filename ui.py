@@ -346,7 +346,8 @@ class _PanelCompletion:
         ]
         return header_items
 
-    def show(self):
+    def show(self) -> None:
+        # TODO: show this side-by-side?
         mdpopups.new_html_sheet(
             window=self.view.window(),
             name="Panel Completions",
