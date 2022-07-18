@@ -334,7 +334,7 @@ class _PanelCompletion:
                     header_items=" &nbsp;".join(self.completion_header_items),
                     score=item["score"],
                     lang=basescope2languageid(syntax.scope),
-                    code=textwrap.dedent(item["displayText"]),
+                    code=self._prepare_popup_code_display_text(item["displayText"]),
                 )
                 for item in self.completion_manager.panel_completions
             ]
@@ -359,3 +359,17 @@ class _PanelCompletion:
             css=self.CSS,
             wrapper_class=self.CSS_CLASS_NAME,
         )
+
+    @staticmethod
+    def _prepare_popup_code_display_text(display_text: str) -> str:
+        # The returned completion is in the form of
+        #   - the first won't be indented
+        #   - the rest of lines will be indented basing on the indentation level of the current line
+        # The rest of lines don't visually look good if the current line is deeply indented.
+        # Hence we modify the rest of lines into always indented by one level if it's originally indented.
+        first_line, sep, rest = display_text.partition("\n")
+
+        if rest.startswith((" ", "\t")):
+            return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
+
+        return display_text
