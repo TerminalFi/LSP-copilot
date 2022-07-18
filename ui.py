@@ -210,20 +210,8 @@ class _PopupCompletion:
     @property
     def popup_code(self) -> str:
         self.completion = self.completion_manager.current_completion
-        assert self.completion  # out code flow guarantees this
-
-        display_text = self.completion["displayText"]
-        position_st = self.completion["positionSt"]
-
-        # multiple lines are not supported
-        if ("\n" in display_text) or (self.view.classify(position_st) & sublime.CLASS_LINE_END):
-            return self._prepare_popup_code_display_text(display_text)
-
-        # inline completion
-        current_line = self.view.line(position_st)
-        following_text = self.view.substr(sublime.Region(position_st, current_line.end())).strip()
-        index = display_text.find(following_text)
-        return display_text[:index] if following_text and index != -1 else display_text
+        assert self.completion  # our code flow guarantees this
+        return textwrap.dedent(self.completion["text"])
 
     def show(self) -> None:
         set_copilot_view_setting(self.view, "is_visible", True)
@@ -242,17 +230,3 @@ class _PopupCompletion:
     @staticmethod
     def hide(view: sublime.View) -> None:
         mdpopups.hide_popup(view)
-
-    @staticmethod
-    def _prepare_popup_code_display_text(display_text: str) -> str:
-        # The returned completion is in the form of
-        #   - the first won't be indented
-        #   - the rest of lines will be indented basing on the indentation level of the current line
-        # The rest of lines don't visually look good if the current line is deeply indented.
-        # Hence we modify the rest of lines into always indented by one level if it's originally indented.
-        first_line, sep, rest = display_text.partition("\n")
-
-        if rest.startswith((" ", "\t")):
-            return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
-
-        return display_text
