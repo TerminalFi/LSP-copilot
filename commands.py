@@ -31,7 +31,13 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager
-from .utils import erase_copilot_view_setting, get_copilot_view_setting, get_setting, prepare_completion_request, set_copilot_view_setting
+from .utils import (
+    erase_copilot_view_setting,
+    get_copilot_view_setting,
+    get_setting,
+    prepare_completion_request,
+    set_copilot_view_setting,
+)
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -164,7 +170,11 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload.get("solutionCountTarget", 0)
-        sublime.status_message("[LSP-copilot] Retrieving Panel Completions: {}".format(count,))
+        sublime.status_message(
+            "[LSP-copilot] Retrieving Panel Completions: {}".format(
+                count,
+            )
+        )
         set_copilot_view_setting(self.view, "panel_completion_target_count", count)
 
 

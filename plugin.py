@@ -18,20 +18,19 @@ from .constants import (
     REQ_GET_COMPLETIONS,
     REQ_SET_EDITOR_INFO,
 )
-from .types import (
+from .types import (  # CopilotPayloadPanelSolutionDone,
     CopilotPayloadCompletions,
     CopilotPayloadLogMessage,
+    CopilotPayloadPanelSolution,
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
-    CopilotPayloadPanelSolution,
-    # CopilotPayloadPanelSolutionDone,
 )
 from .ui import ViewCompletionManager
 from .utils import (
     erase_copilot_view_setting,
+    get_copilot_view_setting,
     prepare_completion_request,
     preprocess_completions,
-    get_copilot_view_setting,
     set_copilot_view_setting,
 )
 
@@ -156,7 +155,6 @@ class CopilotPlugin(NpmClientHandler):
 
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
 
-
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_ntfy_panel_solution_done(self, payload) -> None:
         target_view = None
@@ -175,7 +173,6 @@ class CopilotPlugin(NpmClientHandler):
         set_copilot_view_setting(target_view, "panel_completions_retrieving", False)
         completion_manager = ViewCompletionManager(target_view)
         completion_manager.show_panel_completions()
-
 
     def request_get_completions(self, view: sublime.View) -> None:
         ViewCompletionManager(view).hide()

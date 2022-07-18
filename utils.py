@@ -1,11 +1,11 @@
 import os
 import textwrap
-from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.url import filename_to_uri
 
 import sublime
 from LSP.plugin.core.sessions import Session
+from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import Any, List, Optional, TypeVar, Union
+from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
 from .types import CopilotPayloadCompletion

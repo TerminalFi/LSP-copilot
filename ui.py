@@ -328,13 +328,17 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-        content = "<hr>\n\n".join([
-            self.COMPLETION_TEMPLATE.format(
-                header_items=" &nbsp;".join(self.completion_header_items),
-                score=item["score"],
-                lang=basescope2languageid(syntax.scope),
-                code=self.textwrap.dedent(item["displayText"])
-                ) for item in self.completion_manager.panel_completions])
+        content = "<hr>\n\n".join(
+            [
+                self.COMPLETION_TEMPLATE.format(
+                    header_items=" &nbsp;".join(self.completion_header_items),
+                    score=item["score"],
+                    lang=basescope2languageid(syntax.scope),
+                    code=self.textwrap.dedent(item["displayText"]),
+                )
+                for item in self.completion_manager.panel_completions
+            ]
+        )
         return content
         self.completion = self.completion_manager.current_completion
         assert self.completion  # our code flow guarantees this
@@ -356,4 +360,4 @@ class _PanelCompletion:
             md=True,
             css=self.CSS,
             wrapper_class=self.CSS_CLASS_NAME,
-            )
+        )
