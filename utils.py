@@ -4,7 +4,7 @@ import textwrap
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.typing import Any, List, Optional, TypeVar, Union
+from LSP.plugin.core.typing import Any, Dict, List, Optional, TypeVar, Union
 from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
@@ -64,7 +64,7 @@ def reformat(text: str) -> str:
     return textwrap.dedent(text).strip()
 
 
-def prepare_completion_request(view: sublime.View) -> Union[dict, None]:
+def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
     syntax = view.syntax()
     sel = view.sel()
     if not (syntax and len(sel) == 1):
@@ -73,7 +73,7 @@ def prepare_completion_request(view: sublime.View) -> Union[dict, None]:
     cursor = sel[0]
     file_path = view.file_name() or ""
     row, col = view.rowcol(cursor.begin())
-    doc = {
+    return {
         "doc": {
             "source": view.substr(sublime.Region(0, view.size())),
             "tabSize": view.settings().get("tab_size", 4),
@@ -86,4 +86,3 @@ def prepare_completion_request(view: sublime.View) -> Union[dict, None]:
             "position": {"line": row, "character": col},
         }
     }
-    return doc
