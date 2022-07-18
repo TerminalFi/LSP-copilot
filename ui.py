@@ -39,6 +39,10 @@ class ViewCompletionManager:
         """The current chosen `completion`."""
         return self.completions[self.completion_index] if self.completions else None
 
+    def get_panel_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
+        """The chosen `solution`."""
+        return self.panel_completions[index] if len(self.panel_completions) >= index else None
+
     def show_previous_completion(self) -> None:
         """Show the previous completion."""
         self.show(
@@ -248,9 +252,6 @@ class _PanelCompletion:
         --copilot-accept-foreground: var(--foreground);
         --copilot-accept-background: var(--background);
         --copilot-accept-border: var(--greenish);
-        --copilot-reject-foreground: var(--foreground);
-        --copilot-reject-background: var(--background);
-        --copilot-reject-border: var(--yellowish);
     }}
 
     .{class_name} {{
@@ -280,16 +281,6 @@ class _PanelCompletion:
     .{class_name} a.accept i {{
         color: var(--copilot-accept-border);
     }}
-
-    .{class_name} a.reject {{
-        background: var(--copilot-reject-background);
-        border-color: var(--copilot-reject-border);
-        color: var(--copilot-reject-foreground);
-    }}
-
-    .{class_name} a.reject i {{
-        color: var(--copilot-reject-border);
-    }}
     """.format(
         class_name=CSS_CLASS_NAME
     )
@@ -313,7 +304,9 @@ class _PanelCompletion:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
         return "\n<hr>\n".join(
             self.COMPLETION_TEMPLATE.format(
-                header_items=" &nbsp;".join(self.completion_header_items),
+                header_items="{}".format(
+                    self.completion_header_item(self.completion_manager.panel_completions.index(item))
+                ),
                 score=item["score"],
                 lang=basescope2languageid(syntax.scope),
                 code=self._prepare_popup_code_display_text(item["displayText"]),
@@ -321,14 +314,12 @@ class _PanelCompletion:
             for item in self.completion_manager.panel_completions
         )
 
-    @property
-    def completion_header_items(self) -> List[str]:
+    @staticmethod
+    def completion_header_item(index: int) -> str:
         # TODO Accept Completion Completiond ID
-        header_items = [
-            '<a class="accept" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
-            '<a class="reject" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
-        ]
-        return header_items
+        return '<a class="accept" title="Accept Completion" href=\'subl:copilot_accept_panel_completion {{"index": {index}}}\'><i>✓</i> Accept</a>'.format(
+            index=index
+        )
 
     def open(self) -> None:
         # TODO: show this side-by-side?
