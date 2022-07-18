@@ -43,28 +43,6 @@
             }
         ]
     },
-    {
-        "keys": [
-            "alt+["
-        ],
-        "command": "copilot_previous_suggestion",
-        "context": [
-            {
-                "key": "setting.copilot.completion.is_visible",
-            }
-        ]
-    },
-    {
-        "keys": [
-            "alt+]"
-        ],
-        "command": "copilot_next_suggestion",
-        "context": [
-            {
-                "key": "setting.copilot.completion.is_visible"
-            }
-        ]
-    },
     // {
     //     "keys": [
     //         "UNBOUND"
