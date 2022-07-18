@@ -23,7 +23,12 @@ from .types import (
     CopilotPayloadStatusNotification,
 )
 from .ui import ViewCompletionManager
-from .utils import get_project_relative_path, preprocess_completions, set_copilot_view_setting
+from .utils import (
+    erase_copilot_view_setting,
+    get_project_relative_path,
+    preprocess_completions,
+    set_copilot_view_setting,
+)
 
 
 def plugin_loaded() -> None:
@@ -59,8 +64,8 @@ class CopilotPlugin(NpmClientHandler):
         # ST persists view setting after getting closed so we have to reset some status
         for window in sublime.windows():
             for view in window.views(include_transient=True):
-                set_copilot_view_setting(view, "is_visible", False)
-                set_copilot_view_setting(view, "is_waiting", False)
+                erase_copilot_view_setting(view, "is_visible")
+                erase_copilot_view_setting(view, "is_waiting")
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
