@@ -337,10 +337,13 @@ class _PanelCompletion:
     )
     COMPLETION_TEMPLATE = reformat(
         """
+        <div>Match Score: {score}</div>
+        <hr>
         <div class="header">{header_items}</div>
         ```{lang}
         {code}
         ```
+        </br>
         """
     )
 
@@ -351,16 +354,18 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-        return self.COMPLETION_TEMPLATE.format(
-            header_items=" &nbsp;".join(self.completion_header_items),
-            lang=basescope2languageid(syntax.scope),
-            code=self.popup_code,
-        )
+        content = "<hr>\n\n".join([
+            self.COMPLETION_TEMPLATE.format(
+                header_items=" &nbsp;".join(self.completion_header_items),
+                score=item["score"],
+                lang=basescope2languageid(syntax.scope),
+                code=self._prepare_popup_code_display_text(item["displayText"])
+                ) for item in self.completion_manager.panel_completions])
+        return content
 
     @property
     def completion_header_items(self) -> List[str]:
         # TODO Accept Completion Completiond ID
-        completions_cnt = len(self.completion_manager.completions)
         header_items = [
             '<a class="accept" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
             '<a class="reject" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
@@ -368,5 +373,25 @@ class _PanelCompletion:
         return header_items
 
     def show(self):
-        content = "\n".join([item["displayText"] for item in self.completion_manager.panel_completions])
-        mdpopups.new_html_sheet(self.view.window(), "Panel Completions", content)
+        mdpopups.new_html_sheet(
+            window=self.view.window(),
+            name="Panel Completions",
+            contents=self.completion_content,
+            md=True,
+            css=self.CSS,
+            wrapper_class=self.CSS_CLASS_NAME,
+            )
+
+    @staticmethod
+    def _prepare_popup_code_display_text(display_text: str) -> str:
+        # The returned completion is in the form of
+        #   - the first won't be indented
+        #   - the rest of lines will be indented basing on the indentation level of the current line
+        # The rest of lines don't visually look good if the current line is deeply indented.
+        # Hence we modify the rest of lines into always indented by one level if it's originally indented.
+        first_line, sep, rest = display_text.partition("\n")
+
+        if rest.startswith((" ", "\t")):
+            return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
+
+        return display_text
