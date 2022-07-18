@@ -70,9 +70,8 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
     if not (syntax and len(sel) == 1):
         return None
 
-    cursor = sel[0]
     file_path = view.file_name() or ""
-    row, col = view.rowcol(cursor.begin())
+    row, col = view.rowcol(sel[0].begin())
     return {
         "doc": {
             "source": view.substr(sublime.Region(0, view.size())),
