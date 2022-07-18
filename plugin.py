@@ -4,6 +4,7 @@ import weakref
 
 import sublime
 from LSP.plugin import Request, Session, filename_to_uri
+from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import Optional, Tuple
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
@@ -152,7 +153,7 @@ class CopilotPlugin(NpmClientHandler):
                 "path": file_path,
                 "uri": file_path and filename_to_uri(file_path),
                 "relativePath": get_project_relative_path(file_path),
-                "languageId": syntax.scope.rpartition(".")[2],  # @todo there is a mapping in LSP already?
+                "languageId": basescope2languageid(syntax.scope),
                 "position": {"line": row, "character": col},
             }
         }
