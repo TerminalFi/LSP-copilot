@@ -28,9 +28,11 @@ from .types import (  # CopilotPayloadPanelSolutionDone,
 from .ui import ViewCompletionManager
 from .utils import (
     erase_copilot_view_setting,
+    first,
     get_copilot_view_setting,
     prepare_completion_request,
     preprocess_completions,
+    remove_prefix,
     set_copilot_view_setting,
 )
 
@@ -138,21 +140,13 @@ class CopilotPlugin(NpmClientHandler):
 
     @notification_handler(NTFY_PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
-        target_view = None
-        for view in sublime.active_window().views():
-            temp_view = payload.get("panelId", None)
-            if temp_view is None:
-                continue
-            temp_view = temp_view.replace("copilot://", "")
-            if view.id() == int(temp_view):
-                target_view = view
-                break
-
-        if target_view is None:
+        panel_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
+        target_view = first(sublime.active_window().views(), lambda view: view.id() == panel_id)
+        if not target_view:
             return
 
         panel_completions = get_copilot_view_setting(target_view, "panel_completions", [])
-        panel_completions = panel_completions + [payload]
+        panel_completions += [payload]
 
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
 

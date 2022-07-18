@@ -4,12 +4,13 @@ import textwrap
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.typing import Any, Dict, List, Optional, TypeVar, Union
+from LSP.plugin.core.typing import Any, Callable, Dict, Iterable, List, Optional, TypeVar, Union
 from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
 from .types import CopilotPayloadCompletion
 
+T = TypeVar("T")
 T_Number = TypeVar("T_Number", bound=Union[int, float])
 
 
@@ -20,6 +21,18 @@ def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T
     if max_val is not None and val > max_val:  # type: ignore
         return max_val
     return val
+
+
+def first(
+    items: Iterable[T],
+    test: Optional[Callable[[T], bool]] = None,
+    default: Optional[T] = None,
+) -> Optional[T]:
+    """
+    Gets the first item which satisfies the `test`. Otherwise, `default`.
+    If `test` is not given or `None`, the first truthy item will be returned.
+    """
+    return next(filter(test, items), default)
 
 
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
@@ -62,6 +75,17 @@ def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadC
 def reformat(text: str) -> str:
     """Remove common indentations and then trim."""
     return textwrap.dedent(text).strip()
+
+
+def remove_prefix(s: str, prefix: str) -> str:
+    """Remove the prefix from the string. I.e., str.removeprefix in Python 3.9."""
+    return s[len(prefix) :] if s.startswith(prefix) else s
+
+
+def remove_suffix(s: str, suffix: str) -> str:
+    """Remove the suffix from the string. I.e., str.removesuffix in Python 3.9."""
+    # suffix="" should not call s[:-0]
+    return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
 def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
