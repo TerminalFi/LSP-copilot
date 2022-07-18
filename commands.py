@@ -170,11 +170,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload.get("solutionCountTarget", 0)
-        sublime.status_message(
-            "[LSP-copilot] Retrieving Panel Completions: {}".format(
-                count,
-            )
-        )
+        sublime.status_message("[LSP-copilot] Retrieving Panel Completions: {}".format(count))
         set_copilot_view_setting(self.view, "panel_completion_target_count", count)
 
 
