@@ -31,13 +31,18 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager
-from .utils import get_copilot_view_setting, get_setting, prepare_completion_request, set_copilot_view_setting
+from .utils import erase_copilot_view_setting, get_copilot_view_setting, get_setting, prepare_completion_request, set_copilot_view_setting
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrap(self, *arg, **kwargs) -> Any:
+            """
+            The first argument is always `self` for a decorated method.
+            We want to provide `session` right after it. If we failed to find a `session`,
+            then it will be early failed and return `failed_return`.
+            """
             session = self.session_by_name(self.session_name)
             if not session:
                 return failed_return
@@ -50,10 +55,6 @@ def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_C
 
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
     session_name = PACKAGE_NAME
-
-    def __init__(self, view: sublime.View) -> None:
-        super().__init__(view)
-        self.plugin = CopilotPlugin
 
     def want_event(self) -> bool:
         return False
@@ -99,7 +100,7 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         )
 
 
-class CopilotAcceptSuggestionCommand(CopilotTextCommand):
+class CopilotAcceptCompletionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, edit: sublime.Edit) -> None:
         completion_manager = ViewCompletionManager(self.view)
@@ -128,7 +129,7 @@ class CopilotAcceptSuggestionCommand(CopilotTextCommand):
             self._record_telemetry(session, REQ_NOTIFY_REJECTED, {"uuids": other_uuids})
 
 
-class CopilotRejectSuggestionCommand(CopilotTextCommand):
+class CopilotRejectCompletionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
         completion_manager = ViewCompletionManager(self.view)
@@ -141,6 +142,7 @@ class CopilotRejectSuggestionCommand(CopilotTextCommand):
             {"uuids": [completion["uuid"] for completion in completion_manager.completions]},
         )
 
+
 class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
@@ -148,7 +150,13 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         if params is None:
             return
 
-        params["panelId"] = "copilot://{}".format(self.view.id())
+        copilot_panel_id = "copilot://{}".format(self.view.id())
+        params["panelId"] = copilot_panel_id
+
+        set_copilot_view_setting(self.view, "panel_id", copilot_panel_id)
+        set_copilot_view_setting(self.view, "panel_completions_retrieving", True)
+        erase_copilot_view_setting(self.view, "panel_completions")
+
         session.send_request(
             Request(REQ_GET_PANEL_COMPLETIONS, params),
             self._on_result_get_panel_completions,
@@ -160,18 +168,14 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         set_copilot_view_setting(self.view, "panel_completion_target_count", count)
 
 
-class CopilotPreviousSuggestionCommand(CopilotTextCommand):
+class CopilotPreviousCompletionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        completion_manager = ViewCompletionManager(self.view)
-        completion_manager.choose_previous_completion()
-        completion_manager.show()
+        ViewCompletionManager(self.view).show_previous_completion()
 
 
-class CopilotNextSuggestionCommand(CopilotTextCommand):
+class CopilotNextCompletionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        completion_manager = ViewCompletionManager(self.view)
-        completion_manager.choose_next_completion()
-        completion_manager.show()
+        ViewCompletionManager(self.view).show_next_completion()
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):

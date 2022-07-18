@@ -3,7 +3,7 @@
         "keys": [
             "tab"
         ],
-        "command": "copilot_accept_suggestion",
+        "command": "copilot_accept_completion",
         "context": [
             {
                 "key": "setting.copilot.completion.is_visible"
@@ -14,7 +14,29 @@
         "keys": [
             "escape"
         ],
-        "command": "copilot_reject_suggestion",
+        "command": "copilot_reject_completion",
+        "context": [
+            {
+                "key": "setting.copilot.completion.is_visible"
+            }
+        ]
+    },
+    {
+        "keys": [
+            "alt+["
+        ],
+        "command": "copilot_previous_completion",
+        "context": [
+            {
+                "key": "setting.copilot.completion.is_visible",
+            }
+        ]
+    },
+    {
+        "keys": [
+            "alt+]"
+        ],
+        "command": "copilot_next_completion",
         "context": [
             {
                 "key": "setting.copilot.completion.is_visible"

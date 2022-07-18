@@ -1,5 +1,6 @@
 import os
 import textwrap
+from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.url import filename_to_uri
 
 import sublime
@@ -33,14 +34,14 @@ def erase_copilot_view_setting(view: sublime.View, key: str) -> None:
     view.settings().erase("{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key))
 
 
-def get_project_relative_path(file_path: str) -> str:
-    ret = file_path
+def get_project_relative_path(path: str) -> str:
+    relpath = path
     for folder in sublime.active_window().folders():
         try:
-            ret = min(ret, os.path.relpath(file_path, folder), key=len)
+            relpath = min(relpath, os.path.relpath(path, folder), key=len)
         except ValueError:
             pass
-    return ret
+    return relpath
 
 
 def get_setting(session: Session, key: str, default: Optional[Union[str, bool, List[str]]] = None) -> Any:
@@ -81,7 +82,7 @@ def prepare_completion_request(view: sublime.View) -> Union[dict, None]:
             "path": file_path,
             "uri": file_path and filename_to_uri(file_path),
             "relativePath": get_project_relative_path(file_path),
-            "languageId": syntax.scope.rpartition(".")[2],  # @todo there is a mapping in LSP already?
+            "languageId": basescope2languageid(syntax.scope),
             "position": {"line": row, "character": col},
         }
     }

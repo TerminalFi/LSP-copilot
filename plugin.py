@@ -9,7 +9,8 @@ from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handle
 
 from .constants import (
     NTFY_LOG_MESSAGE,
-    NTFY_PANLE_SOLUTION,
+    NTFY_PANEL_SOLUTION,
+    NTFY_PANEL_SOLUTION_DONE,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
     PACKAGE_VERSION,
@@ -23,10 +24,17 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
     CopilotPayloadPanelSolution,
-    CopilotPayloadPanelSolutionDone,
+    # CopilotPayloadPanelSolutionDone,
 )
 from .ui import ViewCompletionManager
-from .utils import get_copilot_view_setting, prepare_completion_request, preprocess_completions, set_copilot_view_setting
+from .utils import (
+    erase_copilot_view_setting,
+    prepare_completion_request,
+    preprocess_completions,
+    get_copilot_view_setting,
+    set_copilot_view_setting,
+)
+
 
 def plugin_loaded() -> None:
     CopilotPlugin.setup()
@@ -61,8 +69,8 @@ class CopilotPlugin(NpmClientHandler):
         # ST persists view setting after getting closed so we have to reset some status
         for window in sublime.windows():
             for view in window.views(include_transient=True):
-                set_copilot_view_setting(view, "is_visible", False)
-                set_copilot_view_setting(view, "is_waiting", False)
+                erase_copilot_view_setting(view, "is_visible")
+                erase_copilot_view_setting(view, "is_waiting")
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
@@ -143,19 +151,14 @@ class CopilotPlugin(NpmClientHandler):
         if target_view is None:
             return
 
-        set_copilot_view_setting(target_view, "panel_completion_set_retrieving", True)
+        panel_completions = get_copilot_view_setting(target_view, "panel_completions", [])
+        panel_completions = panel_completions + [payload]
 
-        panel_completions = get_copilot_view_setting(target_view, "panel_completions")
-        if panel_completions is None:
-            panel_completions = []
-
-        panel_completions.append(payload)
-
-        set_copilot_view_setting(target_view, "panel_completions", payload)
+        set_copilot_view_setting(target_view, "panel_completions", panel_completions)
 
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
-    def _handle_ntfy_panel_solution_done(self, payload: CopilotPayloadPanelSolutionDone) -> None:
+    def _handle_ntfy_panel_solution_done(self, payload) -> None:
         target_view = None
         for view in sublime.active_window().views():
             temp_view = payload.get("panelId", None)
@@ -169,9 +172,9 @@ class CopilotPlugin(NpmClientHandler):
         if target_view is None:
             return
 
-        set_copilot_view_setting(target_view, "panel_completion_set_retrieving", False)
+        set_copilot_view_setting(target_view, "panel_completions_retrieving", False)
         completion_manager = ViewCompletionManager(target_view)
-        # completion_manager.show_panel()
+        completion_manager.show_panel_completions()
 
 
     def request_get_completions(self, view: sublime.View) -> None:
@@ -212,6 +215,4 @@ class CopilotPlugin(NpmClientHandler):
 
         preprocess_completions(view, completions)
 
-        set_copilot_view_setting(view, "completions", completions)
-        set_copilot_view_setting(view, "completion_index", 0)
-        ViewCompletionManager(view).show()
+        ViewCompletionManager(view).show(completions, 0)
