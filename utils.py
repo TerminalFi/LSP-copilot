@@ -4,7 +4,7 @@ import textwrap
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.typing import Any, Callable, Dict, Iterable, List, Optional, TypeVar, Union
+from LSP.plugin.core.typing import Any, Callable, Dict, Generator, Iterable, List, Optional, TypeVar, Union
 from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
@@ -12,6 +12,11 @@ from .types import CopilotPayloadCompletion
 
 T = TypeVar("T")
 T_Number = TypeVar("T_Number", bound=Union[int, float])
+
+
+def all_st_views(*, include_transient: bool = False) -> Generator[sublime.View, None, None]:
+    for window in sublime.windows():
+        yield from window.views(include_transient=include_transient)
 
 
 def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T_Number] = None) -> T_Number:

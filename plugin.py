@@ -27,6 +27,7 @@ from .types import (
 )
 from .ui import ViewCompletionManager
 from .utils import (
+    all_st_views,
     erase_copilot_view_setting,
     first,
     get_copilot_view_setting,
@@ -137,7 +138,7 @@ class CopilotPlugin(NpmClientHandler):
     @notification_handler(NTFY_PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
         panel_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
-        target_view = first(sublime.active_window().views(), lambda view: view.id() == panel_id)
+        target_view = first(all_st_views(), lambda view: view.id() == panel_id)
         if not target_view:
             return
 
@@ -149,7 +150,7 @@ class CopilotPlugin(NpmClientHandler):
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
         panel_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
-        target_view = first(sublime.active_window().views(), lambda view: view.id() == panel_id)
+        target_view = first(all_st_views(), lambda view: view.id() == panel_id)
         if not target_view:
             return
 
