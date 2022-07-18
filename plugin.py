@@ -147,7 +147,7 @@ class CopilotPlugin(NpmClientHandler):
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
-    def _handle_ntfy_panel_solution_done(self, payload) -> None:
+    def _handle_panel_solution_done_notification(self, payload) -> None:
         target_view = None
         for view in sublime.active_window().views():
             temp_view = payload.get("panelId", None)
@@ -165,7 +165,7 @@ class CopilotPlugin(NpmClientHandler):
         ViewCompletionManager(target_view).show_panel_completions()
 
     @notification_handler(NTFY_STATUS_NOTIFICATION)
-    def _handle_status_notification(self, payload: CopilotPayloadStatusNotification) -> None:
+    def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
         pass
 
     def request_get_completions(self, view: sublime.View) -> None:
