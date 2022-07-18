@@ -106,6 +106,21 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         )
 
 
+class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
+    def run(self, edit: sublime.Edit, index: int) -> None:
+        completion_manager = ViewCompletionManager(self.view)
+        print(index)
+        completion = completion_manager.get_panel_completion(index)
+        if not completion:
+            return
+
+        # Remove the current line and then insert full text.
+        # We don't have to care whether it's an inline completion or not.
+        source_line_region = self.view.line(completion["positionSt"])
+        self.view.erase(edit, source_line_region)
+        self.view.insert(edit, source_line_region.begin(), completion["completionText"])
+
+
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, edit: sublime.Edit) -> None:
@@ -160,6 +175,11 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         params["panelId"] = copilot_panel_id
 
         set_copilot_view_setting(self.view, "panel_id", copilot_panel_id)
+        set_copilot_view_setting(
+            self.view,
+            "positionSt",
+            self.view.text_point(params["doc"]["position"]["line"], params["doc"]["position"]["character"]),
+        )
         set_copilot_view_setting(self.view, "is_waiting_panel_completions", True)
         erase_copilot_view_setting(self.view, "panel_completions")
 
