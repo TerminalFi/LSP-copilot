@@ -18,7 +18,7 @@ from .constants import (
     REQ_GET_COMPLETIONS,
     REQ_SET_EDITOR_INFO,
 )
-from .types import (  # CopilotPayloadPanelSolutionDone,
+from .types import (
     CopilotPayloadCompletions,
     CopilotPayloadLogMessage,
     CopilotPayloadPanelSolution,
@@ -148,17 +148,9 @@ class CopilotPlugin(NpmClientHandler):
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
-        target_view = None
-        for view in sublime.active_window().views():
-            temp_view = payload.get("panelId", None)
-            if temp_view is None:
-                continue
-            temp_view = temp_view.replace("copilot://", "")
-            if view.id() == int(temp_view):
-                target_view = view
-                break
-
-        if target_view is None:
+        panel_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
+        target_view = first(sublime.active_window().views(), lambda view: view.id() == panel_id)
+        if not target_view:
             return
 
         set_copilot_view_setting(target_view, "is_waiting_panel_completions", False)
@@ -177,14 +169,13 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         params = prepare_completion_request(view)
-        if params is None:
+        if not params:
             return
 
-        cursor = sel[0]
         set_copilot_view_setting(view, "is_waiting_completions", True)
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),
-            functools.partial(self._on_get_completions, view, region=cursor.to_tuple()),
+            functools.partial(self._on_get_completions, view, region=sel[0].to_tuple()),
         )
 
     def _on_get_completions(
