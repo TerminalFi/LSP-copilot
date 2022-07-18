@@ -134,10 +134,6 @@ class CopilotPlugin(NpmClientHandler):
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
         pass
 
-    @notification_handler(NTFY_STATUS_NOTIFICATION)
-    def _handle_status_notification(self, payload: CopilotPayloadStatusNotification) -> None:
-        pass
-
     @notification_handler(NTFY_PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
         panel_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
@@ -167,6 +163,10 @@ class CopilotPlugin(NpmClientHandler):
 
         set_copilot_view_setting(target_view, "is_waiting_panel_completions", False)
         ViewCompletionManager(target_view).show_panel_completions()
+
+    @notification_handler(NTFY_STATUS_NOTIFICATION)
+    def _handle_status_notification(self, payload: CopilotPayloadStatusNotification) -> None:
+        pass
 
     def request_get_completions(self, view: sublime.View) -> None:
         ViewCompletionManager(view).hide()
