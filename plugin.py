@@ -69,7 +69,8 @@ class CopilotPlugin(NpmClientHandler):
         for window in sublime.windows():
             for view in window.views(include_transient=True):
                 erase_copilot_view_setting(view, "is_visible")
-                erase_copilot_view_setting(view, "is_waiting")
+                erase_copilot_view_setting(view, "is_waiting_completions")
+                erase_copilot_view_setting(view, "is_waiting_panel_completions")
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
@@ -170,9 +171,8 @@ class CopilotPlugin(NpmClientHandler):
         if target_view is None:
             return
 
-        set_copilot_view_setting(target_view, "panel_completions_retrieving", False)
-        completion_manager = ViewCompletionManager(target_view)
-        completion_manager.show_panel_completions()
+        set_copilot_view_setting(target_view, "is_waiting_panel_completions", False)
+        ViewCompletionManager(target_view).show_panel_completions()
 
     def request_get_completions(self, view: sublime.View) -> None:
         ViewCompletionManager(view).hide()
@@ -187,7 +187,7 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         cursor = sel[0]
-        set_copilot_view_setting(view, "is_waiting", True)
+        set_copilot_view_setting(view, "is_waiting_completions", True)
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),
             functools.partial(self._on_get_completions, view, region=cursor.to_tuple()),
@@ -199,7 +199,7 @@ class CopilotPlugin(NpmClientHandler):
         payload: CopilotPayloadCompletions,
         region: Tuple[int, int],
     ) -> None:
-        set_copilot_view_setting(view, "is_waiting", False)
+        set_copilot_view_setting(view, "is_waiting_completions", False)
 
         # re-request completions because the cursor position changed during awaiting Copilot's response
         if view.sel()[0].to_tuple() != region:

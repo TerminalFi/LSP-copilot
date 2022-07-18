@@ -101,7 +101,7 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         debounced(
             functools.partial(plugin.request_get_completions, self.view),
             FEATURES_TIMEOUT,
-            lambda: not get_copilot_view_setting(self.view, "is_waiting", False),
+            lambda: not get_copilot_view_setting(self.view, "is_waiting_completions", False),
             async_thread=True,
         )
 
@@ -160,7 +160,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         params["panelId"] = copilot_panel_id
 
         set_copilot_view_setting(self.view, "panel_id", copilot_panel_id)
-        set_copilot_view_setting(self.view, "panel_completions_retrieving", True)
+        set_copilot_view_setting(self.view, "is_waiting_panel_completions", True)
         erase_copilot_view_setting(self.view, "panel_completions")
 
         session.send_request(
