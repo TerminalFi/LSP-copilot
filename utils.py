@@ -69,6 +69,29 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     return value
 
 
+def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
+    syntax = view.syntax()
+    sel = view.sel()
+    if not (syntax and len(sel) == 1):
+        return None
+
+    file_path = view.file_name() or ""
+    row, col = view.rowcol(sel[0].begin())
+    return {
+        "doc": {
+            "source": view.substr(sublime.Region(0, view.size())),
+            "tabSize": view.settings().get("tab_size", 4),
+            "indentSize": 1,  # there is no such concept in ST
+            "insertSpaces": view.settings().get("translate_tabs_to_spaces", False),
+            "path": file_path,
+            "uri": file_path and filename_to_uri(file_path),
+            "relativePath": get_project_relative_path(file_path),
+            "languageId": basescope2languageid(syntax.scope),
+            "position": {"line": row, "character": col},
+        }
+    }
+
+
 def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadCompletion]) -> None:
     for completion in completions:
         completion["positionSt"] = view.text_point(
@@ -91,26 +114,3 @@ def remove_suffix(s: str, suffix: str) -> str:
     """Remove the suffix from the string. I.e., str.removesuffix in Python 3.9."""
     # suffix="" should not call s[:-0]
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
-
-
-def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
-    syntax = view.syntax()
-    sel = view.sel()
-    if not (syntax and len(sel) == 1):
-        return None
-
-    file_path = view.file_name() or ""
-    row, col = view.rowcol(sel[0].begin())
-    return {
-        "doc": {
-            "source": view.substr(sublime.Region(0, view.size())),
-            "tabSize": view.settings().get("tab_size", 4),
-            "indentSize": 1,  # there is no such concept in ST
-            "insertSpaces": view.settings().get("translate_tabs_to_spaces", False),
-            "path": file_path,
-            "uri": file_path and filename_to_uri(file_path),
-            "relativePath": get_project_relative_path(file_path),
-            "languageId": basescope2languageid(syntax.scope),
-            "position": {"line": row, "character": col},
-        }
-    }
