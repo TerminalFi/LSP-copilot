@@ -334,14 +334,12 @@ class _PanelCompletion:
                     header_items=" &nbsp;".join(self.completion_header_items),
                     score=item["score"],
                     lang=basescope2languageid(syntax.scope),
-                    code=self.textwrap.dedent(item["displayText"]),
+                    code=textwrap.dedent(item["displayText"]),
                 )
                 for item in self.completion_manager.panel_completions
             ]
         )
         return content
-        self.completion = self.completion_manager.current_completion
-        assert self.completion  # our code flow guarantees this
 
     @property
     def completion_header_items(self) -> List[str]:
