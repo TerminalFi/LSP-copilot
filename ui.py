@@ -21,7 +21,7 @@ class ViewCompletionManager:
 
     @property
     def panel_completions(self) -> List[CopilotPayloadPanelSolution]:
-        """All `panel completions` in the view."""
+        """All `panel_completions` in the view."""
         return get_copilot_view_setting(self.view, "panel_completions", [])
 
     @property
@@ -317,7 +317,6 @@ class _PanelCompletion:
         ```{lang}
         {code}
         ```
-        </br>
         """
     )
 
@@ -328,18 +327,15 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-        content = "<hr>\n\n".join(
-            [
-                self.COMPLETION_TEMPLATE.format(
-                    header_items=" &nbsp;".join(self.completion_header_items),
-                    score=item["score"],
-                    lang=basescope2languageid(syntax.scope),
-                    code=self._prepare_popup_code_display_text(item["displayText"]),
-                )
-                for item in self.completion_manager.panel_completions
-            ]
+        return "\n<hr>\n".join(
+            self.COMPLETION_TEMPLATE.format(
+                header_items=" &nbsp;".join(self.completion_header_items),
+                score=item["score"],
+                lang=basescope2languageid(syntax.scope),
+                code=self._prepare_popup_code_display_text(item["displayText"]),
+            )
+            for item in self.completion_manager.panel_completions
         )
-        return content
 
     @property
     def completion_header_items(self) -> List[str]:
