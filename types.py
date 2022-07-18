@@ -117,7 +117,7 @@ CopilotPayloadStatusNotification = TypedDict(
 )
 
 CopilotPayloadPanelSolution = TypedDict(
-    "CopilotPayloadPanelCompletion",
+    "CopilotPayloadPanelSolution",
     {
         "displayText": str,
         "solutionId": str,
@@ -125,6 +125,8 @@ CopilotPayloadPanelSolution = TypedDict(
         "panelId": str,
         "completionText": str,
         "range": CopilotPayloadCompletionRange,
+        # injected for convenience
+        "positionSt": int,
     },
     total=True,
 )
