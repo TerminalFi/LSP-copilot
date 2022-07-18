@@ -32,7 +32,6 @@ from .types import (
 )
 from .ui import ViewCompletionManager
 from .utils import (
-    erase_copilot_view_setting,
     get_copilot_view_setting,
     get_setting,
     prepare_completion_request,
@@ -161,7 +160,6 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
         set_copilot_view_setting(self.view, "panel_id", copilot_panel_id)
         set_copilot_view_setting(self.view, "is_waiting_panel_completions", True)
-        erase_copilot_view_setting(self.view, "panel_completions")
 
         session.send_request(
             Request(REQ_GET_PANEL_COMPLETIONS, params),
