@@ -115,3 +115,24 @@ CopilotPayloadStatusNotification = TypedDict(
     },
     total=True,
 )
+
+CopilotPayloadPanelSolution = TypedDict(
+    "CopilotPayloadPanelCompletion",
+    {
+       "displayText": str,
+       "solutionId": str,
+       "score": int,
+       "panelId": str,
+       "completionText": str,
+       "range": CopilotPayloadCompletionRange,
+    },
+    total=True,
+)
+
+CopilotPayloadPanelCompletionSolutionCount = TypedDict(
+    "CopilotPayloadPanelCompletionSolutionCount",
+    {
+        "solutionCountTarget": int,
+    },
+    total=True,
+)

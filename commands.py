@@ -11,6 +11,7 @@ from LSP.plugin.core.typing import Any, Callable, Union, cast
 from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
+    REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_VERSION,
     REQ_NOTIFY_ACCEPTED,
     REQ_NOTIFY_REJECTED,
@@ -23,13 +24,14 @@ from .types import (
     CopilotPayloadGetVersion,
     CopilotPayloadNotifyAccepted,
     CopilotPayloadNotifyRejected,
+    CopilotPayloadPanelCompletionSolutionCount,
     CopilotPayloadSignInConfirm,
     CopilotPayloadSignInInitiate,
     CopilotPayloadSignOut,
     T_Callable,
 )
 from .ui import ViewCompletionManager
-from .utils import get_copilot_view_setting, get_setting
+from .utils import get_copilot_view_setting, get_setting, prepare_completion_request, set_copilot_view_setting
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -48,6 +50,10 @@ def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_C
 
 class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
     session_name = PACKAGE_NAME
+
+    def __init__(self, view: sublime.View) -> None:
+        super().__init__(view)
+        self.plugin = CopilotPlugin
 
     def want_event(self) -> bool:
         return False
@@ -134,6 +140,24 @@ class CopilotRejectSuggestionCommand(CopilotTextCommand):
             REQ_NOTIFY_REJECTED,
             {"uuids": [completion["uuid"] for completion in completion_manager.completions]},
         )
+
+class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
+    @_provide_session()
+    def run(self, session: Session, _: sublime.Edit) -> None:
+        params = prepare_completion_request(view=self.view)
+        if params is None:
+            return
+
+        params["panelId"] = "copilot://{}".format(self.view.id())
+        session.send_request(
+            Request(REQ_GET_PANEL_COMPLETIONS, params),
+            self._on_result_get_panel_completions,
+        )
+
+    def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
+        count = payload.get("solutionCountTarget", 0)
+        sublime.status_message("[LSP-copilot] Retrieving Panel Completions: {}".format(count,))
+        set_copilot_view_setting(self.view, "panel_completion_target_count", count)
 
 
 class CopilotPreviousSuggestionCommand(CopilotTextCommand):

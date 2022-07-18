@@ -1,5 +1,6 @@
 import os
 import textwrap
+from LSP.plugin.core.url import filename_to_uri
 
 import sublime
 from LSP.plugin.core.sessions import Session
@@ -60,3 +61,28 @@ def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadC
 def reformat(text: str) -> str:
     """Remove common indentations and then trim."""
     return textwrap.dedent(text).strip()
+
+
+def prepare_completion_request(view: sublime.View) -> Union[dict, None]:
+    syntax = view.syntax()
+    sel = view.sel()
+    if not (syntax and len(sel) == 1):
+        return None
+
+    cursor = sel[0]
+    file_path = view.file_name() or ""
+    row, col = view.rowcol(cursor.begin())
+    doc = {
+        "doc": {
+            "source": view.substr(sublime.Region(0, view.size())),
+            "tabSize": view.settings().get("tab_size", 4),
+            "indentSize": 1,  # there is no such concept in ST
+            "insertSpaces": view.settings().get("translate_tabs_to_spaces", False),
+            "path": file_path,
+            "uri": file_path and filename_to_uri(file_path),
+            "relativePath": get_project_relative_path(file_path),
+            "languageId": syntax.scope.rpartition(".")[2],  # @todo there is a mapping in LSP already?
+            "position": {"line": row, "character": col},
+        }
+    }
+    return doc

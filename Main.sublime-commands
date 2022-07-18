@@ -8,6 +8,10 @@
         "command": "copilot_get_version"
     },
     {
+        "caption": "Copilot: Get Panel Completions",
+        "command": "copilot_get_panel_completions"
+    },
+    {
         "caption": "Copilot: Sign In",
         "command": "copilot_sign_in"
     },

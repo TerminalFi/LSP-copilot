@@ -27,3 +27,5 @@ REQ_SIGN_OUT = "signOut"  # done
 
 NTFY_LOG_MESSAGE = "LogMessage"  # done
 NTFY_STATUS_NOTIFICATION = "statusNotification"  # done
+NTFY_PANLE_SOLUTION = "PanelSolution"
+NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"

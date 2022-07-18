@@ -3,12 +3,13 @@ import os
 import weakref
 
 import sublime
-from LSP.plugin import Request, Session, filename_to_uri
+from LSP.plugin import Request, Session
 from LSP.plugin.core.typing import Optional, Tuple
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
     NTFY_LOG_MESSAGE,
+    NTFY_PANLE_SOLUTION,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
     PACKAGE_VERSION,
@@ -21,10 +22,11 @@ from .types import (
     CopilotPayloadLogMessage,
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
+    CopilotPayloadPanelSolution,
+    CopilotPayloadPanelSolutionDone,
 )
 from .ui import ViewCompletionManager
-from .utils import get_project_relative_path, preprocess_completions, set_copilot_view_setting
-
+from .utils import get_copilot_view_setting, prepare_completion_request, preprocess_completions, set_copilot_view_setting
 
 def plugin_loaded() -> None:
     CopilotPlugin.setup()
@@ -126,32 +128,65 @@ class CopilotPlugin(NpmClientHandler):
     def _handle_status_notification(self, payload: CopilotPayloadStatusNotification) -> None:
         pass
 
+    @notification_handler(NTFY_PANEL_SOLUTION)
+    def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
+        target_view = None
+        for view in sublime.active_window().views():
+            temp_view = payload.get("panelId", None)
+            if temp_view is None:
+                continue
+            temp_view = temp_view.replace("copilot://", "")
+            if view.id() == int(temp_view):
+                target_view = view
+                break
+
+        if target_view is None:
+            return
+
+        set_copilot_view_setting(target_view, "panel_completion_set_retrieving", True)
+
+        panel_completions = get_copilot_view_setting(target_view, "panel_completions")
+        if panel_completions is None:
+            panel_completions = []
+
+        panel_completions.append(payload)
+
+        set_copilot_view_setting(target_view, "panel_completions", payload)
+
+
+    @notification_handler(NTFY_PANEL_SOLUTION_DONE)
+    def _handle_ntfy_panel_solution_done(self, payload: CopilotPayloadPanelSolutionDone) -> None:
+        target_view = None
+        for view in sublime.active_window().views():
+            temp_view = payload.get("panelId", None)
+            if temp_view is None:
+                continue
+            temp_view = temp_view.replace("copilot://", "")
+            if view.id() == int(temp_view):
+                target_view = view
+                break
+
+        if target_view is None:
+            return
+
+        set_copilot_view_setting(target_view, "panel_completion_set_retrieving", False)
+        completion_manager = ViewCompletionManager(target_view)
+        # completion_manager.show_panel()
+
+
     def request_get_completions(self, view: sublime.View) -> None:
         ViewCompletionManager(view).hide()
 
         session = self.weaksession()
-        syntax = view.syntax()
         sel = view.sel()
-        if not (self.get_has_signed_in() and session and syntax and len(sel) == 1):
+        if not (self.get_has_signed_in() and session and len(sel) == 1):
+            return
+
+        params = prepare_completion_request(view)
+        if params is None:
             return
 
         cursor = sel[0]
-        file_path = view.file_name() or ""
-        row, col = view.rowcol(cursor.begin())
-        params = {
-            "doc": {
-                "source": view.substr(sublime.Region(0, view.size())),
-                "tabSize": view.settings().get("tab_size", 4),
-                "indentSize": 1,  # there is no such concept in ST
-                "insertSpaces": view.settings().get("translate_tabs_to_spaces", False),
-                "path": file_path,
-                "uri": file_path and filename_to_uri(file_path),
-                "relativePath": get_project_relative_path(file_path),
-                "languageId": syntax.scope.rpartition(".")[2],  # @todo there is a mapping in LSP already?
-                "position": {"line": row, "character": col},
-            }
-        }
-
         set_copilot_view_setting(view, "is_waiting", True)
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),

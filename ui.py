@@ -5,7 +5,7 @@ import mdpopups
 import sublime
 from LSP.plugin.core.typing import List, Optional
 
-from .types import CopilotPayloadCompletion
+from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
 from .utils import clamp, get_copilot_view_setting, reformat, set_copilot_view_setting
 
 
@@ -17,6 +17,11 @@ class ViewCompletionManager:
     def is_visible(self) -> bool:
         """Whether Copilot's completion popup is visible."""
         return get_copilot_view_setting(self.view, "is_visible", False)
+
+    @property
+    def panel_completions(self) -> List[CopilotPayloadPanelSolution]:
+        """All `panel completions` in the view."""
+        return get_copilot_view_setting(self.view, "panel_completions", [])
 
     @property
     def completions(self) -> List[CopilotPayloadCompletion]:
@@ -226,3 +231,12 @@ class _PopupCompletion:
             return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
 
         return display_text
+
+
+class PanelCompletion:
+    def __init__(self, view: sublime.View) -> None:
+        self.view = view
+        self.completion_manager = ViewCompletionManager(view)
+
+    def show(self):
+        mdpopups.new_html_sheet(self.view.window(), "Panel Completions", )
