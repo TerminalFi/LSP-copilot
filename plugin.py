@@ -142,7 +142,7 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         panel_completions = get_copilot_view_setting(target_view, "panel_completions", [])
-        panel_completions += [payload]
+        panel_completions.append(payload)
 
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
 
