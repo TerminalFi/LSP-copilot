@@ -85,9 +85,9 @@ class ViewCompletionManager:
 
         _PopupCompletion(self.view).show()
 
-    def show_panel_completions(self) -> None:
-        """Show panel completions."""
-        _PanelCompletion(self.view).show()
+    def open_panel_completions(self) -> None:
+        """Open panel completions."""
+        _PanelCompletion(self.view).open()
 
     def _tidy_completion_index(self, do_clamp: bool = True) -> None:
         """
@@ -346,7 +346,7 @@ class _PanelCompletion:
         ]
         return header_items
 
-    def show(self) -> None:
+    def open(self) -> None:
         # TODO: show this side-by-side?
         mdpopups.new_html_sheet(
             window=self.view.window(),
