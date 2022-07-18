@@ -290,22 +290,6 @@ class _PanelCompletion:
     .{class_name} a.reject i {{
         color: var(--copilot-reject-border);
     }}
-
-    .{class_name} a.prev {{
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
-        border-right-width: 0;
-        padding-left: 8px;
-        padding-right: 8px;
-    }}
-
-    .{class_name} a.next {{
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-        border-left-width: 0;
-        padding-left: 8px;
-        padding-right: 8px;
-    }}
     """.format(
         class_name=CSS_CLASS_NAME
     )
