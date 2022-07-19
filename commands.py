@@ -75,7 +75,9 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
 
 
 class CopilotWindowCommand(LspWindowCommand, metaclass=ABCMeta):
-    pass
+    @_provide_session(failed_return=False)
+    def is_enabled(self, session: Session) -> bool:
+        return not CopilotPlugin.get_has_signed_in() or get_setting(session, "debug", False)
 
 
 class CopilotGetVersionCommand(CopilotTextCommand):
