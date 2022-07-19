@@ -31,7 +31,14 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import all_views, first, get_setting, message_dialog, prepare_completion_request, status_message
+from .utils import (
+    all_views,
+    first,
+    get_setting,
+    message_dialog,
+    prepare_completion_request,
+    status_message,
+)
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:

@@ -26,7 +26,11 @@ from .types import (
     CopilotPayloadStatusNotification,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import prepare_completion_request, preprocess_completions, preprocess_panel_completions
+from .utils import (
+    prepare_completion_request,
+    preprocess_completions,
+    preprocess_panel_completions,
+)
 
 
 def plugin_loaded() -> None:
