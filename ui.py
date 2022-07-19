@@ -318,7 +318,6 @@ class ViewPanelCompletionManager:
         self.view = view
 
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
-        """The chosen `completion`."""
         return next(iter(self.completions[index : index + 1]), None)
 
     @staticmethod
