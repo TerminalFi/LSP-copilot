@@ -175,13 +175,25 @@ class _PanelCompletion:
                     {"view_id": view_id, "completion_index": index},
                 )
             ),
-            "Mean Probability: {}".format(completion["score"]),
+            """<i> Mean Probability: {}</i>""".format(completion["score"]),
         ]
 
     def open(self) -> None:
         # TODO: show this side-by-side?
+        window = self.view.window()
+        if not window:
+            # error message
+            return
+            
+        # Dumb method. Doesn't consider the users layout prior to the completion panel
+        window.set_layout({
+                    'cols': [0.0, 0.5, 1.0],
+                    'rows': [0.0, 1.0],
+                    'cells': [[0, 0, 1, 1], [1, 0, 2, 1]]
+                })
+        window.focus_group(1)
         sheet = mdpopups.new_html_sheet(
-            window=self.view.window(),
+            window=window,
             name="Panel Completions",
             contents=self.completion_content,
             md=True,
@@ -229,6 +241,8 @@ class _PanelCompletion:
             return
 
         target_sheet.close()
+        # Dumb method. Doesn't consider the users layout prior to the completion panel
+        window.set_layout({"cells": [[0, 0, 1, 1]], "cols": [0.0, 1.0], "rows": [0.0, 1.0]})
 
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:
