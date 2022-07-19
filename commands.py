@@ -131,7 +131,7 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
         # We don't have to care whether it's an inline completion or not.
         source_line_region = self.view.line(sublime.Region(*completion["rangeSt"]))
         self.view.erase(edit, source_line_region)
-        self.view.insert(edit, source_line_region.begin(), completion["displayText"])
+        self.view.insert(edit, source_line_region.begin(), completion["completionText"])
 
         completion_manager.close_panel_completions()
 
