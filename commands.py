@@ -4,7 +4,7 @@ from functools import partial, wraps
 
 import sublime
 from LSP.plugin import Request, Session
-from LSP.plugin.core.registry import LspTextCommand
+from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
 from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
 from LSP.plugin.core.typing import Any, Callable, Union, cast
 
@@ -32,7 +32,9 @@ from .types import (
 )
 from .ui import ViewCompletionManager
 from .utils import (
+    all_st_views,
     erase_copilot_view_setting,
+    first,
     get_copilot_view_setting,
     get_setting,
     prepare_completion_request,
@@ -106,19 +108,27 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         )
 
 
+class CopilotAcceptPanelCompletionShimCommand(LspWindowCommand):
+    def run(self, panel_id: int, completion_index: int) -> None:
+        target_view = first(all_st_views(), lambda view: view.id() == panel_id)
+        if not target_view:
+            return
+        target_view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
+
+
 class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
-    def run(self, edit: sublime.Edit, index: int) -> None:
+    def run(self, edit: sublime.Edit, completion_index: int) -> None:
         completion_manager = ViewCompletionManager(self.view)
-        print(index)
-        completion = completion_manager.get_panel_completion(index)
+        completion = completion_manager.get_panel_completion(completion_index)
         if not completion:
             return
+        print(completion)
 
         # Remove the current line and then insert full text.
         # We don't have to care whether it's an inline completion or not.
         source_line_region = self.view.line(completion["positionSt"])
         self.view.erase(edit, source_line_region)
-        self.view.insert(edit, source_line_region.begin(), completion["completionText"])
+        self.view.insert(edit, source_line_region.begin(), completion["displayText"])
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):

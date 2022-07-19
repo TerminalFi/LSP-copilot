@@ -7,7 +7,7 @@ from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import List, Optional
 
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
-from .utils import clamp, first, get_copilot_view_setting, reformat, set_copilot_view_setting
+from .utils import clamp, first, get_copilot_view_setting, reformat, remove_prefix, set_copilot_view_setting
 
 
 class ViewCompletionManager:
@@ -317,9 +317,7 @@ class _PanelCompletion:
             total_solutions=get_copilot_view_setting(view=self.view, key="panel_completion_target_count", default=0),
         ) + "\n<hr>\n".join(
             self.COMPLETION_TEMPLATE.format(
-                header_items="{}".format(
-                    self.completion_header_item(completions.index(item))
-                ),
+                header_items="{}".format(self.completion_header_item(completions.index(item))),
                 score=item["score"],
                 lang=basescope2languageid(syntax.scope),
                 code=self._prepare_popup_code_display_text(item["displayText"]),
@@ -327,11 +325,12 @@ class _PanelCompletion:
             for item in completions
         )
 
-    @staticmethod
-    def completion_header_item(index: int) -> str:
+    def completion_header_item(self, index: int) -> str:
         # TODO Accept Completion Completiond ID
-        return """<a class="accept" title="Accept Completion" href='subl:{command}'><i>✓</i> Accept</a>""".format(
-            command=sublime.html_format_command("copilot_accept_panel_completion", {'index': index})
+        panel_id = int(remove_prefix(get_copilot_view_setting(view=self.view, key="panel_id", default=-1), "copilot://"))
+        return """<a class="accept" title="Accept Completion" href='subl:copilot_accept_panel_completion_shim {{"panel_id": {panel_id}, "completion_index": {index}}}'><i>✓</i> Accept</a>""".format(
+            panel_id=panel_id,
+            index=index,
         )
 
     def open(self) -> None:
@@ -397,4 +396,7 @@ class _PanelCompletion:
 
                 yield elem
                 seen.add(k)
-        return sorted(list(deduplicate(completions, lambda d: (d['completionText']))), key=lambda d: d['score'], reverse=True)
+
+        return sorted(
+            list(deduplicate(completions, lambda d: (d["completionText"]))), key=lambda d: d["score"], reverse=True
+        )
