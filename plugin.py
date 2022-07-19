@@ -59,7 +59,7 @@ class CopilotPlugin(NpmClientHandler):
         if sess:
             self.plugin_mapping[sess.window.id()] = self
 
-        # ST persists view setting after getting closed so we have to reset some status
+        # ST persists view settings after getting closed so we have to reset some status
         for window in sublime.windows():
             for view in window.views(include_transient=True):
                 cm = ViewCompletionManager(view)
