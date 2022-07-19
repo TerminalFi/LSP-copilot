@@ -3,7 +3,7 @@ from LSP.plugin.core.typing import Any, Callable, List, Literal, Tuple, TypedDic
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 StPoint = int
-StRegionTuple = Tuple[int, int]
+StRegionTuple = Tuple[StPoint, StPoint]
 
 CopilotPayloadCompletionPosition = TypedDict(
     "CopilotPayloadCompletionPosition",
