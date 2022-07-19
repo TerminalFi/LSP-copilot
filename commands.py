@@ -87,7 +87,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
         )
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
-        message_dialog("[LSP-copilot] Server version: {}".format(payload["version"]))
+        message_dialog("Server version: {}".format(payload["version"]))
 
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
@@ -215,10 +215,10 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
         if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload["user"]))
+            message_dialog('Sign in OK with user "{}".'.format(payload["user"]))
         else:
             CopilotPlugin.set_has_signed_in(False)
-            message_dialog("[LSP-Copilot] You haven't signed in yet.")
+            message_dialog("You haven't signed in yet.")
 
 
 class CopilotSignInCommand(CopilotTextCommand):
@@ -258,7 +258,7 @@ class CopilotSignInCommand(CopilotTextCommand):
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
         if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload["user"]))
+            message_dialog('Sign in OK with user "{}".'.format(payload["user"]))
 
     @_provide_session(failed_return=False)
     def is_enabled(self, session: Session) -> bool:
@@ -273,4 +273,4 @@ class CopilotSignOutCommand(CopilotTextCommand):
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
         if payload["status"] == "NotSignedIn":
             CopilotPlugin.set_has_signed_in(False)
-            message_dialog("[LSP-Copilot] Sign out OK. Bye!")
+            message_dialog("Sign out OK. Bye!")
