@@ -151,6 +151,7 @@ class CopilotPlugin(NpmClientHandler):
         panel_completions.append(payload)
 
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
+        ViewCompletionManager(target_view).update_panel_completions()
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
@@ -161,7 +162,7 @@ class CopilotPlugin(NpmClientHandler):
 
         set_copilot_view_setting(target_view, "is_waiting_panel_completions", False)
 
-        ViewCompletionManager(target_view).open_panel_completions()
+        # ViewCompletionManager(target_view).open_panel_completions()
 
     @notification_handler(NTFY_STATUS_NOTIFICATION)
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:

@@ -193,6 +193,8 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         sublime.status_message("[LSP-copilot] Retrieving Panel Completions: {}".format(count))
         set_copilot_view_setting(self.view, "panel_completion_target_count", count)
 
+        ViewCompletionManager(self.view).open_panel_completions()
+
 
 class CopilotPreviousCompletionCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:

@@ -93,6 +93,10 @@ class ViewCompletionManager:
         """Open panel completions."""
         _PanelCompletion(self.view).open()
 
+    def update_panel_completions(self) -> None:
+        """Open panel completions."""
+        _PanelCompletion(self.view).update()
+
     def _tidy_completion_index(self, do_clamp: bool = True) -> None:
         """
         Revise `completion_index` to a valid value, or `0` if `self.completions` is empty.
@@ -286,7 +290,9 @@ class _PanelCompletion:
     )
     COMPLETION_TEMPLATE = reformat(
         """
-        <div>Match Score: {score}</div>
+        <h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4>
+        <hr>
+        <div>Mean Probability: {score}</div>
         <hr>
         <div class="header">{header_items}</div>
         ```{lang}
@@ -304,6 +310,8 @@ class _PanelCompletion:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
         return "\n<hr>\n".join(
             self.COMPLETION_TEMPLATE.format(
+                index=len(self.completion_manager.panel_completions),
+                total_solutions=get_copilot_view_setting(view=self.view, key="panel_completion_target_count", default=0),
                 header_items="{}".format(
                     self.completion_header_item(self.completion_manager.panel_completions.index(item))
                 ),
@@ -323,8 +331,37 @@ class _PanelCompletion:
 
     def open(self) -> None:
         # TODO: show this side-by-side?
-        mdpopups.new_html_sheet(
+        sheet = mdpopups.new_html_sheet(
             window=self.view.window(),
+            name="Panel Completions",
+            contents=self.completion_content,
+            md=True,
+            css=self.CSS,
+            wrapper_class=self.CSS_CLASS_NAME,
+        )
+
+        set_copilot_view_setting(view=self.view, key="panel_sheet_id", value=sheet.id())
+
+    def update(self) -> None:
+        # TODO: show this side-by-side?
+        sheet_id = get_copilot_view_setting(view=self.view, key="panel_sheet_id", default=None)
+        if not sheet_id:
+            return
+
+        window = self.view.window()
+        if not window:
+            return
+
+        target_sheet = None
+        for sheet in window.sheets():
+            if sheet.id() == sheet_id:
+                target_sheet = sheet
+                break
+
+        if target_sheet is None:
+            return
+        mdpopups.update_html_sheet(
+            sheet=target_sheet,
             name="Panel Completions",
             contents=self.completion_content,
             md=True,
