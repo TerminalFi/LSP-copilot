@@ -186,15 +186,10 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         if not params:
             return
 
-        copilot_panel_id = "copilot://{}".format(self.view.id())
-        params["panelId"] = copilot_panel_id
+        panel_id = "copilot://{}".format(self.view.id())
+        params["panelId"] = panel_id
 
-        set_copilot_view_setting(self.view, "panel_id", copilot_panel_id)
-        set_copilot_view_setting(
-            self.view,
-            "positionSt",
-            self.view.text_point(params["doc"]["position"]["line"], params["doc"]["position"]["character"]),
-        )
+        set_copilot_view_setting(self.view, "panel_id", panel_id)
         set_copilot_view_setting(self.view, "is_waiting_panel_completions", True)
         erase_copilot_view_setting(self.view, "panel_completions")
 
