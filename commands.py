@@ -31,7 +31,7 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import all_views, first, get_setting, prepare_completion_request
+from .utils import all_views, first, get_setting, message_dialog, prepare_completion_request, status_message
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -87,7 +87,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
         )
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
-        sublime.message_dialog("[LSP-copilot] Server version: {}".format(payload["version"]))
+        message_dialog("[LSP-copilot] Server version: {}".format(payload["version"]))
 
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
@@ -106,10 +106,10 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
 
 class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
     def run(self, view_id: int, completion_index: int) -> None:
-        target_view = first(all_views(), lambda view: view.id() == view_id)
-        if not target_view:
+        view = first(all_views(), lambda view: view.id() == view_id)
+        if not view:
             return
-        target_view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
+        view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
 
 
 class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
@@ -190,7 +190,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload["solutionCountTarget"]
-        sublime.status_message("[LSP-copilot] Retrieving Panel Completions: {}".format(count))
+        status_message("retrieving panel completions: {count}".format(count=count))
 
         completion_manager = ViewPanelCompletionManager(self.view)
         completion_manager.completion_target_count = count
@@ -215,10 +215,10 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
         if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload["user"]))
+            message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload["user"]))
         else:
             CopilotPlugin.set_has_signed_in(False)
-            sublime.message_dialog("[LSP-Copilot] You haven't signed in yet.")
+            message_dialog("[LSP-Copilot] You haven't signed in yet.")
 
 
 class CopilotSignInCommand(CopilotTextCommand):
@@ -258,7 +258,7 @@ class CopilotSignInCommand(CopilotTextCommand):
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
         if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload["user"]))
+            message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload["user"]))
 
     @_provide_session(failed_return=False)
     def is_enabled(self, session: Session) -> bool:
@@ -273,4 +273,4 @@ class CopilotSignOutCommand(CopilotTextCommand):
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
         if payload["status"] == "NotSignedIn":
             CopilotPlugin.set_has_signed_in(False)
-            sublime.message_dialog("[LSP-Copilot] Sign out OK. Bye!")
+            message_dialog("[LSP-Copilot] Sign out OK. Bye!")

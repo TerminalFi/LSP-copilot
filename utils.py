@@ -65,6 +65,10 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     return value
 
 
+def message_dialog(msg: str) -> None:
+    sublime.message_dialog("[LSP-copilot] {msg}".format(msg=msg))
+
+
 def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
     syntax = view.syntax()
     sel = view.sel()
@@ -94,30 +98,12 @@ def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadC
             completion["position"]["line"],
             completion["position"]["character"],
         )
-        completion["region"] = (
-            view.text_point(
-                completion["range"]["start"]["line"],
-                completion["range"]["start"]["character"],
-            ),
-            view.text_point(
-                completion["range"]["end"]["line"],
-                completion["range"]["end"]["character"],
-            ),
-        )
+        _generate_completion_region(view, completion)
 
 
 def preprocess_panel_completions(view: sublime.View, completions: List[CopilotPayloadPanelSolution]) -> None:
     for completion in completions:
-        completion["region"] = (
-            view.text_point(
-                completion["range"]["start"]["line"],
-                completion["range"]["start"]["character"],
-            ),
-            view.text_point(
-                completion["range"]["end"]["line"],
-                completion["range"]["end"]["character"],
-            ),
-        )
+        _generate_completion_region(view, completion)
 
 
 def reformat(text: str) -> str:
@@ -136,6 +122,10 @@ def remove_suffix(s: str, suffix: str) -> str:
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
+def status_message(msg: str) -> None:
+    sublime.status_message("✈ Copilot {msg}".format(msg=msg))
+
+
 def unique(items: Iterable[T], key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
     key = key or (lambda x: x)
     seen = set()
@@ -144,3 +134,18 @@ def unique(items: Iterable[T], key: Optional[Callable[[T], Any]] = None) -> Gene
         if k not in seen:
             yield item
             seen.add(k)
+
+
+def _generate_completion_region(
+    view: sublime.View, completion: Union[CopilotPayloadCompletion, CopilotPayloadPanelSolution]
+) -> None:
+    completion["region"] = (
+        view.text_point(
+            completion["range"]["start"]["line"],
+            completion["range"]["start"]["character"],
+        ),
+        view.text_point(
+            completion["range"]["end"]["line"],
+            completion["range"]["end"]["character"],
+        ),
+    )
