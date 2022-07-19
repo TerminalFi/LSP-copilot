@@ -90,11 +90,11 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
 
 def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadCompletion]) -> None:
     for completion in completions:
-        completion["positionSt"] = view.text_point(
+        completion["point"] = view.text_point(
             completion["position"]["line"],
             completion["position"]["character"],
         )
-        completion["rangeSt"] = (
+        completion["region"] = (
             view.text_point(
                 completion["range"]["start"]["line"],
                 completion["range"]["start"]["character"],
@@ -108,7 +108,7 @@ def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadC
 
 def preprocess_panel_completions(view: sublime.View, completions: List[CopilotPayloadPanelSolution]) -> None:
     for completion in completions:
-        completion["rangeSt"] = (
+        completion["region"] = (
             view.text_point(
                 completion["range"]["start"]["line"],
                 completion["range"]["start"]["character"],

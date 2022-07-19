@@ -129,7 +129,7 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
 
         # Remove the current line and then insert full text.
         # We don't have to care whether it's an inline completion or not.
-        source_line_region = self.view.line(sublime.Region(*completion["rangeSt"]))
+        source_line_region = self.view.line(sublime.Region(*completion["region"]))
         self.view.erase(edit, source_line_region)
         self.view.insert(edit, source_line_region.begin(), completion["completionText"])
 
@@ -151,7 +151,7 @@ class CopilotAcceptCompletionCommand(CopilotTextCommand):
 
         # Remove the current line and then insert full text.
         # We don't have to care whether it's an inline completion or not.
-        source_line_region = self.view.line(completion["positionSt"])
+        source_line_region = self.view.line(completion["point"])
         self.view.erase(edit, source_line_region)
         self.view.insert(edit, source_line_region.begin(), completion["text"])
 

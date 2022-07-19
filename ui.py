@@ -75,7 +75,7 @@ class ViewCompletionManager:
             return
 
         # the text after completion is the same
-        current_line = self.view.line(completion["positionSt"])
+        current_line = self.view.line(completion["point"])
         if completion["text"] == self.view.substr(current_line):
             return
 
