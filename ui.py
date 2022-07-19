@@ -334,7 +334,6 @@ class _PanelCompletion:
 
     @staticmethod
     def completion_header_items(completion: CopilotPayloadPanelSolution, view_id: int, index: int) -> List[str]:
-        # TODO Accept Completion Completiond ID
         return [
             """<a class="accept" href='{}'><i>✓</i> Accept</a>""".format(
                 sublime.command_url(
