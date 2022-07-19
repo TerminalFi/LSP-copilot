@@ -87,7 +87,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
         )
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
-        sublime.message_dialog("[LSP-copilot] Server version: {}".format(payload.get("version", "unknown")))
+        sublime.message_dialog("[LSP-copilot] Server version: {}".format(payload["version"]))
 
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
@@ -189,7 +189,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         )
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
-        count = payload.get("solutionCountTarget", 0)
+        count = payload["solutionCountTarget"]
         sublime.status_message("[LSP-copilot] Retrieving Panel Completions: {}".format(count))
 
         completion_manager = ViewPanelCompletionManager(self.view)
@@ -213,9 +213,9 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
         session.send_request(Request(REQ_CHECK_STATUS, {}), self._on_result_check_status)
 
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
-        if payload.get("status") == "OK":
+        if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
+            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload["user"]))
         else:
             CopilotPlugin.set_has_signed_in(False)
             sublime.message_dialog("[LSP-Copilot] You haven't signed in yet.")
@@ -235,9 +235,10 @@ class CopilotSignInCommand(CopilotTextCommand):
         payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate],
     ) -> None:
         CopilotPlugin.set_has_signed_in(False)
-        if payload.get("status") == "AlreadySignedIn":
+        if payload["status"] == "AlreadySignedIn":
             CopilotPlugin.set_has_signed_in(True)
             return
+        # TODO: what will happen if the user has no access to Copilot?
         user_code = payload.get("userCode")
         verification_uri = payload.get("verificationUri")
         if not (user_code and verification_uri):
@@ -255,9 +256,9 @@ class CopilotSignInCommand(CopilotTextCommand):
         )
 
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
-        if payload.get("status") == "OK":
+        if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload.get("user")))
+            sublime.message_dialog('[LSP-Copilot] Sign in OK with user "{}".'.format(payload["user"]))
 
     @_provide_session(failed_return=False)
     def is_enabled(self, session: Session) -> bool:
@@ -270,6 +271,6 @@ class CopilotSignOutCommand(CopilotTextCommand):
         session.send_request(Request(REQ_SIGN_OUT, {}), self._on_result_sign_out)
 
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
-        if payload.get("status") == "NotSignedIn":
+        if payload["status"] == "NotSignedIn":
             CopilotPlugin.set_has_signed_in(False)
             sublime.message_dialog("[LSP-Copilot] Sign out OK. Bye!")

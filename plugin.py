@@ -71,7 +71,7 @@ class CopilotPlugin(NpmClientHandler):
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
-            self.set_has_signed_in(result.get("status") == "OK")
+            self.set_has_signed_in(result["status"] == "OK")
 
         def on_set_editor_info(result: str, failed: bool) -> None:
             pass
