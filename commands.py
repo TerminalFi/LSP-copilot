@@ -31,7 +31,7 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import all_st_views, first, get_copilot_view_setting, get_setting, prepare_completion_request
+from .utils import all_st_views, first, get_setting, prepare_completion_request
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -99,7 +99,7 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         debounced(
             functools.partial(plugin.request_get_completions, self.view),
             FEATURES_TIMEOUT,
-            lambda: not get_copilot_view_setting(self.view, "is_waiting_completions", False),
+            lambda: not ViewCompletionManager(self.view).is_waiting,
             async_thread=True,
         )
 

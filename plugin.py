@@ -28,13 +28,11 @@ from .types import (
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     all_st_views,
-    erase_copilot_view_setting,
     first,
     prepare_completion_request,
     preprocess_completions,
     preprocess_panel_completions,
     remove_prefix,
-    set_copilot_view_setting,
 )
 
 
@@ -71,8 +69,9 @@ class CopilotPlugin(NpmClientHandler):
         # ST persists view setting after getting closed so we have to reset some status
         for window in sublime.windows():
             for view in window.views(include_transient=True):
-                erase_copilot_view_setting(view, "is_visible")
-                erase_copilot_view_setting(view, "is_waiting_completions")
+                cm = ViewCompletionManager(view)
+                cm.is_visible = False
+                cm.is_waiting = False
 
                 pcm = ViewPanelCompletionManager(view)
                 pcm.is_waiting = False
@@ -166,7 +165,8 @@ class CopilotPlugin(NpmClientHandler):
         pass
 
     def request_get_completions(self, view: sublime.View) -> None:
-        ViewCompletionManager(view).hide()
+        completion_manager = ViewCompletionManager(view)
+        completion_manager.hide()
 
         session = self.weaksession()
         sel = view.sel()
@@ -177,7 +177,7 @@ class CopilotPlugin(NpmClientHandler):
         if not params:
             return
 
-        set_copilot_view_setting(view, "is_waiting_completions", True)
+        completion_manager.is_waiting = True
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),
             functools.partial(self._on_get_completions, view, region=sel[0].to_tuple()),
@@ -189,7 +189,8 @@ class CopilotPlugin(NpmClientHandler):
         payload: CopilotPayloadCompletions,
         region: Tuple[int, int],
     ) -> None:
-        set_copilot_view_setting(view, "is_waiting_completions", False)
+        completion_manager = ViewCompletionManager(view)
+        completion_manager.is_waiting = False
 
         # re-request completions because the cursor position changed during awaiting Copilot's response
         if view.sel()[0].to_tuple() != region:
@@ -201,4 +202,4 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         preprocess_completions(view, completions)
-        ViewCompletionManager(view).show(completions, 0)
+        completion_manager.show(completions, 0)
