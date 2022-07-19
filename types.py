@@ -2,8 +2,16 @@ from LSP.plugin.core.typing import Any, Callable, List, Literal, Tuple, TypedDic
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
+# ---------------------------- #
+# realted to Sublime Text APIs #
+# ---------------------------- #
+
 StPoint = int
-StRegionTuple = Tuple[StPoint, StPoint]
+StRegion = Tuple[StPoint, StPoint]
+
+# --------------- #
+# Copilot payload #
+# --------------- #
 
 CopilotPayloadCompletionPosition = TypedDict(
     "CopilotPayloadCompletionPosition",
@@ -33,7 +41,7 @@ CopilotPayloadCompletion = TypedDict(
         "displayText": str,
         # injected for convenience
         "point": StPoint,
-        "region": StRegionTuple,
+        "region": StRegion,
     },
     total=True,
 )
@@ -130,7 +138,7 @@ CopilotPayloadPanelSolution = TypedDict(
         "completionText": str,
         "range": CopilotPayloadCompletionRange,
         # injected for convenience
-        "region": StRegionTuple,
+        "region": StRegion,
     },
     total=True,
 )
