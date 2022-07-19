@@ -26,14 +26,7 @@ from .types import (
     CopilotPayloadStatusNotification,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import (
-    all_st_views,
-    first,
-    prepare_completion_request,
-    preprocess_completions,
-    preprocess_panel_completions,
-    remove_prefix,
-)
+from .utils import prepare_completion_request, preprocess_completions, preprocess_panel_completions
 
 
 def plugin_loaded() -> None:
@@ -138,14 +131,13 @@ class CopilotPlugin(NpmClientHandler):
 
     @notification_handler(NTFY_PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
-        view_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
-        target_view = first(all_st_views(), lambda view: view.id() == view_id)
-        if not target_view:
+        view = ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])
+        if not view:
             return
 
-        preprocess_panel_completions(target_view, [payload])
+        preprocess_panel_completions(view, [payload])
 
-        completion_manager = ViewPanelCompletionManager(target_view)
+        completion_manager = ViewPanelCompletionManager(view)
         completions = completion_manager.completions
         completions.append(payload)
         completion_manager.completions = completions
@@ -153,12 +145,11 @@ class CopilotPlugin(NpmClientHandler):
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
-        view_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
-        target_view = first(all_st_views(), lambda view: view.id() == view_id)
-        if not target_view:
+        view = ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])
+        if not view:
             return
 
-        ViewPanelCompletionManager(target_view).is_waiting = False
+        ViewPanelCompletionManager(view).is_waiting = False
 
     @notification_handler(NTFY_STATUS_NOTIFICATION)
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
@@ -197,7 +188,7 @@ class CopilotPlugin(NpmClientHandler):
             self.request_get_completions(view)
             return
 
-        completions = payload.get("completions")
+        completions = payload["completions"]
         if not completions:
             return
 

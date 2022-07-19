@@ -8,7 +8,16 @@ from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import Iterable, List, Optional
 
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
-from .utils import clamp, first, get_copilot_view_setting, reformat, set_copilot_view_setting, unique
+from .utils import (
+    all_st_views,
+    clamp,
+    first,
+    get_copilot_view_setting,
+    reformat,
+    remove_prefix,
+    set_copilot_view_setting,
+    unique,
+)
 
 
 class ViewCompletionManager:
@@ -311,6 +320,11 @@ class ViewPanelCompletionManager:
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
         """The chosen `completion`."""
         return next(iter(self.completions[index : index + 1]), None)
+
+    @staticmethod
+    def find_view_by_panel_id(panel_id: str) -> Optional[sublime.View]:
+        view_id = int(remove_prefix(panel_id, "copilot://"))
+        return first(all_st_views(), lambda view: view.id() == view_id)
 
     def open(self) -> None:
         """Open the completion panel."""
