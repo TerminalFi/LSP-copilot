@@ -329,7 +329,7 @@ class _PanelCompletion:
     @staticmethod
     def completion_header_item(index: int) -> str:
         # TODO Accept Completion Completiond ID
-        return '<a class="accept" title="Accept Completion" href="{command_url}"><i>✓</i> Accept</a>'.format(
+        return """<a class="accept" title="Accept Completion" href='{command_url}'><i>✓</i> Accept</a>""".format(
             command_url=sublime.command_url("copilot_accept_panel_completion", {"index": index})
         )
 
