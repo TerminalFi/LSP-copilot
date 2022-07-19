@@ -288,10 +288,14 @@ class _PanelCompletion:
     """.format(
         class_name=CSS_CLASS_NAME
     )
-    COMPLETION_TEMPLATE = reformat(
+    COMPLETION_TITLE = reformat(
         """
         <h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4>
         <hr>
+        """
+    )
+    COMPLETION_TEMPLATE = reformat(
+        """
         <div>Mean Probability: {score}</div>
         <div class="header">{header_items}</div>
         ```{lang}
@@ -307,25 +311,27 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-        return "\n\n<hr>\n".join(
+        completions = self._synthesize(self.completion_manager.panel_completions)
+        return self.COMPLETION_TITLE.format(
+            index=len(self.completion_manager.panel_completions),
+            total_solutions=get_copilot_view_setting(view=self.view, key="panel_completion_target_count", default=0),
+        ) + "\n<hr>\n".join(
             self.COMPLETION_TEMPLATE.format(
-                index=len(self.completion_manager.panel_completions),
-                total_solutions=get_copilot_view_setting(self.view, "panel_completion_target_count", 0),
                 header_items="{}".format(
-                    self.completion_header_item(self.completion_manager.panel_completions.index(item))
+                    self.completion_header_item(completions.index(item))
                 ),
                 score=item["score"],
                 lang=basescope2languageid(syntax.scope),
                 code=self._prepare_popup_code_display_text(item["displayText"]),
             )
-            for item in self.completion_manager.panel_completions
+            for item in completions
         )
 
     @staticmethod
     def completion_header_item(index: int) -> str:
         # TODO Accept Completion Completiond ID
-        return '<a class="accept" title="Accept Completion" href=\'subl:copilot_accept_panel_completion {{"index": {index}}}\'><i>✓</i> Accept</a>'.format(
-            index=index
+        return """<a class="accept" title="Accept Completion" href='subl:{command}'><i>✓</i> Accept</a>""".format(
+            command=sublime.html_format_command("copilot_accept_panel_completion", {'index': index})
         )
 
     def open(self) -> None:
@@ -377,3 +383,18 @@ class _PanelCompletion:
             return first_line + sep + textwrap.indent(textwrap.dedent(rest), "\t")
 
         return display_text
+
+    @staticmethod
+    def _synthesize(completions: List[CopilotPayloadPanelSolution]) -> List[CopilotPayloadPanelSolution]:
+        def deduplicate(iterable, key=None):
+            if key is None:
+                key = lambda x: x
+            seen = set()
+            for elem in iterable:
+                k = key(elem)
+                if k in seen:
+                    continue
+
+                yield elem
+                seen.add(k)
+        return sorted(list(deduplicate(completions, lambda d: (d['completionText']))), key=lambda d: d['score'], reverse=True)

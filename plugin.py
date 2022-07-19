@@ -143,11 +143,6 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         panel_completions = get_copilot_view_setting(target_view, "panel_completions", [])
-        for completion in panel_completions:
-            if completion.get("displayText") == payload.get("displayText"):
-                # Log that a duplicate item was found?
-                return
-
         panel_completions.append(payload)
 
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
