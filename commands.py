@@ -122,13 +122,14 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
         completion = completion_manager.get_panel_completion(completion_index)
         if not completion:
             return
-        print(completion)
 
         # Remove the current line and then insert full text.
         # We don't have to care whether it's an inline completion or not.
         source_line_region = self.view.line(completion["positionSt"])
         self.view.erase(edit, source_line_region)
         self.view.insert(edit, source_line_region.begin(), completion["displayText"])
+
+        completion_manager.close_panel_completions()
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):

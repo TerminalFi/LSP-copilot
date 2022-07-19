@@ -97,6 +97,10 @@ class ViewCompletionManager:
         """Open panel completions."""
         _PanelCompletion(self.view).update()
 
+    def close_panel_completions(self) -> None:
+        """Open panel completions."""
+        _PanelCompletion(self.view).close()
+
     def _tidy_completion_index(self, do_clamp: bool = True) -> None:
         """
         Revise `completion_index` to a valid value, or `0` if `self.completions` is empty.
@@ -368,6 +372,22 @@ class _PanelCompletion:
             css=self.CSS,
             wrapper_class=self.CSS_CLASS_NAME,
         )
+
+    def close(self) -> None:
+        # TODO: show this side-by-side?
+        sheet_id = get_copilot_view_setting(self.view, "panel_sheet_id")
+        if not sheet_id:
+            return
+
+        window = self.view.window()
+        if not window:
+            return
+
+        target_sheet = first(window.sheets(), lambda sheet: sheet.id() == sheet_id)
+        if target_sheet is None:
+            return
+
+        target_sheet.close()
 
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:
