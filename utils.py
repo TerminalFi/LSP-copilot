@@ -141,8 +141,6 @@ def unique(items: Iterable[T], key: Optional[Callable[[T], Any]] = None) -> Gene
     seen = set()
     for item in items:
         k = key(item)
-        if k in seen:
-            continue
-
-        yield item
-        seen.add(k)
+        if k not in seen:
+            yield item
+            seen.add(k)
