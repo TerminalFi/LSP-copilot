@@ -168,7 +168,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
         params = prepare_completion_request(view=self.view)
-        if params is None:
+        if not params:
             return
 
         copilot_panel_id = "copilot://{}".format(self.view.id())

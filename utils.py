@@ -28,11 +28,7 @@ def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T
     return val
 
 
-def first(
-    items: Iterable[T],
-    test: Optional[Callable[[T], bool]] = None,
-    default: Optional[T] = None,
-) -> Optional[T]:
+def first(items: Iterable[T], test: Optional[Callable[[T], bool]] = None, default: Optional[T] = None) -> Optional[T]:
     """
     Gets the first item which satisfies the `test`. Otherwise, `default`.
     If `test` is not given or `None`, the first truthy item will be returned.
