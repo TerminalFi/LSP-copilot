@@ -239,12 +239,12 @@ class ViewPanelCompletionManager:
 
     @property
     def completions(self) -> List[CopilotPayloadPanelSolution]:
-        """All `panel_completions` in the view."""
+        """All `completions` in the view."""
         return get_copilot_view_setting(self.view, "panel_completions", [])
 
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
-        """The chosen `solution`."""
-        return self.completions[index] if len(self.completions) >= index else None
+        """The chosen `completion`."""
+        return next(iter(self.completions[index : index + 1]), None)
 
     def open(self) -> None:
         """Open the completion panel."""
