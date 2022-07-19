@@ -110,3 +110,15 @@ def remove_suffix(s: str, suffix: str) -> str:
     """Remove the suffix from the string. I.e., str.removesuffix in Python 3.9."""
     # suffix="" should not call s[:-0]
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
+
+
+def unique(items: Iterable[T], key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
+    key = key or (lambda x: x)
+    seen = set()
+    for item in items:
+        k = key(item)
+        if k in seen:
+            continue
+
+        yield item
+        seen.add(k)

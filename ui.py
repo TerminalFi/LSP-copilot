@@ -1,13 +1,14 @@
 import textwrap
 from functools import partial
+from operator import itemgetter
 
 import mdpopups
 import sublime
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.typing import List, Optional
+from LSP.plugin.core.typing import Iterable, List, Optional
 
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
-from .utils import clamp, first, get_copilot_view_setting, reformat, set_copilot_view_setting
+from .utils import clamp, first, get_copilot_view_setting, reformat, set_copilot_view_setting, unique
 
 
 class ViewCompletionManager:
@@ -314,12 +315,10 @@ class _PanelCompletion:
         completions = self._synthesize(self.completion_manager.panel_completions)
         return self.COMPLETION_TITLE.format(
             index=len(self.completion_manager.panel_completions),
-            total_solutions=get_copilot_view_setting(view=self.view, key="panel_completion_target_count", default=0),
+            total_solutions=get_copilot_view_setting(self.view, "panel_completion_target_count", 0),
         ) + "\n<hr>\n".join(
             self.COMPLETION_TEMPLATE.format(
-                header_items="{}".format(
-                    self.completion_header_item(completions.index(item))
-                ),
+                header_items="{}".format(self.completion_header_item(completions.index(item))),
                 score=item["score"],
                 lang=basescope2languageid(syntax.scope),
                 code=self._prepare_popup_code_display_text(item["displayText"]),
@@ -330,8 +329,8 @@ class _PanelCompletion:
     @staticmethod
     def completion_header_item(index: int) -> str:
         # TODO Accept Completion Completiond ID
-        return """<a class="accept" title="Accept Completion" href='subl:{command}'><i>✓</i> Accept</a>""".format(
-            command=sublime.html_format_command("copilot_accept_panel_completion", {'index': index})
+        return '<a class="accept" title="Accept Completion" href="{command_url}"><i>✓</i> Accept</a>'.format(
+            command_url=sublime.command_url("copilot_accept_panel_completion", {"index": index})
         )
 
     def open(self) -> None:
@@ -385,16 +384,5 @@ class _PanelCompletion:
         return display_text
 
     @staticmethod
-    def _synthesize(completions: List[CopilotPayloadPanelSolution]) -> List[CopilotPayloadPanelSolution]:
-        def deduplicate(iterable, key=None):
-            if key is None:
-                key = lambda x: x
-            seen = set()
-            for elem in iterable:
-                k = key(elem)
-                if k in seen:
-                    continue
-
-                yield elem
-                seen.add(k)
-        return sorted(list(deduplicate(completions, lambda d: (d['completionText']))), key=lambda d: d['score'], reverse=True)
+    def _synthesize(completions: Iterable[CopilotPayloadPanelSolution]) -> List[CopilotPayloadPanelSolution]:
+        return sorted(unique(completions, itemgetter("completionText")), key=itemgetter("score"), reverse=True)
