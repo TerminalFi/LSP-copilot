@@ -8,7 +8,7 @@ from LSP.plugin.core.typing import Iterable, List, Optional
 
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
-    all_st_views,
+    all_views,
     first,
     get_copilot_view_setting,
     reformat,
@@ -74,7 +74,7 @@ class ViewPanelCompletionManager:
     @staticmethod
     def find_view_by_panel_id(panel_id: str) -> Optional[sublime.View]:
         view_id = int(remove_prefix(panel_id, "copilot://"))
-        return first(all_st_views(), lambda view: view.id() == view_id)
+        return first(all_views(), lambda view: view.id() == view_id)
 
     def open(self) -> None:
         """Open the completion panel."""

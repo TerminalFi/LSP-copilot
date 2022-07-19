@@ -31,7 +31,7 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import all_st_views, first, get_setting, prepare_completion_request
+from .utils import all_views, first, get_setting, prepare_completion_request
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -106,7 +106,7 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
 
 class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
     def run(self, view_id: int, completion_index: int) -> None:
-        target_view = first(all_st_views(), lambda view: view.id() == view_id)
+        target_view = first(all_views(), lambda view: view.id() == view_id)
         if not target_view:
             return
         target_view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})

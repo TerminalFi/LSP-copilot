@@ -14,7 +14,7 @@ T = TypeVar("T")
 T_Number = TypeVar("T_Number", bound=Union[int, float])
 
 
-def all_st_views(*, include_transient: bool = False) -> Generator[sublime.View, None, None]:
+def all_views(*, include_transient: bool = False) -> Generator[sublime.View, None, None]:
     for window in sublime.windows():
         yield from window.views(include_transient=include_transient)
 
