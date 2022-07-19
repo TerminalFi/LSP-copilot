@@ -316,14 +316,14 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-        panel_id = int(remove_prefix(get_copilot_view_setting(self.view, "panel_id", -1), "copilot://"))
+        view_id = int(remove_prefix(get_copilot_view_setting(self.view, "panel_id", -1), "copilot://"))
         completions = self._synthesize(self.completion_manager.panel_completions)
         return self.COMPLETION_TEMPLATE.format(
             index=len(self.completion_manager.panel_completions),
             total_solutions=get_copilot_view_setting(self.view, "panel_completion_target_count", 0),
             sections="\n\n<hr>\n".join(
                 self.COMPLETION_SECTION_TEMPLATE.format(
-                    header_items=" &nbsp;".join(self.completion_header_items(completion, panel_id, index)),
+                    header_items=" &nbsp;".join(self.completion_header_items(completion, view_id, index)),
                     score=completion["score"],
                     lang=basescope2languageid(syntax.scope),
                     code=self._prepare_popup_code_display_text(completion["displayText"]),
@@ -333,13 +333,13 @@ class _PanelCompletion:
         )
 
     @staticmethod
-    def completion_header_items(completion: CopilotPayloadPanelSolution, panel_id: int, index: int) -> List[str]:
+    def completion_header_items(completion: CopilotPayloadPanelSolution, view_id: int, index: int) -> List[str]:
         # TODO Accept Completion Completiond ID
         return [
             """<a class="accept" href='{}'><i>✓</i> Accept</a>""".format(
                 sublime.command_url(
                     "copilot_accept_panel_completion_shim",
-                    {"panel_id": panel_id, "completion_index": index},
+                    {"view_id": view_id, "completion_index": index},
                 )
             ),
             "(Mean Probability: {})".format(completion["score"]),

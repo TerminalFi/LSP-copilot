@@ -82,6 +82,10 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
         )
 
 
+class CopilotWindowCommand(LspWindowCommand, metaclass=ABCMeta):
+    pass
+
+
 class CopilotGetVersionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
@@ -108,9 +112,9 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         )
 
 
-class CopilotAcceptPanelCompletionShimCommand(LspWindowCommand):
-    def run(self, panel_id: int, completion_index: int) -> None:
-        target_view = first(all_st_views(), lambda view: view.id() == panel_id)
+class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
+    def run(self, view_id: int, completion_index: int) -> None:
+        target_view = first(all_st_views(), lambda view: view.id() == view_id)
         if not target_view:
             return
         target_view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
