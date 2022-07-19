@@ -7,7 +7,7 @@ from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import List, Optional
 
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
-from .utils import clamp, get_copilot_view_setting, reformat, set_copilot_view_setting
+from .utils import clamp, first, get_copilot_view_setting, reformat, set_copilot_view_setting
 
 
 class ViewCompletionManager:
@@ -293,7 +293,6 @@ class _PanelCompletion:
         <h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4>
         <hr>
         <div>Mean Probability: {score}</div>
-        <hr>
         <div class="header">{header_items}</div>
         ```{lang}
         {code}
@@ -308,10 +307,10 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-        return "\n<hr>\n".join(
+        return "\n\n<hr>\n".join(
             self.COMPLETION_TEMPLATE.format(
                 index=len(self.completion_manager.panel_completions),
-                total_solutions=get_copilot_view_setting(view=self.view, key="panel_completion_target_count", default=0),
+                total_solutions=get_copilot_view_setting(self.view, "panel_completion_target_count", 0),
                 header_items="{}".format(
                     self.completion_header_item(self.completion_manager.panel_completions.index(item))
                 ),
@@ -340,11 +339,11 @@ class _PanelCompletion:
             wrapper_class=self.CSS_CLASS_NAME,
         )
 
-        set_copilot_view_setting(view=self.view, key="panel_sheet_id", value=sheet.id())
+        set_copilot_view_setting(self.view, "panel_sheet_id", sheet.id())
 
     def update(self) -> None:
         # TODO: show this side-by-side?
-        sheet_id = get_copilot_view_setting(view=self.view, key="panel_sheet_id", default=None)
+        sheet_id = get_copilot_view_setting(self.view, "panel_sheet_id")
         if not sheet_id:
             return
 
@@ -352,14 +351,10 @@ class _PanelCompletion:
         if not window:
             return
 
-        target_sheet = None
-        for sheet in window.sheets():
-            if sheet.id() == sheet_id:
-                target_sheet = sheet
-                break
-
+        target_sheet = first(window.sheets(), lambda sheet: sheet.id() == sheet_id)
         if target_sheet is None:
             return
+
         mdpopups.update_html_sheet(
             sheet=target_sheet,
             name="Panel Completions",

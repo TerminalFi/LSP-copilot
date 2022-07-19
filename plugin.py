@@ -4,7 +4,7 @@ import weakref
 
 import sublime
 from LSP.plugin import Request, Session
-from LSP.plugin.core.typing import Optional, Tuple, List
+from LSP.plugin.core.typing import List, Optional, Tuple
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
