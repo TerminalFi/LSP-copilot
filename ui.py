@@ -91,15 +91,15 @@ class ViewCompletionManager:
         _PopupCompletion(self.view).show()
 
     def open_panel_completions(self) -> None:
-        """Open panel completions."""
+        """Open the completion panel."""
         _PanelCompletion(self.view).open()
 
     def update_panel_completions(self) -> None:
-        """Open panel completions."""
+        """Update the completion panel."""
         _PanelCompletion(self.view).update()
 
     def close_panel_completions(self) -> None:
-        """Open panel completions."""
+        """Close the completion panel."""
         _PanelCompletion(self.view).close()
 
     def _tidy_completion_index(self, do_clamp: bool = True) -> None:
@@ -316,9 +316,7 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-        panel_id = int(
-            remove_prefix(get_copilot_view_setting(view=self.view, key="panel_id", default=-1), "copilot://")
-        )
+        panel_id = int(remove_prefix(get_copilot_view_setting(self.view, "panel_id", -1), "copilot://"))
         completions = self._synthesize(self.completion_manager.panel_completions)
         return self.COMPLETION_TEMPLATE.format(
             index=len(self.completion_manager.panel_completions),
@@ -338,11 +336,13 @@ class _PanelCompletion:
     def completion_header_items(completion: CopilotPayloadPanelSolution, panel_id: int, index: int) -> List[str]:
         # TODO Accept Completion Completiond ID
         return [
-            """<a class="accept" title="Accept Completion" href='subl:copilot_accept_panel_completion_shim {{"panel_id": {panel_id}, "completion_index": {index}}}'><i>✓</i> Accept</a>""".format(
-                panel_id=panel_id,
-                index=index,
+            """<a class="accept" href='{}'><i>✓</i> Accept</a>""".format(
+                sublime.command_url(
+                    "copilot_accept_panel_completion_shim",
+                    {"panel_id": panel_id, "completion_index": index},
+                )
             ),
-            "(Mean Probability: {score})".format(score=completion["score"]),
+            "(Mean Probability: {})".format(completion["score"]),
         ]
 
     def open(self) -> None:

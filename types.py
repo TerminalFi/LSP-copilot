@@ -1,6 +1,9 @@
-from LSP.plugin.core.typing import Any, Callable, List, Literal, TypedDict, TypeVar
+from LSP.plugin.core.typing import Any, Callable, List, Literal, Tuple, TypedDict, TypeVar
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
+
+StPosition = int
+StRange = Tuple[int, int]
 
 CopilotPayloadCompletionPosition = TypedDict(
     "CopilotPayloadCompletionPosition",
@@ -14,7 +17,7 @@ CopilotPayloadCompletionPosition = TypedDict(
 CopilotPayloadCompletionRange = TypedDict(
     "CopilotPayloadCompletionRange",
     {
-        "begin": CopilotPayloadCompletionPosition,
+        "start": CopilotPayloadCompletionPosition,
         "end": CopilotPayloadCompletionPosition,
     },
     total=True,
@@ -29,7 +32,8 @@ CopilotPayloadCompletion = TypedDict(
         "range": CopilotPayloadCompletionRange,
         "displayText": str,
         # injected for convenience
-        "positionSt": int,
+        "positionSt": StPosition,
+        "rangeSt": StRange,
     },
     total=True,
 )
@@ -126,7 +130,7 @@ CopilotPayloadPanelSolution = TypedDict(
         "completionText": str,
         "range": CopilotPayloadCompletionRange,
         # injected for convenience
-        "positionSt": int,
+        "rangeSt": StRange,
     },
     total=True,
 )

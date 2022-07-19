@@ -8,7 +8,7 @@ from LSP.plugin.core.typing import Any, Callable, Dict, Generator, Iterable, Lis
 from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX
-from .types import CopilotPayloadCompletion
+from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
 
 T = TypeVar("T")
 T_Number = TypeVar("T_Number", bound=Union[int, float])
@@ -93,6 +93,30 @@ def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadC
         completion["positionSt"] = view.text_point(
             completion["position"]["line"],
             completion["position"]["character"],
+        )
+        completion["rangeSt"] = (
+            view.text_point(
+                completion["range"]["start"]["line"],
+                completion["range"]["start"]["character"],
+            ),
+            view.text_point(
+                completion["range"]["end"]["line"],
+                completion["range"]["end"]["character"],
+            ),
+        )
+
+
+def preprocess_panel_completions(view: sublime.View, completions: List[CopilotPayloadPanelSolution]) -> None:
+    for completion in completions:
+        completion["rangeSt"] = (
+            view.text_point(
+                completion["range"]["start"]["line"],
+                completion["range"]["start"]["character"],
+            ),
+            view.text_point(
+                completion["range"]["end"]["line"],
+                completion["range"]["end"]["character"],
+            ),
         )
 
 

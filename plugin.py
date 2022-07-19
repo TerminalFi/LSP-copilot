@@ -4,7 +4,7 @@ import weakref
 
 import sublime
 from LSP.plugin import Request, Session
-from LSP.plugin.core.typing import List, Optional, Tuple
+from LSP.plugin.core.typing import Optional, Tuple
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
@@ -33,6 +33,7 @@ from .utils import (
     get_copilot_view_setting,
     prepare_completion_request,
     preprocess_completions,
+    preprocess_panel_completions,
     remove_prefix,
     set_copilot_view_setting,
 )
@@ -142,10 +143,8 @@ class CopilotPlugin(NpmClientHandler):
         if not target_view:
             return
 
+        preprocess_panel_completions(target_view, [payload])
         panel_completions = get_copilot_view_setting(target_view, "panel_completions", [])
-        payload["positionSt"] = target_view.text_point(
-            payload["range"]["end"]["line"], payload["range"]["end"]["character"]
-        )
         panel_completions.append(payload)
 
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
@@ -200,5 +199,4 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         preprocess_completions(view, completions)
-
         ViewCompletionManager(view).show(completions, 0)
