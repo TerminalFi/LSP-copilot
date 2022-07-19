@@ -1,13 +1,14 @@
 import textwrap
 from functools import partial
+from operator import itemgetter
 
 import mdpopups
 import sublime
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.typing import List, Optional
+from LSP.plugin.core.typing import Iterable, List, Optional
 
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
-from .utils import clamp, first, get_copilot_view_setting, reformat, remove_prefix, set_copilot_view_setting
+from .utils import clamp, first, get_copilot_view_setting, reformat, remove_prefix, set_copilot_view_setting, unique
 
 
 class ViewCompletionManager:
@@ -292,15 +293,15 @@ class _PanelCompletion:
     """.format(
         class_name=CSS_CLASS_NAME
     )
-    COMPLETION_TITLE = reformat(
+    COMPLETION_TEMPLATE = reformat(
         """
         <h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4>
         <hr>
+        {sections}
         """
     )
-    COMPLETION_TEMPLATE = reformat(
+    COMPLETION_SECTION_TEMPLATE = reformat(
         """
-        <div>Mean Probability: {score}</div>
         <div class="header">{header_items}</div>
         ```{lang}
         {code}
@@ -315,27 +316,34 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
+        panel_id = int(
+            remove_prefix(get_copilot_view_setting(view=self.view, key="panel_id", default=-1), "copilot://")
+        )
         completions = self._synthesize(self.completion_manager.panel_completions)
-        return self.COMPLETION_TITLE.format(
+        return self.COMPLETION_TEMPLATE.format(
             index=len(self.completion_manager.panel_completions),
-            total_solutions=get_copilot_view_setting(view=self.view, key="panel_completion_target_count", default=0),
-        ) + "\n<hr>\n".join(
-            self.COMPLETION_TEMPLATE.format(
-                header_items="{}".format(self.completion_header_item(completions.index(item))),
-                score=item["score"],
-                lang=basescope2languageid(syntax.scope),
-                code=self._prepare_popup_code_display_text(item["displayText"]),
-            )
-            for item in completions
+            total_solutions=get_copilot_view_setting(self.view, "panel_completion_target_count", 0),
+            sections="\n\n<hr>\n".join(
+                self.COMPLETION_SECTION_TEMPLATE.format(
+                    header_items=" &nbsp;".join(self.completion_header_items(completion, panel_id, index)),
+                    score=completion["score"],
+                    lang=basescope2languageid(syntax.scope),
+                    code=self._prepare_popup_code_display_text(completion["displayText"]),
+                )
+                for index, completion in enumerate(completions)
+            ),
         )
 
-    def completion_header_item(self, index: int) -> str:
+    @staticmethod
+    def completion_header_items(completion: CopilotPayloadPanelSolution, panel_id: int, index: int) -> List[str]:
         # TODO Accept Completion Completiond ID
-        panel_id = int(remove_prefix(get_copilot_view_setting(view=self.view, key="panel_id", default=-1), "copilot://"))
-        return """<a class="accept" title="Accept Completion" href='subl:copilot_accept_panel_completion_shim {{"panel_id": {panel_id}, "completion_index": {index}}}'><i>✓</i> Accept</a>""".format(
-            panel_id=panel_id,
-            index=index,
-        )
+        return [
+            """<a class="accept" title="Accept Completion" href='subl:copilot_accept_panel_completion_shim {{"panel_id": {panel_id}, "completion_index": {index}}}'><i>✓</i> Accept</a>""".format(
+                panel_id=panel_id,
+                index=index,
+            ),
+            "(Mean Probability: {score})".format(score=completion["score"]),
+        ]
 
     def open(self) -> None:
         # TODO: show this side-by-side?
@@ -404,19 +412,5 @@ class _PanelCompletion:
         return display_text
 
     @staticmethod
-    def _synthesize(completions: List[CopilotPayloadPanelSolution]) -> List[CopilotPayloadPanelSolution]:
-        def deduplicate(iterable, key=None):
-            if key is None:
-                key = lambda x: x
-            seen = set()
-            for elem in iterable:
-                k = key(elem)
-                if k in seen:
-                    continue
-
-                yield elem
-                seen.add(k)
-
-        return sorted(
-            list(deduplicate(completions, lambda d: (d["completionText"]))), key=lambda d: d["score"], reverse=True
-        )
+    def _synthesize(completions: Iterable[CopilotPayloadPanelSolution]) -> List[CopilotPayloadPanelSolution]:
+        return sorted(unique(completions, itemgetter("completionText")), key=itemgetter("score"), reverse=True)

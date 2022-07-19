@@ -143,7 +143,9 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         panel_completions = get_copilot_view_setting(target_view, "panel_completions", [])
-        payload['positionSt'] = target_view.text_point(payload["range"]["end"]["line"], payload["range"]["end"]["character"])
+        payload["positionSt"] = target_view.text_point(
+            payload["range"]["end"]["line"], payload["range"]["end"]["character"]
+        )
         panel_completions.append(payload)
 
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
