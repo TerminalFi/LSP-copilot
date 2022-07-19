@@ -25,7 +25,7 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
 )
-from .ui import ViewCompletionManager
+from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     all_st_views,
     erase_copilot_view_setting,
@@ -148,7 +148,7 @@ class CopilotPlugin(NpmClientHandler):
         panel_completions.append(payload)
 
         set_copilot_view_setting(target_view, "panel_completions", panel_completions)
-        ViewCompletionManager(target_view).update_panel_completions()
+        ViewPanelCompletionManager(target_view).update()
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:

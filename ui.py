@@ -21,11 +21,6 @@ class ViewCompletionManager:
         return get_copilot_view_setting(self.view, "is_visible", False)
 
     @property
-    def panel_completions(self) -> List[CopilotPayloadPanelSolution]:
-        """All `panel_completions` in the view."""
-        return get_copilot_view_setting(self.view, "panel_completions", [])
-
-    @property
     def completions(self) -> List[CopilotPayloadCompletion]:
         """All `completions` in the view."""
         return get_copilot_view_setting(self.view, "completions", [])
@@ -39,10 +34,6 @@ class ViewCompletionManager:
     def current_completion(self) -> Optional[CopilotPayloadCompletion]:
         """The current chosen `completion`."""
         return self.completions[self.completion_index] if self.completions else None
-
-    def get_panel_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
-        """The chosen `solution`."""
-        return self.panel_completions[index] if len(self.panel_completions) >= index else None
 
     def show_previous_completion(self) -> None:
         """Show the previous completion."""
@@ -89,18 +80,6 @@ class ViewCompletionManager:
             return
 
         _PopupCompletion(self.view).show()
-
-    def open_panel_completions(self) -> None:
-        """Open the completion panel."""
-        _PanelCompletion(self.view).open()
-
-    def update_panel_completions(self) -> None:
-        """Update the completion panel."""
-        _PanelCompletion(self.view).update()
-
-    def close_panel_completions(self) -> None:
-        """Close the completion panel."""
-        _PanelCompletion(self.view).close()
 
     def _tidy_completion_index(self, do_clamp: bool = True) -> None:
         """
@@ -254,6 +233,32 @@ class _PopupCompletion:
         mdpopups.hide_popup(view)
 
 
+class ViewPanelCompletionManager:
+    def __init__(self, view: sublime.View) -> None:
+        self.view = view
+
+    @property
+    def completions(self) -> List[CopilotPayloadPanelSolution]:
+        """All `panel_completions` in the view."""
+        return get_copilot_view_setting(self.view, "panel_completions", [])
+
+    def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
+        """The chosen `solution`."""
+        return self.completions[index] if len(self.completions) >= index else None
+
+    def open(self) -> None:
+        """Open the completion panel."""
+        _PanelCompletion(self.view).open()
+
+    def update(self) -> None:
+        """Update the completion panel."""
+        _PanelCompletion(self.view).update()
+
+    def close(self) -> None:
+        """Close the completion panel."""
+        _PanelCompletion(self.view).close()
+
+
 class _PanelCompletion:
     CSS_CLASS_NAME = "copilot-completion-panel"
     CSS = """
@@ -311,15 +316,15 @@ class _PanelCompletion:
 
     def __init__(self, view: sublime.View) -> None:
         self.view = view
-        self.completion_manager = ViewCompletionManager(view)
+        self.completion_manager = ViewPanelCompletionManager(view)
 
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
         view_id = int(remove_prefix(get_copilot_view_setting(self.view, "panel_id", -1), "copilot://"))
-        completions = self._synthesize(self.completion_manager.panel_completions)
+        completions = self._synthesize(self.completion_manager.completions)
         return self.COMPLETION_TEMPLATE.format(
-            index=len(self.completion_manager.panel_completions),
+            index=len(self.completion_manager.completions),
             total_solutions=get_copilot_view_setting(self.view, "panel_completion_target_count", 0),
             sections="\n\n<hr>\n".join(
                 self.COMPLETION_SECTION_TEMPLATE.format(

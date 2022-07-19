@@ -30,7 +30,7 @@ from .types import (
     CopilotPayloadSignOut,
     T_Callable,
 )
-from .ui import ViewCompletionManager
+from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     all_st_views,
     erase_copilot_view_setting,
@@ -122,8 +122,8 @@ class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
 
 class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit, completion_index: int) -> None:
-        completion_manager = ViewCompletionManager(self.view)
-        completion = completion_manager.get_panel_completion(completion_index)
+        completion_manager = ViewPanelCompletionManager(self.view)
+        completion = completion_manager.get_completion(completion_index)
         if not completion:
             return
 
@@ -133,7 +133,7 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
         self.view.erase(edit, source_line_region)
         self.view.insert(edit, source_line_region.begin(), completion["completionText"])
 
-        completion_manager.close_panel_completions()
+        completion_manager.close()
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
@@ -203,7 +203,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         sublime.status_message("[LSP-copilot] Retrieving Panel Completions: {}".format(count))
         set_copilot_view_setting(self.view, "panel_completion_target_count", count)
 
-        ViewCompletionManager(self.view).open_panel_completions()
+        ViewPanelCompletionManager(self.view).open()
 
 
 class CopilotPreviousCompletionCommand(CopilotTextCommand):
