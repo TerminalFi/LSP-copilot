@@ -30,7 +30,6 @@ from .utils import (
     all_st_views,
     erase_copilot_view_setting,
     first,
-    get_copilot_view_setting,
     prepare_completion_request,
     preprocess_completions,
     preprocess_panel_completions,
@@ -74,7 +73,9 @@ class CopilotPlugin(NpmClientHandler):
             for view in window.views(include_transient=True):
                 erase_copilot_view_setting(view, "is_visible")
                 erase_copilot_view_setting(view, "is_waiting_completions")
-                erase_copilot_view_setting(view, "is_waiting_panel_completions")
+
+                pcm = ViewPanelCompletionManager(view)
+                pcm.is_waiting = False
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
@@ -144,11 +145,12 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         preprocess_panel_completions(target_view, [payload])
-        panel_completions = get_copilot_view_setting(target_view, "panel_completions", [])
-        panel_completions.append(payload)
 
-        set_copilot_view_setting(target_view, "panel_completions", panel_completions)
-        ViewPanelCompletionManager(target_view).update()
+        completion_manager = ViewPanelCompletionManager(target_view)
+        completions = completion_manager.completions
+        completions.append(payload)
+        completion_manager.completions = completions
+        completion_manager.update()
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
@@ -157,7 +159,7 @@ class CopilotPlugin(NpmClientHandler):
         if not target_view:
             return
 
-        set_copilot_view_setting(target_view, "is_waiting_panel_completions", False)
+        ViewPanelCompletionManager(target_view).is_waiting = False
 
     @notification_handler(NTFY_STATUS_NOTIFICATION)
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:

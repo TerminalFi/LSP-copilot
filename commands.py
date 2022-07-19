@@ -31,15 +31,7 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import (
-    all_st_views,
-    erase_copilot_view_setting,
-    first,
-    get_copilot_view_setting,
-    get_setting,
-    prepare_completion_request,
-    set_copilot_view_setting,
-)
+from .utils import all_st_views, first, get_copilot_view_setting, get_setting, prepare_completion_request
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -186,13 +178,11 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         if not params:
             return
 
-        panel_id = "copilot://{}".format(self.view.id())
-        params["panelId"] = panel_id
+        completion_manager = ViewPanelCompletionManager(self.view)
+        completion_manager.is_waiting = True
+        completion_manager.completions = []
 
-        set_copilot_view_setting(self.view, "panel_id", panel_id)
-        set_copilot_view_setting(self.view, "is_waiting_panel_completions", True)
-        erase_copilot_view_setting(self.view, "panel_completions")
-
+        params["panelId"] = completion_manager.panel_id
         session.send_request(
             Request(REQ_GET_PANEL_COMPLETIONS, params),
             self._on_result_get_panel_completions,
@@ -201,9 +191,10 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload.get("solutionCountTarget", 0)
         sublime.status_message("[LSP-copilot] Retrieving Panel Completions: {}".format(count))
-        set_copilot_view_setting(self.view, "panel_completion_target_count", count)
 
-        ViewPanelCompletionManager(self.view).open()
+        completion_manager = ViewPanelCompletionManager(self.view)
+        completion_manager.completion_target_count = count
+        completion_manager.open()
 
 
 class CopilotPreviousCompletionCommand(CopilotTextCommand):

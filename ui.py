@@ -237,10 +237,51 @@ class ViewPanelCompletionManager:
     def __init__(self, view: sublime.View) -> None:
         self.view = view
 
+    # ------------- #
+    # view settings #
+    # ------------- #
+
+    @property
+    def is_waiting(self) -> bool:
+        return get_copilot_view_setting(self.view, "is_waiting_panel_completions", False)
+
+    @is_waiting.setter
+    def is_waiting(self, value: bool) -> None:
+        set_copilot_view_setting(self.view, "is_waiting_panel_completions", value)
+
+    @property
+    def sheet_id(self) -> int:
+        """The ID of the sheet which is used to show panel completions."""
+        return get_copilot_view_setting(self.view, "panel_sheet_id", -1)
+
+    @sheet_id.setter
+    def sheet_id(self, value: int) -> None:
+        set_copilot_view_setting(self.view, "panel_sheet_id", value)
+
+    @property
+    def completion_target_count(self) -> int:
+        return get_copilot_view_setting(self.view, "panel_completion_target_count", 0)
+
+    @completion_target_count.setter
+    def completion_target_count(self, value: int) -> None:
+        set_copilot_view_setting(self.view, "panel_completion_target_count", value)
+
+    @property
+    def panel_id(self) -> str:
+        return "copilot://{}".format(self.view.id())
+
     @property
     def completions(self) -> List[CopilotPayloadPanelSolution]:
-        """All `completions` in the view."""
+        """All `completions` in the view. Note that this is a copy."""
         return get_copilot_view_setting(self.view, "panel_completions", [])
+
+    @completions.setter
+    def completions(self, value: List[CopilotPayloadPanelSolution]) -> None:
+        set_copilot_view_setting(self.view, "panel_completions", value)
+
+    # -------------- #
+    # normal methods #
+    # -------------- #
 
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
         """The chosen `completion`."""
@@ -321,14 +362,13 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-        view_id = int(remove_prefix(get_copilot_view_setting(self.view, "panel_id", -1), "copilot://"))
         completions = self._synthesize(self.completion_manager.completions)
         return self.COMPLETION_TEMPLATE.format(
             index=len(self.completion_manager.completions),
-            total_solutions=get_copilot_view_setting(self.view, "panel_completion_target_count", 0),
+            total_solutions=self.completion_manager.completion_target_count,
             sections="\n\n<hr>\n".join(
                 self.COMPLETION_SECTION_TEMPLATE.format(
-                    header_items=" &nbsp;".join(self.completion_header_items(completion, view_id, index)),
+                    header_items=" &nbsp;".join(self.completion_header_items(completion, self.view.id(), index)),
                     score=completion["score"],
                     lang=basescope2languageid(syntax.scope),
                     code=self._prepare_popup_code_display_text(completion["displayText"]),
@@ -346,7 +386,7 @@ class _PanelCompletion:
                     {"view_id": view_id, "completion_index": index},
                 )
             ),
-            "(Mean Probability: {})".format(completion["score"]),
+            "Mean Probability: {}".format(completion["score"]),
         ]
 
     def open(self) -> None:
@@ -360,11 +400,11 @@ class _PanelCompletion:
             wrapper_class=self.CSS_CLASS_NAME,
         )
 
-        set_copilot_view_setting(self.view, "panel_sheet_id", sheet.id())
+        self.completion_manager.sheet_id = sheet.id()
 
     def update(self) -> None:
         # TODO: show this side-by-side?
-        sheet_id = get_copilot_view_setting(self.view, "panel_sheet_id")
+        sheet_id = self.completion_manager.sheet_id
         if not sheet_id:
             return
 
@@ -387,7 +427,7 @@ class _PanelCompletion:
 
     def close(self) -> None:
         # TODO: show this side-by-side?
-        sheet_id = get_copilot_view_setting(self.view, "panel_sheet_id")
+        sheet_id = self.completion_manager.sheet_id
         if not sheet_id:
             return
 
