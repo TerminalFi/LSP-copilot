@@ -138,8 +138,8 @@ class CopilotPlugin(NpmClientHandler):
 
     @notification_handler(NTFY_PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
-        panel_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
-        target_view = first(all_st_views(), lambda view: view.id() == panel_id)
+        view_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
+        target_view = first(all_st_views(), lambda view: view.id() == view_id)
         if not target_view:
             return
 
@@ -152,8 +152,8 @@ class CopilotPlugin(NpmClientHandler):
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
-        panel_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
-        target_view = first(all_st_views(), lambda view: view.id() == panel_id)
+        view_id = int(remove_prefix(payload.get("panelId"), "copilot://"))
+        target_view = first(all_st_views(), lambda view: view.id() == view_id)
         if not target_view:
             return
 
