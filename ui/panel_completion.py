@@ -241,7 +241,7 @@ class _PanelCompletion:
         target_sheet.close()
         if self.completion_manager.original_layout:
             window.set_layout(self.completion_manager.original_layout)
-            erase_copilot_view_setting(self.view, 'original_layout')
+            erase_copilot_view_setting(self.view, "original_layout")
 
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:
@@ -276,11 +276,11 @@ class _PanelCompletion:
     def _open_in_side_by_side(self, window: sublime.Window) -> None:
         self.completion_manager.original_layout = window.layout()
         window.set_layout(
-             {
-                 "cols": [0.0, 0.5, 1.0],
-                 "rows": [0.0, 1.0],
-                 "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
-             }
+            {
+                "cols": [0.0, 0.5, 1.0],
+                "rows": [0.0, 1.0],
+                "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
+            }
         )
         window.focus_group(1)
         sheet = mdpopups.new_html_sheet(

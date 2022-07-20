@@ -234,7 +234,9 @@ class _PopupCompletion:
                     completions_cnt=completions_cnt,
                 )
             )
-        header_items.append('<a class="panel" href="subl:copilot_get_panel_completions" title="Open Panel Completions">☰</a>')
+        header_items.append(
+            '<a class="panel" href="subl:copilot_get_panel_completions" title="Open Panel Completions">☰</a>'
+        )
         return header_items
 
     @property
