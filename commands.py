@@ -86,9 +86,9 @@ class CopilotWindowCommand(LspWindowCommand, metaclass=ABCMeta):
 
     def is_enabled(self) -> bool:
         session =  self.session()
-        if session:
-            return CopilotPlugin.get_has_signed_in() or get_setting(session, "debug", False)
-        return CopilotPlugin.get_has_signed_in()
+        if not session:
+            return False
+        return CopilotPlugin.get_has_signed_in() or get_setting(session, "debug", False)
 
 
 class CopilotGetVersionCommand(CopilotTextCommand):
