@@ -41,6 +41,10 @@ from .utils import (
     status_message,
 )
 
+REQUIRE_NOTHING = 0
+REQUIRE_SIGN_IN = 1 << 0
+REQUIRE_NOT_SIGN_IN = 1 << 1
+
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     def decorator(func: T_Callable) -> T_Callable:
@@ -61,9 +65,23 @@ def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_C
     return decorator
 
 
-class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
+class CopilotCommand(metaclass=ABCMeta):
     session_name = PACKAGE_NAME
+    requirement = REQUIRE_SIGN_IN
 
+    def is_meet_requirement(self, session: Session) -> bool:
+        if get_setting(session, "debug", False):
+            return True
+
+        has_signed_in = CopilotPlugin.get_has_signed_in()
+        if ((self.requirement & REQUIRE_SIGN_IN) and not has_signed_in) or (
+            (self.requirement & REQUIRE_NOT_SIGN_IN) and has_signed_in
+        ):
+            return False
+        return True
+
+
+class CopilotTextCommand(CopilotCommand, LspTextCommand, metaclass=ABCMeta):
     def want_event(self) -> bool:
         return False
 
@@ -81,18 +99,22 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
             lambda _: None,
         )
 
+    @_provide_session(failed_return=False)
+    def is_enabled(self, session: Session) -> bool:
+        return self.is_meet_requirement(session)
 
-class CopilotWindowCommand(LspWindowCommand, metaclass=ABCMeta):
-    session_name = PACKAGE_NAME
 
+class CopilotWindowCommand(CopilotCommand, LspWindowCommand, metaclass=ABCMeta):
     def is_enabled(self) -> bool:
         session = self.session()
         if not session:
             return False
-        return CopilotPlugin.get_has_signed_in() or get_setting(session, "debug", False)
+        return self.is_meet_requirement(session)
 
 
 class CopilotGetVersionCommand(CopilotTextCommand):
+    requirement = REQUIRE_NOTHING
+
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
         session.send_request(
@@ -222,6 +244,8 @@ class CopilotNextCompletionCommand(CopilotTextCommand):
 
 
 class CopilotCheckStatusCommand(CopilotTextCommand):
+    requirement = REQUIRE_NOTHING
+
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
         session.send_request(Request(REQ_CHECK_STATUS, {}), self._on_result_check_status)
@@ -236,6 +260,8 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
 
 class CopilotSignInCommand(CopilotTextCommand):
+    requirement = REQUIRE_NOT_SIGN_IN
+
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
         session.send_request(
@@ -273,10 +299,6 @@ class CopilotSignInCommand(CopilotTextCommand):
         if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
             message_dialog('Sign in OK with user "{}".'.format(payload["user"]))
-
-    @_provide_session(failed_return=False)
-    def is_enabled(self, session: Session) -> bool:
-        return not CopilotPlugin.get_has_signed_in() or get_setting(session, "debug", False)
 
 
 class CopilotSignOutCommand(CopilotTextCommand):
