@@ -9,6 +9,7 @@ from LSP.plugin.core.typing import Iterable, List, Optional
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
     all_views,
+    erase_copilot_view_setting,
     first,
     get_copilot_view_setting,
     reformat,
@@ -39,6 +40,15 @@ class ViewPanelCompletionManager:
     @sheet_id.setter
     def sheet_id(self, value: int) -> None:
         set_copilot_view_setting(self.view, "panel_sheet_id", value)
+
+    @property
+    def original_layout(self):
+        """The Original window layout prior to panel presentation."""
+        return get_copilot_view_setting(self.view, "original_layout", {})
+
+    @original_layout.setter
+    def original_layout(self, value) -> None:
+        set_copilot_view_setting(self.view, "original_layout", value)
 
     @property
     def completion_target_count(self) -> int:
@@ -185,25 +195,11 @@ class _PanelCompletion:
             # error message
             return
 
-        # Dumb method. Doesn't consider the users layout prior to the completion panel
-        window.set_layout(
-            {
-                "cols": [0.0, 0.5, 1.0],
-                "rows": [0.0, 1.0],
-                "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
-            }
-        )
-        window.focus_group(1)
-        sheet = mdpopups.new_html_sheet(
-            window=window,
-            name="Panel Completions",
-            contents=self.completion_content,
-            md=True,
-            css=self.CSS,
-            wrapper_class=self.CSS_CLASS_NAME,
-        )
-
-        self.completion_manager.sheet_id = sheet.id()
+        num_of_groups = window.num_groups()
+        if window.active_group() < num_of_groups - 1:
+            self._open_in_group(window, window.active_group() + 1)
+        else:
+            self._open_in_side_by_side(window)
 
     def update(self) -> None:
         # TODO: show this side-by-side?
@@ -243,14 +239,9 @@ class _PanelCompletion:
             return
 
         target_sheet.close()
-        # Dumb method. Doesn't consider the users layout prior to the completion panel
-        window.set_layout(
-            {
-                "cells": [[0, 0, 1, 1]],
-                "cols": [0.0, 1.0],
-                "rows": [0.0, 1.0],
-            }
-        )
+        if self.completion_manager.original_layout:
+            window.set_layout(self.completion_manager.original_layout)
+            erase_copilot_view_setting(self.view, 'original_layout')
 
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:
@@ -269,3 +260,35 @@ class _PanelCompletion:
     @staticmethod
     def _synthesize(completions: Iterable[CopilotPayloadPanelSolution]) -> List[CopilotPayloadPanelSolution]:
         return sorted(unique(completions, itemgetter("completionText")), key=itemgetter("score"), reverse=True)
+
+    def _open_in_group(self, window: sublime.Window, group_id: int) -> None:
+        window.focus_group(group_id)
+        sheet = mdpopups.new_html_sheet(
+            window=window,
+            name="Panel Completions",
+            contents=self.completion_content,
+            md=True,
+            css=self.CSS,
+            wrapper_class=self.CSS_CLASS_NAME,
+        )
+        self.completion_manager.sheet_id = sheet.id()
+
+    def _open_in_side_by_side(self, window: sublime.Window) -> None:
+        self.completion_manager.original_layout = window.layout()
+        window.set_layout(
+             {
+                 "cols": [0.0, 0.5, 1.0],
+                 "rows": [0.0, 1.0],
+                 "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
+             }
+        )
+        window.focus_group(1)
+        sheet = mdpopups.new_html_sheet(
+            window=window,
+            name="Panel Completions",
+            contents=self.completion_content,
+            md=True,
+            css=self.CSS,
+            wrapper_class=self.CSS_CLASS_NAME,
+        )
+        self.completion_manager.sheet_id = sheet.id()
