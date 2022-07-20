@@ -6,7 +6,7 @@ Uses [Copilot][] Distribution which uses OpenAI Codex to suggest code and entire
 
 ### Prerequisites
 
-* An active subscription is required to Github Copilot.
+* An active subscription is required to use Github Copilot.
 
 ### Installation
 
