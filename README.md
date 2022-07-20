@@ -10,8 +10,14 @@ Uses [Copilot][] Distribution which uses OpenAI Codex to suggest code and entire
 
 ### Installation
 
-* Install [LSP][] and `LSP-copilot` from Package Control.
-* Restart Sublime.
+* Install [LSP][] from Package Control.
+* Install LSP-copilot from git
+    * Go to folder Packages:
+        * Windows: `%APPDATA%\Sublime Text\Packages`
+        * OS X: `~/Library/Application\ Support/Sublime\ Text/Packages`
+        * Linux: `~/.config/sublime-text/Packages/`
+    * Run: `git clone git@github.com:TheSecEng/LSP-copilot.git`
+* Restart Sublime
 
 ### Setup
 
