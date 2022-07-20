@@ -137,9 +137,7 @@ class CopilotPlugin(NpmClientHandler):
         preprocess_panel_completions(view, [payload])
 
         completion_manager = ViewPanelCompletionManager(view)
-        completions = completion_manager.completions
-        completions.append(payload)
-        completion_manager.completions = completions
+        completion_manager.append_completion(payload)
         completion_manager.update()
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)

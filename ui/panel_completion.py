@@ -81,6 +81,11 @@ class ViewPanelCompletionManager:
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
         return next(iter(self.completions[index : index + 1]), None)
 
+    def append_completion(self, completion: CopilotPayloadPanelSolution) -> None:
+        completions = self.completions
+        completions.append(completion)
+        self.completions = completions
+
     @staticmethod
     def find_view_by_panel_id(panel_id: str) -> Optional[sublime.View]:
         view_id = int(remove_prefix(panel_id, "copilot://"))
