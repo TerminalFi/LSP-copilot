@@ -150,7 +150,8 @@ def unique(items: Iterable[T], key: Optional[Callable[[T], Any]] = None) -> Gene
 
 
 def _generate_completion_region(
-    view: sublime.View, completion: Union[CopilotPayloadCompletion, CopilotPayloadPanelSolution]
+    view: sublime.View,
+    completion: Union[CopilotPayloadCompletion, CopilotPayloadPanelSolution],
 ) -> None:
     completion["region"] = (
         view.text_point(
