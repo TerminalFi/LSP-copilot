@@ -65,8 +65,12 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     return value
 
 
-def message_dialog(msg: str) -> None:
-    sublime.message_dialog("[{}] {}".format(PACKAGE_NAME, msg))
+def message_dialog(msg: str, *, console: bool = False) -> None:
+    full_msg = "[{}] {}".format(PACKAGE_NAME, msg)
+    sublime.message_dialog(full_msg)
+
+    if console:
+        print(full_msg)
 
 
 def ok_cancel_dialog(msg: str) -> bool:
@@ -126,9 +130,13 @@ def remove_suffix(s: str, suffix: str) -> str:
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
-def status_message(msg: str, *, icon: Optional[str] = "✈") -> None:
+def status_message(msg: str, *, icon: Optional[str] = "✈", console: bool = False) -> None:
     prefix = "{} ".format(icon) if icon else ""
-    sublime.status_message("{}Copilot {}".format(prefix, msg))
+    full_msg = "{}Copilot {}".format(prefix, msg)
+    sublime.status_message(full_msg)
+
+    if console:
+        print(full_msg)
 
 
 def unique(items: Iterable[T], key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
