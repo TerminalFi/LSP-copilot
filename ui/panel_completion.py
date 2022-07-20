@@ -1,5 +1,6 @@
 import textwrap
 from operator import itemgetter
+from constants import PLAIN_TEXT_SYNTAX
 
 import mdpopups
 import sublime
@@ -165,7 +166,7 @@ class _PanelCompletion:
 
     @property
     def completion_content(self) -> str:
-        syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
+        syntax = self.view.syntax() or PLAIN_TEXT_SYNTAX
         completions = self._synthesize(self.completion_manager.completions)
         return self.COMPLETION_TEMPLATE.format(
             index=len(self.completion_manager.completions),

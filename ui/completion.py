@@ -1,5 +1,6 @@
 import textwrap
 from functools import partial
+from constants import PLAIN_TEXT_SYNTAX
 
 import mdpopups
 import sublime
@@ -209,7 +210,7 @@ class _PopupCompletion:
 
     @property
     def popup_content(self) -> str:
-        syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
+        syntax = self.view.syntax() or PLAIN_TEXT_SYNTAX
         return self.COMPLETION_TEMPLATE.format(
             header_items=" &nbsp;".join(self.popup_header_items),
             lang=basescope2languageid(syntax.scope),

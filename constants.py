@@ -1,5 +1,9 @@
+import sublime
+
 PACKAGE_NAME = __package__.partition(".")[0]
 PACKAGE_VERSION = "0.0.1"
+
+PLAIN_TEXT_SYNTAX = sublime.find_syntax_by_name("Plain Text")[0]
 
 COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 
