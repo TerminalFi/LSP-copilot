@@ -1,12 +1,12 @@
 import textwrap
 from operator import itemgetter
-from constants import PLAIN_TEXT_SYNTAX
 
 import mdpopups
 import sublime
 from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import Iterable, List, Optional
 
+from ..constants import PLAIN_TEXT_SYNTAX
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
     all_views,

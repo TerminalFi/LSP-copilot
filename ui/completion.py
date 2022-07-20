@@ -1,12 +1,12 @@
 import textwrap
 from functools import partial
-from constants import PLAIN_TEXT_SYNTAX
 
 import mdpopups
 import sublime
 from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import List, Optional
 
+from ..constants import PLAIN_TEXT_SYNTAX
 from ..types import CopilotPayloadCompletion
 from ..utils import clamp, get_copilot_view_setting, reformat, set_copilot_view_setting
 

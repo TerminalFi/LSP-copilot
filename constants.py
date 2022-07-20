@@ -3,7 +3,7 @@ import sublime
 PACKAGE_NAME = __package__.partition(".")[0]
 PACKAGE_VERSION = "0.0.1"
 
-PLAIN_TEXT_SYNTAX = sublime.find_syntax_by_name("Plain Text")[0]
+PLAIN_TEXT_SYNTAX = sublime.Syntax("Packages/Text/Plain text.tmLanguage", "Plain Text", False, "text.plain")
 
 COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 
