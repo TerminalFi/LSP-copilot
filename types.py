@@ -1,12 +1,4 @@
-from LSP.plugin.core.typing import (
-    Any,
-    Callable,
-    List,
-    Literal,
-    Tuple,
-    TypedDict,
-    TypeVar,
-)
+from LSP.plugin.core.typing import Any, Callable, List, Literal, Tuple, TypedDict, TypeVar
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 

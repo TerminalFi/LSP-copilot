@@ -184,13 +184,15 @@ class _PanelCompletion:
         if not window:
             # error message
             return
-            
+
         # Dumb method. Doesn't consider the users layout prior to the completion panel
-        window.set_layout({
-                    'cols': [0.0, 0.5, 1.0],
-                    'rows': [0.0, 1.0],
-                    'cells': [[0, 0, 1, 1], [1, 0, 2, 1]]
-                })
+        window.set_layout(
+            {
+                "cols": [0.0, 0.5, 1.0],
+                "rows": [0.0, 1.0],
+                "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
+            }
+        )
         window.focus_group(1)
         sheet = mdpopups.new_html_sheet(
             window=window,
@@ -242,7 +244,13 @@ class _PanelCompletion:
 
         target_sheet.close()
         # Dumb method. Doesn't consider the users layout prior to the completion panel
-        window.set_layout({"cells": [[0, 0, 1, 1]], "cols": [0.0, 1.0], "rows": [0.0, 1.0]})
+        window.set_layout(
+            {
+                "cells": [[0, 0, 1, 1]],
+                "cols": [0.0, 1.0],
+                "rows": [0.0, 1.0],
+            }
+        )
 
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:
