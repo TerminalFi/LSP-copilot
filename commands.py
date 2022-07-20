@@ -82,6 +82,8 @@ class CopilotTextCommand(LspTextCommand, metaclass=ABCMeta):
 
 
 class CopilotWindowCommand(LspWindowCommand, metaclass=ABCMeta):
+    session_name = PACKAGE_NAME
+
     def is_enabled(self) -> bool:
         session =  self.session()
         if session:
