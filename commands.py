@@ -65,11 +65,11 @@ def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_C
     return decorator
 
 
-class CopilotCommand(metaclass=ABCMeta):
+class CopilotCommandBase(metaclass=ABCMeta):
     session_name = PACKAGE_NAME
     requirement = REQUIRE_SIGN_IN
 
-    def is_meet_requirement(self, session: Session) -> bool:
+    def _can_meet_requirement(self, session: Session) -> bool:
         if get_setting(session, "debug", False):
             return True
 
@@ -81,7 +81,7 @@ class CopilotCommand(metaclass=ABCMeta):
         return True
 
 
-class CopilotTextCommand(CopilotCommand, LspTextCommand, metaclass=ABCMeta):
+class CopilotTextCommand(CopilotCommandBase, LspTextCommand, metaclass=ABCMeta):
     def want_event(self) -> bool:
         return False
 
@@ -101,15 +101,15 @@ class CopilotTextCommand(CopilotCommand, LspTextCommand, metaclass=ABCMeta):
 
     @_provide_session(failed_return=False)
     def is_enabled(self, session: Session) -> bool:
-        return self.is_meet_requirement(session)
+        return self._can_meet_requirement(session)
 
 
-class CopilotWindowCommand(CopilotCommand, LspWindowCommand, metaclass=ABCMeta):
+class CopilotWindowCommand(CopilotCommandBase, LspWindowCommand, metaclass=ABCMeta):
     def is_enabled(self) -> bool:
         session = self.session()
         if not session:
             return False
-        return self.is_meet_requirement(session)
+        return self._can_meet_requirement(session)
 
 
 class CopilotGetVersionCommand(CopilotTextCommand):
