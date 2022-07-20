@@ -186,6 +186,11 @@ class _PopupCompletion:
         padding-left: 8px;
         padding-right: 8px;
     }}
+
+    .{class_name} a.panel {{
+        padding-left: 8px;
+        padding-right: 8px;
+    }}
     """.format(
         class_name=CSS_CLASS_NAME
     )
@@ -215,13 +220,13 @@ class _PopupCompletion:
     def popup_header_items(self) -> List[str]:
         completions_cnt = len(self.completion_manager.completions)
         header_items = [
-            '<a class="accept" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
-            '<a class="reject" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
+            '<a class="accept" title="Accept Completion" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
+            '<a class="reject" title="Reject Completion" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
         ]
         if completions_cnt > 1:
             header_items.append(
-                '<a class="prev" href="subl:copilot_previous_completion">◀</a>'
-                + '<a class="next" href="subl:copilot_next_completion">▶</a>'
+                '<a class="prev" title="Previous Completion" href="subl:copilot_previous_completion">◀</a>'
+                + '<a class="next" title="Next Completion" href="subl:copilot_next_completion">▶</a>'
             )
             header_items.append(
                 "({completion_index_1} of {completions_cnt})".format(
@@ -229,6 +234,7 @@ class _PopupCompletion:
                     completions_cnt=completions_cnt,
                 )
             )
+        header_items.append('<a class="panel" href="subl:copilot_get_panel_completions" title="Open Panel Completions">☰</a>')
         return header_items
 
     @property
