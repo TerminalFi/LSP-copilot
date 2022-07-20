@@ -191,7 +191,7 @@ class _PanelCompletion:
                     {"view_id": view_id, "completion_index": index},
                 )
             ),
-            """<i> Mean Probability: {}</i>""".format(completion["score"]),
+            "<i> Mean Probability: {}</i>".format(completion["score"]),
         ]
 
     def open(self) -> None:
@@ -201,11 +201,11 @@ class _PanelCompletion:
             # error message
             return
 
-        num_of_groups = window.num_groups()
-        if window.active_group() < num_of_groups - 1:
-            self._open_in_group(window, window.active_group() + 1)
-        else:
+        current_group = window.active_group()
+        if current_group == window.num_groups() - 1:
             self._open_in_side_by_side(window)
+        else:
+            self._open_in_group(window, current_group + 1)
 
     def update(self) -> None:
         # TODO: show this side-by-side?
@@ -288,13 +288,4 @@ class _PanelCompletion:
                 "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
             }
         )
-        window.focus_group(1)
-        sheet = mdpopups.new_html_sheet(
-            window=window,
-            name="Panel Completions",
-            contents=self.completion_content,
-            md=True,
-            css=self.CSS,
-            wrapper_class=self.CSS_CLASS_NAME,
-        )
-        self.completion_manager.sheet_id = sheet.id()
+        self._open_in_group(window, 1)
