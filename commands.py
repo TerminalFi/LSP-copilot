@@ -36,6 +36,7 @@ from .utils import (
     first,
     get_setting,
     message_dialog,
+    ok_cancel_dialog,
     prepare_completion_request,
     status_message,
 )
@@ -203,7 +204,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload["solutionCountTarget"]
-        status_message("retrieving panel completions: {count}".format(count=count))
+        status_message("retrieving panel completions: {}".format(count))
 
         completion_manager = ViewPanelCompletionManager(self.view)
         completion_manager.completion_target_count = count
@@ -258,8 +259,8 @@ class CopilotSignInCommand(CopilotTextCommand):
             return
         sublime.set_clipboard(user_code)
         sublime.run_command("open_url", {"url": verification_uri})
-        if not sublime.ok_cancel_dialog(
-            "[LSP-Copilot] The device activation code has been copied."
+        if not ok_cancel_dialog(
+            "The device activation code has been copied."
             + " Please paste it in the popup GitHub page. Press OK when completed."
         ):
             return

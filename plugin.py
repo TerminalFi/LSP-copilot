@@ -26,11 +26,7 @@ from .types import (
     CopilotPayloadStatusNotification,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import (
-    prepare_completion_request,
-    preprocess_completions,
-    preprocess_panel_completions,
-)
+from .utils import prepare_completion_request, preprocess_completions, preprocess_panel_completions, status_message
 
 
 def plugin_loaded() -> None:
@@ -109,11 +105,11 @@ class CopilotPlugin(NpmClientHandler):
     def set_has_signed_in(cls, value: bool) -> None:
         cls._has_signed_in = value
         if value:
-            msg = "✈ Copilot has been signed in."
+            icon, msg = "✈", "has been signed in."
         else:
-            msg = "⚠ Copilot has NOT been signed in."
-        print("[{}] {}".format(PACKAGE_NAME, msg))
-        sublime.status_message(msg)
+            icon, msg = "⚠", "has NOT been signed in."
+        print("[{}] Copilot {}".format(PACKAGE_NAME, msg))
+        status_message(msg, icon=icon)
 
     @classmethod
     def plugin_from_view(cls, view: sublime.View) -> Optional["CopilotPlugin"]:

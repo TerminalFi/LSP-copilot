@@ -17,7 +17,7 @@ from LSP.plugin.core.typing import (
 )
 from LSP.plugin.core.url import filename_to_uri
 
-from .constants import COPILOT_VIEW_SETTINGS_PREFIX
+from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
 
 T = TypeVar("T")
@@ -76,7 +76,11 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
 
 
 def message_dialog(msg: str) -> None:
-    sublime.message_dialog("[LSP-copilot] {msg}".format(msg=msg))
+    sublime.message_dialog("[{}] {}".format(PACKAGE_NAME, msg))
+
+
+def ok_cancel_dialog(msg: str) -> bool:
+    return sublime.ok_cancel_dialog("[{}] {}".format(PACKAGE_NAME, msg))
 
 
 def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
@@ -132,8 +136,9 @@ def remove_suffix(s: str, suffix: str) -> str:
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
-def status_message(msg: str) -> None:
-    sublime.status_message("✈ Copilot {msg}".format(msg=msg))
+def status_message(msg: str, *, icon: Optional[str] = "✈") -> None:
+    prefix = "{} ".format(icon) if icon else ""
+    sublime.status_message("{}Copilot {}".format(prefix, msg))
 
 
 def unique(items: Iterable[T], key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
