@@ -111,7 +111,7 @@ class CopilotPlugin(NpmClientHandler):
             icon, msg = "✈", "has been signed in."
         else:
             icon, msg = "⚠", "has NOT been signed in."
-        status_message(msg, icon=icon, console=True)
+        status_message(msg, _icon=icon, _console=True)
 
     @classmethod
     def plugin_from_view(cls, view: sublime.View) -> Optional["CopilotPlugin"]:

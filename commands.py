@@ -122,7 +122,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
         )
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
-        message_dialog("Server version: {}".format(payload["version"]))
+        message_dialog("Server version: {}", payload["version"])
 
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
@@ -225,7 +225,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload["solutionCountTarget"]
-        status_message("retrieving panel completions: {}".format(count))
+        status_message("retrieving panel completions: {}", count)
 
         completion_manager = ViewPanelCompletionManager(self.view)
         completion_manager.completion_target_count = count
@@ -252,7 +252,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
         if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            message_dialog('Sign in OK with user "{}".'.format(payload["user"]))
+            message_dialog('Sign in OK with user "{}".', payload["user"])
         else:
             CopilotPlugin.set_has_signed_in(False)
             message_dialog("You haven't signed in yet.")
@@ -297,7 +297,7 @@ class CopilotSignInCommand(CopilotTextCommand):
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
         if payload["status"] == "OK":
             CopilotPlugin.set_has_signed_in(True)
-            message_dialog('Sign in OK with user "{}".'.format(payload["user"]))
+            message_dialog('Sign in OK with user "{}".', payload["user"])
 
 
 class CopilotSignOutCommand(CopilotTextCommand):

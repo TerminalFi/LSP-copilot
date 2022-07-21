@@ -82,16 +82,16 @@ def get_view_syntax(view: sublime.View) -> sublime.Syntax:
     return view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
 
 
-def message_dialog(msg: str, *, console: bool = False) -> None:
-    full_msg = "[{}] {}".format(PACKAGE_NAME, msg)
+def message_dialog(_msg: str, *args, _console: bool = False, **kwargs) -> None:
+    full_msg = "[{}] {}".format(PACKAGE_NAME, _msg.format(*args, **kwargs))
     sublime.message_dialog(full_msg)
 
-    if console:
+    if _console:
         print(full_msg)
 
 
-def ok_cancel_dialog(msg: str) -> bool:
-    return sublime.ok_cancel_dialog("[{}] {}".format(PACKAGE_NAME, msg))
+def ok_cancel_dialog(_msg: str, *args, **kwargs) -> bool:
+    return sublime.ok_cancel_dialog("[{}] {}".format(PACKAGE_NAME, _msg.format(*args, **kwargs)))
 
 
 def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
@@ -147,12 +147,12 @@ def remove_suffix(s: str, suffix: str) -> str:
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
-def status_message(msg: str, *, icon: Optional[str] = "✈", console: bool = False) -> None:
-    prefix = "{} ".format(icon) if icon else ""
-    full_msg = "{}Copilot {}".format(prefix, msg)
+def status_message(_msg: str, *args, _icon: Optional[str] = "✈", _console: bool = False, **kwargs) -> None:
+    prefix = "{} ".format(_icon) if _icon else ""
+    full_msg = "{}Copilot {}".format(prefix, _msg.format(*args, **kwargs))
     sublime.status_message(full_msg)
 
-    if console:
+    if _console:
         print(full_msg)
 
 
