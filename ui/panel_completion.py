@@ -16,7 +16,7 @@ from ..utils import (
     remove_prefix,
     set_copilot_view_setting,
     unique,
-    _mdpopups_update_html_sheet,
+    mdpopups_update_html_sheet,
 )
 
 
@@ -253,7 +253,7 @@ class _PanelCompletion:
         if not sheet:
             return
             
-        _mdpopups_update_html_sheet(
+        mdpopups_update_html_sheet(
             window=window,
             sheet=sheet,
             name="Panel Completions",
