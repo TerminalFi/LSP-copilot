@@ -6,9 +6,8 @@ import sublime
 from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import List, Optional
 
-from ..constants import PLAIN_TEXT_SYNTAX
 from ..types import CopilotPayloadCompletion
-from ..utils import clamp, get_copilot_view_setting, reformat, set_copilot_view_setting
+from ..utils import clamp, get_copilot_view_setting, get_view_syntax, reformat, set_copilot_view_setting
 
 
 class ViewCompletionManager:
@@ -214,10 +213,9 @@ class _PopupCompletion:
 
     @property
     def popup_content(self) -> str:
-        syntax = self.view.syntax() or PLAIN_TEXT_SYNTAX
         return self.COMPLETION_TEMPLATE.format(
             header_items=" &nbsp;".join(self.popup_header_items),
-            lang=basescope2languageid(syntax.scope),
+            lang=basescope2languageid(get_view_syntax(self.view).scope),
             code=self.popup_code,
         )
 

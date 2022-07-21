@@ -78,6 +78,10 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     return value
 
 
+def get_view_syntax(view: sublime.View) -> sublime.Syntax:
+    return view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
+
+
 def message_dialog(msg: str, *, console: bool = False) -> None:
     full_msg = "[{}] {}".format(PACKAGE_NAME, msg)
     sublime.message_dialog(full_msg)
