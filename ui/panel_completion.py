@@ -9,9 +9,9 @@ from LSP.plugin.core.typing import Iterable, List, Optional
 from ..constants import PLAIN_TEXT_SYNTAX
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
-    all_views,
     erase_copilot_view_setting,
-    first,
+    find_sheet_by_id,
+    find_view_by_id,
     get_copilot_view_setting,
     reformat,
     remove_prefix,
@@ -90,7 +90,7 @@ class ViewPanelCompletionManager:
     @staticmethod
     def find_view_by_panel_id(panel_id: str) -> Optional[sublime.View]:
         view_id = int(remove_prefix(panel_id, "copilot://"))
-        return first(all_views(), lambda view: view.id() == view_id)
+        return find_view_by_id(view_id)
 
     def open(self) -> None:
         """Open the completion panel."""
@@ -209,20 +209,12 @@ class _PanelCompletion:
 
     def update(self) -> None:
         # TODO: show this side-by-side?
-        sheet_id = self.completion_manager.sheet_id
-        if not sheet_id:
-            return
-
-        window = self.view.window()
-        if not window:
-            return
-
-        target_sheet = first(window.sheets(), lambda sheet: sheet.id() == sheet_id)
-        if target_sheet is None:
+        sheet = find_sheet_by_id(self.completion_manager.sheet_id)
+        if sheet is None:
             return
 
         mdpopups.update_html_sheet(
-            sheet=target_sheet,
+            sheet=sheet,
             name="Panel Completions",
             contents=self.completion_content,
             md=True,
@@ -232,19 +224,15 @@ class _PanelCompletion:
 
     def close(self) -> None:
         # TODO: show this side-by-side?
-        sheet_id = self.completion_manager.sheet_id
-        if not sheet_id:
-            return
-
         window = self.view.window()
         if not window:
             return
 
-        target_sheet = first(window.sheets(), lambda sheet: sheet.id() == sheet_id)
-        if target_sheet is None:
+        sheet = find_sheet_by_id(self.completion_manager.sheet_id)
+        if sheet is None:
             return
 
-        target_sheet.close()
+        sheet.close()
         if self.completion_manager.original_layout:
             window.set_layout(self.completion_manager.original_layout)
             erase_copilot_view_setting(self.view, "original_layout")

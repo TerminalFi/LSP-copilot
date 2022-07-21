@@ -26,7 +26,13 @@ from .types import (
     CopilotPayloadStatusNotification,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import prepare_completion_request, preprocess_completions, preprocess_panel_completions, status_message
+from .utils import (
+    all_views,
+    prepare_completion_request,
+    preprocess_completions,
+    preprocess_panel_completions,
+    status_message,
+)
 
 
 def plugin_loaded() -> None:
@@ -60,14 +66,13 @@ class CopilotPlugin(NpmClientHandler):
             self.plugin_mapping[sess.window.id()] = self
 
         # ST persists view settings after getting closed so we have to reset some status
-        for window in sublime.windows():
-            for view in window.views(include_transient=True):
-                cm = ViewCompletionManager(view)
-                cm.is_visible = False
-                cm.is_waiting = False
+        for view in all_views():
+            cm = ViewCompletionManager(view)
+            cm.is_visible = False
+            cm.is_waiting = False
 
-                pcm = ViewPanelCompletionManager(view)
-                pcm.is_waiting = False
+            pcm = ViewPanelCompletionManager(view)
+            pcm.is_waiting = False
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:

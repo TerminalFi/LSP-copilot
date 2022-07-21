@@ -19,6 +19,11 @@ def all_views(*, include_transient: bool = False) -> Generator[sublime.View, Non
         yield from window.views(include_transient=include_transient)
 
 
+def all_sheets() -> Generator[sublime.Sheet, None, None]:
+    for window in sublime.windows():
+        yield from window.sheets()
+
+
 def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T_Number] = None) -> T_Number:
     """Returns the bounded value of `val` in the range of `[min_val, max_val]`."""
     if min_val is not None and val < min_val:  # type: ignore
@@ -26,6 +31,14 @@ def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T
     if max_val is not None and val > max_val:  # type: ignore
         return max_val
     return val
+
+
+def find_sheet_by_id(id: int) -> Optional[sublime.Sheet]:
+    return first(all_sheets(), lambda sheet: sheet.id() == id)
+
+
+def find_view_by_id(id: int, *, include_transient: bool = False) -> Optional[sublime.View]:
+    return first(all_views(include_transient=include_transient), lambda view: view.id() == id)
 
 
 def first(items: Iterable[T], test: Optional[Callable[[T], bool]] = None, default: Optional[T] = None) -> Optional[T]:

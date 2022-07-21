@@ -32,8 +32,7 @@ from .types import (
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
-    all_views,
-    first,
+    find_view_by_id,
     get_setting,
     message_dialog,
     ok_cancel_dialog,
@@ -142,7 +141,7 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
 
 class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
     def run(self, view_id: int, completion_index: int) -> None:
-        view = first(all_views(), lambda view: view.id() == view_id)
+        view = find_view_by_id(view_id)
         if not view:
             return
         view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
