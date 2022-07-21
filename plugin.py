@@ -65,7 +65,9 @@ class CopilotPlugin(NpmClientHandler):
         if sess:
             self.plugin_mapping[sess.window.id()] = self
 
-        # ST persists view settings after getting closed so we have to reset some status
+        # Note that ST persists view settings after ST is closed. If the user closes ST
+        # during awaiting Copilot's response, the internal state management will be corrupted.
+        # So, we have to reset some status when started.
         for view in all_views():
             ViewCompletionManager(view).reset()
             ViewPanelCompletionManager(view).reset()
