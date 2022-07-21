@@ -31,7 +31,7 @@ On the first time use, follow the steps below:
     1. The `User Code` will be auto copied to your clipboard.
     1. Paste the `User Code` into the pop-up Github authentication page.
     1. Return to Sublime Text and press `OK` on the dialog.
-    1. LSP-copilot should start working since then.
+    1. If you see a "sign in OK" dialog, LSP-copilot should start working since then.
 
 
 [Copilot]: https://github.com/features/copilot
