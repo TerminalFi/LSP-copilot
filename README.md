@@ -1,34 +1,39 @@
 # LSP-copilot
 
-Github Copilot support for Sublime's LSP plugin.
+Github Copilot support for Sublime Text LSP plugin provided through [Copilot.vim][].
 
-Uses [Copilot][] Distribution which uses OpenAI Codex to suggest code and entire functions in real-time right from your editor.
+This plugin uses [Copilot][] distribution which uses OpenAI Codex to suggest codes
+and entire functions in real-time right from your editor.
 
-### Prerequisites
+## Prerequisites
 
-* An active subscription is required to use Github Copilot.
+* Network connection.
+* Active Github Copilot subscription.
 
-### Installation
+    Note that GitHub Copilot is free until August 22, 2022. You can start your trail on [this][Copilot] page.
 
-1. Install [LSP][] from Package Control.
-1. Install LSP-copilot from git
-    1. Go to folder Packages:
-        * Windows: `%APPDATA%\Sublime Text\Packages`
-        * OS X: `~/Library/Application\ Support/Sublime\ Text/Packages`
-        * Linux: `~/.config/sublime-text/Packages/`
-    1. Run: `git clone git@github.com:TheSecEng/LSP-copilot.git` via command line or terminal
-1. Restart Sublime
+## Installation
 
-### Setup
+Currently, LSP-copilot is not on Package Control.
 
-On initial use, follow the steps below:
+1. Install [LSP][] via Package Control.
+1. Clone LSP-copilot to your `Packages` folder.
+    1. Run `sublime.packages_path()` in Sublime Text console. It will show the path of your `Packages` folder.
+    1. Open terminal in the `Packages` folder and then run `git clone git@github.com:TheSecEng/LSP-copilot.git`
+1. Restart Sublime Text.
 
-1. Launch `Copilot: Sign In` from the `Command Pallete`
-1. Follow the prompts to Authenticate your Copilot extension
-    1. Paste `User Code` into Github's authentication flow
-    1. Return to `Sublime Text` and press `Ok` on the dialog
-1. Use `LSP-copilot`
+## Setup
+
+On the first time use, follow the steps below:
+
+1. Execute `Copilot: Sign In` from the command palette.
+1. Follow the prompts to authenticate LSP-copilot.
+    1. The `User Code` will be auto copied to your clipboard.
+    1. Paste the `User Code` into the pop-up Github authentication page.
+    1. Return to Sublime Text and press `OK` on the dialog.
+    1. LSP-copilot should start working since then.
 
 
 [Copilot]: https://github.com/features/copilot
-[LSP]: https://github.com/sublimelsp/LSP
+[Copilot.vim]: https://github.com/github/copilot.vim/tree/release/copilot/dist
+[LSP]: https://packagecontrol.io/packages/LSP
