@@ -8,7 +8,7 @@ from LSP.plugin.core.typing import Iterable, List, Optional
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
     erase_copilot_view_setting,
-    find_sheet_by_id,
+    find_sheet_by_group,
     find_view_by_id,
     get_copilot_view_setting,
     get_view_language_id,
@@ -16,6 +16,7 @@ from ..utils import (
     remove_prefix,
     set_copilot_view_setting,
     unique,
+    _mdpopups_update_html_sheet,
 )
 
 
@@ -23,6 +24,15 @@ class ViewPanelCompletionManager:
     # ------------- #
     # view settings #
     # ------------- #
+
+    @property
+    def group_id(self) -> int:
+        """The ID of the group which is used to show panel completions."""
+        return get_copilot_view_setting(self.view, "panel_group_id", -1)
+
+    @group_id.setter
+    def group_id(self, value: int) -> None:
+        set_copilot_view_setting(self.view, "panel_group_id", value)
 
     @property
     def is_waiting(self) -> bool:
@@ -111,6 +121,9 @@ class _PanelCompletion:
     CSS_CLASS_NAME = "copilot-completion-panel"
     CSS = """
     html {{
+        --copilot-close-foreground: var(--foreground);
+        --copilot-close-background: var(--background);
+        --copilot-close-border: var(--redish);
         --copilot-accept-foreground: var(--foreground);
         --copilot-accept-background: var(--background);
         --copilot-accept-border: var(--greenish);
@@ -118,6 +131,10 @@ class _PanelCompletion:
 
     .{class_name} {{
         margin: 1rem 0.5rem 0 0.5rem;
+    }}
+
+    .{class_name} .navbar {{
+        text-align: left;
     }}
 
     .{class_name} .header {{
@@ -134,6 +151,17 @@ class _PanelCompletion:
         text-decoration: none;
     }}
 
+    .{class_name} a.close {{
+        background: var(--copilot-close-background);
+        border-color: var(--copilot-close-border);
+        color: var(--copilot-close-foreground);
+        text-align: right;
+    }}
+
+    .{class_name} a.close i {{
+        color: var(--copilot-close-border);
+    }}
+
     .{class_name} a.accept {{
         background: var(--copilot-accept-background);
         border-color: var(--copilot-accept-border);
@@ -148,7 +176,9 @@ class _PanelCompletion:
     )
     COMPLETION_TEMPLATE = reformat(
         """
-        <h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4>
+        <div class="navbar"><a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a></div>
+        <br>
+        <div><h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4></div>
         <hr>
         {sections}
         """
@@ -170,6 +200,10 @@ class _PanelCompletion:
     def completion_content(self) -> str:
         completions = self._synthesize(self.completion_manager.completions)
         return self.COMPLETION_TEMPLATE.format(
+            close_panel=sublime.command_url(
+                    "copilot_close_panel_completion",
+                    {"view_id": self.view.id()},
+                ),
             index=len(self.completion_manager.completions),
             total_solutions=self.completion_manager.completion_target_count,
             sections="\n\n<hr>\n".join(
@@ -210,11 +244,17 @@ class _PanelCompletion:
 
     def update(self) -> None:
         # TODO: show this side-by-side?
-        sheet = find_sheet_by_id(self.completion_manager.sheet_id)
-        if sheet is None:
+        window = self.view.window()
+        if not window:
+            # error message
             return
 
-        mdpopups.update_html_sheet(
+        sheet = find_sheet_by_group(window, self.completion_manager.group_id)
+        if not sheet:
+            return
+            
+        _mdpopups_update_html_sheet(
+            window=window,
             sheet=sheet,
             name="Panel Completions",
             contents=self.completion_content,
@@ -229,7 +269,7 @@ class _PanelCompletion:
         if not window:
             return
 
-        sheet = find_sheet_by_id(self.completion_manager.sheet_id)
+        sheet = find_sheet_by_group(window, self.completion_manager.group_id)
         if sheet is None:
             return
 
@@ -257,6 +297,8 @@ class _PanelCompletion:
         return sorted(unique(completions, itemgetter("completionText")), key=itemgetter("score"), reverse=True)
 
     def _open_in_group(self, window: sublime.Window, group_id: int) -> None:
+        self.completion_manager.group_id = group_id
+
         window.focus_group(group_id)
         sheet = mdpopups.new_html_sheet(
             window=window,
@@ -264,6 +306,7 @@ class _PanelCompletion:
             contents=self.completion_content,
             md=True,
             css=self.CSS,
+            flags=sublime.TRANSIENT,
             wrapper_class=self.CSS_CLASS_NAME,
         )
         self.completion_manager.sheet_id = sheet.id()
@@ -278,3 +321,4 @@ class _PanelCompletion:
             }
         )
         self._open_in_group(window, 1)
+

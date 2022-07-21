@@ -163,6 +163,15 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
         completion_manager.close()
 
 
+class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
+    def run(self, view_id: int) -> None:
+        view = find_view_by_id(view_id)
+        if not view:
+            return
+        completion_manager = ViewPanelCompletionManager(view)
+        completion_manager.close()
+
+
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, edit: sublime.Edit) -> None:
