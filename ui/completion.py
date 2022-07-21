@@ -65,6 +65,10 @@ class ViewCompletionManager:
     def __init__(self, view: sublime.View) -> None:
         self.view = view
 
+    def reset(self) -> None:
+        self.is_visible = False
+        self.is_waiting = False
+
     @property
     def current_completion(self) -> Optional[CopilotPayloadCompletion]:
         """The current chosen `completion`."""

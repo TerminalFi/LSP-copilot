@@ -67,12 +67,8 @@ class CopilotPlugin(NpmClientHandler):
 
         # ST persists view settings after getting closed so we have to reset some status
         for view in all_views():
-            cm = ViewCompletionManager(view)
-            cm.is_visible = False
-            cm.is_waiting = False
-
-            pcm = ViewPanelCompletionManager(view)
-            pcm.is_waiting = False
+            ViewCompletionManager(view).reset()
+            ViewPanelCompletionManager(view).reset()
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:

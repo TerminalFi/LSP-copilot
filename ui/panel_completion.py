@@ -79,6 +79,9 @@ class ViewPanelCompletionManager:
     def __init__(self, view: sublime.View) -> None:
         self.view = view
 
+    def reset(self) -> None:
+        self.is_waiting = False
+
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
         return next(iter(self.completions[index : index + 1]), None)
 
