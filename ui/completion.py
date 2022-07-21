@@ -50,11 +50,10 @@ class ViewCompletionManager:
     @completion_index.setter
     def completion_index(self, value: int) -> None:
         """The index of the current chosen completion."""
-        do_clamp = not self.view.settings().get("auto_complete_cycle", False)
         set_copilot_view_setting(
             self.view,
             "completion_index",
-            self._tidy_completion_index(value, do_clamp=do_clamp),
+            self._tidy_completion_index(value),
         )
 
     # -------------- #
@@ -111,18 +110,16 @@ class ViewCompletionManager:
 
         _PopupCompletion(self.view).show()
 
-    def _tidy_completion_index(self, index: int, *, do_clamp: bool = True) -> int:
-        """
-        Revise `completion_index` to a valid value, or `0` if `self.completions` is empty.
-
-        :param      do_clamp:  Clamp `completion_index` if it's out-of-bounds. Otherwise, treat it as cyclic.
-        """
+    def _tidy_completion_index(self, index: int) -> int:
+        """Revise `completion_index` to a valid value, or `0` if `self.completions` is empty."""
         completions_cnt = len(self.completions)
-        if completions_cnt:
-            if do_clamp:
-                return clamp(index, 0, completions_cnt - 1)
+        if not completions_cnt:
+            return 0
+
+        # clamp if it's out-of-bounds or treat it as cyclic?
+        if self.view.settings().get("auto_complete_cycle", False):
             return index % completions_cnt
-        return 0
+        return clamp(index, 0, completions_cnt - 1)
 
 
 class _PopupCompletion:
