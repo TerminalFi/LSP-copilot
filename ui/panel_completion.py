@@ -3,7 +3,6 @@ from operator import itemgetter
 
 import mdpopups
 import sublime
-from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import Iterable, List, Optional
 
 from ..types import CopilotPayloadPanelSolution
@@ -12,7 +11,7 @@ from ..utils import (
     find_sheet_by_id,
     find_view_by_id,
     get_copilot_view_setting,
-    get_view_syntax,
+    get_view_language_id,
     reformat,
     remove_prefix,
     set_copilot_view_setting,
@@ -177,7 +176,7 @@ class _PanelCompletion:
                 self.COMPLETION_SECTION_TEMPLATE.format(
                     header_items=" &nbsp;".join(self.completion_header_items(completion, self.view.id(), index)),
                     score=completion["score"],
-                    lang=basescope2languageid(get_view_syntax(self.view).scope),
+                    lang=get_view_language_id(self.view),
                     code=self._prepare_popup_code_display_text(completion["displayText"]),
                 )
                 for index, completion in enumerate(completions)

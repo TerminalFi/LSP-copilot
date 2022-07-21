@@ -3,11 +3,10 @@ from functools import partial
 
 import mdpopups
 import sublime
-from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import List, Optional
 
 from ..types import CopilotPayloadCompletion
-from ..utils import clamp, get_copilot_view_setting, get_view_syntax, reformat, set_copilot_view_setting
+from ..utils import clamp, get_copilot_view_setting, get_view_language_id, reformat, set_copilot_view_setting
 
 
 class ViewCompletionManager:
@@ -212,7 +211,7 @@ class _PopupCompletion:
     def popup_content(self) -> str:
         return self.COMPLETION_TEMPLATE.format(
             header_items=" &nbsp;".join(self.popup_header_items),
-            lang=basescope2languageid(get_view_syntax(self.view).scope),
+            lang=get_view_language_id(self.view),
             code=self.popup_code,
         )
 

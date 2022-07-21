@@ -78,8 +78,9 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     return value
 
 
-def get_view_syntax(view: sublime.View) -> sublime.Syntax:
-    return view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
+def get_view_language_id(view: sublime.View) -> str:
+    syntax = view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
+    return basescope2languageid(syntax.scope)
 
 
 def message_dialog(_msg: str, *args, _console: bool = False, **kwargs) -> None:
@@ -95,9 +96,8 @@ def ok_cancel_dialog(_msg: str, *args, **kwargs) -> bool:
 
 
 def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
-    syntax = view.syntax()
     sel = view.sel()
-    if not (syntax and len(sel) == 1):
+    if len(sel) != 1:
         return None
 
     file_path = view.file_name() or ""
@@ -111,7 +111,7 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
             "path": file_path,
             "uri": file_path and filename_to_uri(file_path),
             "relativePath": get_project_relative_path(file_path),
-            "languageId": basescope2languageid(syntax.scope),
+            "languageId": get_view_language_id(view),
             "position": {"line": row, "character": col},
         }
     }
