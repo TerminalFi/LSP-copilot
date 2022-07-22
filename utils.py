@@ -36,7 +36,7 @@ def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T
 
 
 def find_sheet_by_group(window: sublime.Window, group_id: int) -> Optional[sublime.Sheet]:
-    return window.transient_sheet_in_group(group=group_id)
+    return window.transient_sheet_in_group(group_id)
 
 
 def find_sheet_by_id(id: int) -> Optional[sublime.Sheet]:
