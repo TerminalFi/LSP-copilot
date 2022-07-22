@@ -7,9 +7,11 @@ from LSP.plugin.core.typing import Iterable, List, Optional
 
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
+    all_views,
     erase_copilot_view_setting,
     find_sheet_by_group,
     find_view_by_id,
+    first,
     get_copilot_view_setting,
     get_view_language_id,
     reformat,
@@ -103,6 +105,10 @@ class ViewPanelCompletionManager:
     def find_view_by_panel_id(panel_id: str) -> Optional[sublime.View]:
         view_id = int(remove_prefix(panel_id, "copilot://"))
         return find_view_by_id(view_id)
+
+    @classmethod
+    def from_sheet_id(cls, sheet_id: int) -> Optional["ViewPanelCompletionManager"]:
+        return first(map(cls, all_views()), lambda self: self.sheet_id == sheet_id)
 
     def open(self) -> None:
         """Open the completion panel."""
