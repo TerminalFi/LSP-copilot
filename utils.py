@@ -189,7 +189,7 @@ def _generate_completion_region(
         ),
     )
 
-def _mdpopups_update_html_sheet(window: sublime.Window, sheet, contents, md=True, css=None, wrapper_class=None,
+def mdpopups_update_html_sheet(window: sublime.Window, sheet, contents, md=True, css=None, wrapper_class=None,
         template_vars=None, template_env_options=None, **kwargs) -> None:
     """Update an HTML sheet."""
     view = window.create_output_panel('mdpopups-dummy', unlisted=True)
