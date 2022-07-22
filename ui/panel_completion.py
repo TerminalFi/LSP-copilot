@@ -14,11 +14,11 @@ from ..utils import (
     first,
     get_copilot_view_setting,
     get_view_language_id,
+    mdpopups_update_html_sheet,
     reformat,
     remove_prefix,
     set_copilot_view_setting,
     unique,
-    mdpopups_update_html_sheet,
 )
 
 
@@ -207,9 +207,9 @@ class _PanelCompletion:
         completions = self._synthesize(self.completion_manager.completions)
         return self.COMPLETION_TEMPLATE.format(
             close_panel=sublime.command_url(
-                    "copilot_close_panel_completion",
-                    {"view_id": self.view.id()},
-                ),
+                "copilot_close_panel_completion",
+                {"view_id": self.view.id()},
+            ),
             index=len(self.completion_manager.completions),
             total_solutions=self.completion_manager.completion_target_count,
             sections="\n\n<hr>\n".join(
@@ -258,7 +258,7 @@ class _PanelCompletion:
         sheet = find_sheet_by_group(window, self.completion_manager.group_id)
         if not sheet:
             return
-            
+
         mdpopups_update_html_sheet(
             window=window,
             sheet=sheet,
@@ -327,4 +327,3 @@ class _PanelCompletion:
             }
         )
         self._open_in_group(window, 1)
-

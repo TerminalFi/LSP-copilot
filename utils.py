@@ -2,9 +2,8 @@ import os
 import textwrap
 import traceback
 
-import sublime
 import mdpopups
-
+import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import Any, Callable, Dict, Generator, Iterable, List, Optional, TypeVar, Union
@@ -12,7 +11,6 @@ from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
-
 
 T = TypeVar("T")
 T_Number = TypeVar("T_Number", bound=Union[int, float])
@@ -189,15 +187,31 @@ def _generate_completion_region(
         ),
     )
 
-def mdpopups_update_html_sheet(window: sublime.Window, sheet, contents, md=True, css=None, wrapper_class=None,
-        template_vars=None, template_env_options=None, **kwargs) -> None:
+
+def mdpopups_update_html_sheet(
+    window: sublime.Window,
+    sheet,
+    contents,
+    md=True,
+    css=None,
+    wrapper_class=None,
+    template_vars=None,
+    template_env_options=None,
+    **kwargs
+) -> None:
     """Update an HTML sheet."""
-    view = window.create_output_panel('mdpopups-dummy', unlisted=True)
+    view = window.create_output_panel("mdpopups-dummy", unlisted=True)
 
     try:
         html = mdpopups._create_html(
-            view, contents, md, css, css_type=mdpopups.SHEET, wrapper_class=wrapper_class,
-            template_vars=template_vars, template_env_options=template_env_options
+            view,
+            contents,
+            md,
+            css,
+            css_type=mdpopups.SHEET,
+            wrapper_class=wrapper_class,
+            template_vars=template_vars,
+            template_env_options=template_env_options,
         )
     except Exception:
         mdpopups._log(traceback.format_exc())
