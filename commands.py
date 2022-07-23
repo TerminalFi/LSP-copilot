@@ -148,11 +148,9 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
         if not completion:
             return
 
-        # Remove the current line and then insert full text.
-        # We don't have to care whether it's an inline completion or not.
+        # it seems that `completionText` always assume your cursor is at the end of the line
         source_line_region = self.view.line(sublime.Region(*completion["region"]))
-        self.view.erase(edit, source_line_region)
-        self.view.insert(edit, source_line_region.begin(), completion["displayText"])
+        self.view.insert(edit, source_line_region.end(), completion["completionText"])
 
         completion_manager.close()
 
