@@ -8,13 +8,12 @@ from LSP.plugin.core.typing import Iterable, List, Optional
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
     all_views,
-    erase_copilot_view_setting,
-    find_sheet_by_group,
+    find_transient_sheet_by_group,
     find_view_by_id,
     first,
     get_copilot_view_setting,
     get_view_language_id,
-    mdpopups_update_html_sheet,
+    mdpopups_update_transient_html_sheet,
     reformat,
     remove_prefix,
     set_copilot_view_setting,
@@ -38,6 +37,7 @@ class ViewPanelCompletionManager:
 
     @property
     def is_waiting(self) -> bool:
+        """Whether the panel completions synthesis has been done."""
         return get_copilot_view_setting(self.view, "is_waiting_panel_completions", False)
 
     @is_waiting.setter
@@ -55,7 +55,7 @@ class ViewPanelCompletionManager:
 
     @property
     def original_layout(self):
-        """The Original window layout prior to panel presentation."""
+        """The original window layout prior to panel presentation."""
         return get_copilot_view_setting(self.view, "original_layout", {})
 
     @original_layout.setter
@@ -64,6 +64,7 @@ class ViewPanelCompletionManager:
 
     @property
     def completion_target_count(self) -> int:
+        """How many completions are synthesized in panel completions."""
         return get_copilot_view_setting(self.view, "panel_completion_target_count", 0)
 
     @completion_target_count.setter
@@ -72,6 +73,7 @@ class ViewPanelCompletionManager:
 
     @property
     def panel_id(self) -> str:
+        """The panel ID sent to Copilot `getPanelCompletions` request."""
         return "copilot://{}".format(self.view.id())
 
     @property
@@ -94,7 +96,10 @@ class ViewPanelCompletionManager:
         self.is_waiting = False
 
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
-        return next(iter(self.completions[index : index + 1]), None)
+        try:
+            return self.completions[index]
+        except IndexError:
+            return None
 
     def append_completion(self, completion: CopilotPayloadPanelSolution) -> None:
         completions = self.completions
@@ -110,8 +115,11 @@ class ViewPanelCompletionManager:
     def from_sheet_id(cls, sheet_id: int) -> Optional["ViewPanelCompletionManager"]:
         return first(map(cls, all_views()), lambda self: self.sheet_id == sheet_id)
 
-    def open(self) -> None:
+    def open(self, *, completion_target_count: Optional[int] = None) -> None:
         """Open the completion panel."""
+        if completion_target_count is not None:
+            self.completion_target_count = completion_target_count
+
         _PanelCompletion(self.view).open()
 
     def update(self) -> None:
@@ -182,9 +190,13 @@ class _PanelCompletion:
     )
     COMPLETION_TEMPLATE = reformat(
         """
-        <div class="navbar"><a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a></div>
+        <div class="navbar">
+            <a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a>
+        </div>
         <br>
-        <div><h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4></div>
+        <div>
+            <h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4>
+        </div>
         <hr>
         {sections}
         """
@@ -206,11 +218,8 @@ class _PanelCompletion:
     def completion_content(self) -> str:
         completions = self._synthesize(self.completion_manager.completions)
         return self.COMPLETION_TEMPLATE.format(
-            close_panel=sublime.command_url(
-                "copilot_close_panel_completion",
-                {"view_id": self.view.id()},
-            ),
-            index=len(self.completion_manager.completions),
+            close_panel=sublime.command_url("copilot_close_panel_completion", {"view_id": self.view.id()}),
+            index=len(completions),
             total_solutions=self.completion_manager.completion_target_count,
             sections="\n\n<hr>\n".join(
                 self.COMPLETION_SECTION_TEMPLATE.format(
@@ -226,43 +235,38 @@ class _PanelCompletion:
     @staticmethod
     def completion_header_items(completion: CopilotPayloadPanelSolution, view_id: int, index: int) -> List[str]:
         return [
-            """<a class="accept" href='{}'><i>✓</i> Accept</a>""".format(
+            """<a class="accept" title="Accept Completion" href='{}'><i>✓</i> Accept</a>""".format(
                 sublime.command_url(
                     "copilot_accept_panel_completion_shim",
                     {"view_id": view_id, "completion_index": index},
                 )
             ),
-            "<i> Mean Probability: {}</i>".format(completion["score"]),
+            "<i>Mean Probability: {}</i>".format(completion["score"]),
         ]
 
     def open(self) -> None:
-        # TODO: show this side-by-side?
         window = self.view.window()
         if not window:
-            # error message
             return
 
-        current_group = window.active_group()
-        if current_group == window.num_groups() - 1:
+        active_group = window.active_group()
+        if active_group == window.num_groups() - 1:
             self._open_in_side_by_side(window)
         else:
-            self._open_in_group(window, current_group + 1)
+            self._open_in_group(window, active_group + 1)
 
     def update(self) -> None:
-        # TODO: show this side-by-side?
         window = self.view.window()
         if not window:
-            # error message
             return
 
-        sheet = find_sheet_by_group(window, self.completion_manager.group_id)
-        if not sheet:
+        sheet = find_transient_sheet_by_group(window, self.completion_manager.group_id)
+        if not isinstance(sheet, sublime.HtmlSheet):
             return
 
-        mdpopups_update_html_sheet(
+        mdpopups_update_transient_html_sheet(
             window=window,
             sheet=sheet,
-            name="Panel Completions",
             contents=self.completion_content,
             md=True,
             css=self.CSS,
@@ -270,19 +274,17 @@ class _PanelCompletion:
         )
 
     def close(self) -> None:
-        # TODO: show this side-by-side?
         window = self.view.window()
         if not window:
             return
 
-        sheet = find_sheet_by_group(window, self.completion_manager.group_id)
-        if sheet is None:
+        sheet = find_transient_sheet_by_group(window, self.completion_manager.group_id)
+        if not isinstance(sheet, sublime.HtmlSheet):
             return
 
         sheet.close()
         if self.completion_manager.original_layout:
             window.set_layout(self.completion_manager.original_layout)
-            erase_copilot_view_setting(self.view, "original_layout")
 
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:
@@ -300,7 +302,11 @@ class _PanelCompletion:
 
     @staticmethod
     def _synthesize(completions: Iterable[CopilotPayloadPanelSolution]) -> List[CopilotPayloadPanelSolution]:
-        return sorted(unique(completions, itemgetter("completionText")), key=itemgetter("score"), reverse=True)
+        return sorted(
+            unique(completions, key=itemgetter("completionText")),
+            key=itemgetter("score"),
+            reverse=True,
+        )
 
     def _open_in_group(self, window: sublime.Window, group_id: int) -> None:
         self.completion_manager.group_id = group_id
@@ -314,7 +320,7 @@ class _PanelCompletion:
             css=self.CSS,
             flags=sublime.TRANSIENT,
             wrapper_class=self.CSS_CLASS_NAME,
-        )
+        )  # type: sublime.HtmlSheet
         self.completion_manager.sheet_id = sheet.id()
 
     def _open_in_side_by_side(self, window: sublime.Window) -> None:

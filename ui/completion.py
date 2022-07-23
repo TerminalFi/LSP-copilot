@@ -48,7 +48,6 @@ class ViewCompletionManager:
 
     @completion_index.setter
     def completion_index(self, value: int) -> None:
-        """The index of the current chosen completion."""
         set_copilot_view_setting(
             self.view,
             "completion_index",
@@ -91,10 +90,8 @@ class ViewCompletionManager:
         completion_index: Optional[int] = None,
     ) -> None:
         """Show Copilot's completion popup."""
-        # update completions
         if completions is not None:
             self.completions = completions
-        # update completion index
         if completion_index is not None:
             self.completion_index = completion_index
 

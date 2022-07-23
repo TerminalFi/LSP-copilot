@@ -35,11 +35,10 @@ class EventListener(sublime_plugin.EventListener):
         command_name: str,
         args: Optional[Dict[str, Any]],
     ) -> Optional[Tuple[str, Optional[Dict[str, Any]]]]:
+        sheet = window.active_sheet()
+
         # if the user tries to close panel completion via Ctrl+W
-        if command_name in ("close", "close_file"):
-            sheet = window.active_sheet()
-            if not sheet:
-                return
+        if isinstance(sheet, sublime.HtmlSheet) and command_name in {"close", "close_file"}:
             completion_manager = ViewPanelCompletionManager.from_sheet_id(sheet.id())
             if completion_manager and len(completion_manager.view.buffer().views()) == 1:
                 completion_manager.close()

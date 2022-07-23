@@ -16,13 +16,27 @@ T = TypeVar("T")
 T_Number = TypeVar("T_Number", bound=Union[int, float])
 
 
-def all_views(*, include_transient: bool = False) -> Generator[sublime.View, None, None]:
-    for window in sublime.windows():
+def all_views(
+    window: Optional[sublime.Window] = None,
+    *,
+    include_transient: bool = False
+    # format delimiter
+) -> Generator[sublime.View, None, None]:
+    windows = [window] if window else sublime.windows()
+    for window in windows:
         yield from window.views(include_transient=include_transient)
 
 
-def all_sheets() -> Generator[sublime.Sheet, None, None]:
-    for window in sublime.windows():
+def all_sheets(
+    window: Optional[sublime.Window] = None,
+    *,
+    include_transient: bool = False
+    # format delimiter
+) -> Generator[sublime.Sheet, None, None]:
+    windows = [window] if window else sublime.windows()
+    for window in windows:
+        if include_transient:
+            yield from filter(None, map(window.transient_sheet_in_group, range(window.num_groups())))
         yield from window.sheets()
 
 
@@ -35,16 +49,16 @@ def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T
     return val
 
 
-def find_sheet_by_group(window: sublime.Window, group_id: int) -> Optional[sublime.Sheet]:
+def find_transient_sheet_by_group(window: sublime.Window, group_id: int) -> Optional[sublime.Sheet]:
     return window.transient_sheet_in_group(group_id)
 
 
 def find_sheet_by_id(id: int) -> Optional[sublime.Sheet]:
-    return first(all_sheets(), lambda sheet: sheet.id() == id)
+    return first(all_sheets(include_transient=True), lambda sheet: sheet.id() == id)
 
 
-def find_view_by_id(id: int, *, include_transient: bool = False) -> Optional[sublime.View]:
-    return first(all_views(include_transient=include_transient), lambda view: view.id() == id)
+def find_view_by_id(id: int) -> Optional[sublime.View]:
+    return first(all_views(include_transient=True), lambda view: view.id() == id)
 
 
 def first(items: Iterable[T], test: Optional[Callable[[T], bool]] = None, default: Optional[T] = None) -> Optional[T]:
@@ -89,16 +103,16 @@ def get_view_language_id(view: sublime.View) -> str:
     return basescope2languageid(syntax.scope)
 
 
-def message_dialog(_msg: str, *args, _console: bool = False, **kwargs) -> None:
-    full_msg = "[{}] {}".format(PACKAGE_NAME, _msg.format(*args, **kwargs))
+def message_dialog(msg_: str, *args, console_: bool = False, **kwargs) -> None:
+    full_msg = "[{}] {}".format(PACKAGE_NAME, msg_.format(*args, **kwargs))
     sublime.message_dialog(full_msg)
 
-    if _console:
+    if console_:
         print(full_msg)
 
 
-def ok_cancel_dialog(_msg: str, *args, **kwargs) -> bool:
-    return sublime.ok_cancel_dialog("[{}] {}".format(PACKAGE_NAME, _msg.format(*args, **kwargs)))
+def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
+    return sublime.ok_cancel_dialog("[{}] {}".format(PACKAGE_NAME, msg_.format(*args, **kwargs)))
 
 
 def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
@@ -153,16 +167,16 @@ def remove_suffix(s: str, suffix: str) -> str:
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
-def status_message(_msg: str, *args, _icon: Optional[str] = "✈", _console: bool = False, **kwargs) -> None:
-    prefix = "{} ".format(_icon) if _icon else ""
-    full_msg = "{}Copilot {}".format(prefix, _msg.format(*args, **kwargs))
+def status_message(msg_: str, *args, icon_: Optional[str] = "✈", console_: bool = False, **kwargs) -> None:
+    prefix = "{} ".format(icon_) if icon_ else ""
+    full_msg = "{}Copilot {}".format(prefix, msg_.format(*args, **kwargs))
     sublime.status_message(full_msg)
 
-    if _console:
+    if console_:
         print(full_msg)
 
 
-def unique(items: Iterable[T], key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
+def unique(items: Iterable[T], *, key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
     key = key or (lambda x: x)
     seen = set()
     for item in items:
@@ -188,18 +202,19 @@ def _generate_completion_region(
     )
 
 
-def mdpopups_update_html_sheet(
+def mdpopups_update_transient_html_sheet(
     window: sublime.Window,
-    sheet,
-    contents,
-    md=True,
-    css=None,
-    wrapper_class=None,
-    template_vars=None,
-    template_env_options=None,
+    sheet: sublime.HtmlSheet,
+    contents: str,
+    md: bool = True,
+    css: Optional[str] = None,
+    wrapper_class: Optional[str] = None,
+    template_vars: Optional[Any] = None,
+    template_env_options: Optional[Dict[str, Any]] = None,
     **kwargs
 ) -> None:
-    """Update an HTML sheet."""
+    """Update a transient HTML sheet."""
+    # for a transient sheet, `.window()` returns `None` so we can't just use `mdpopups.update_html_sheet`
     view = window.create_output_panel("mdpopups-dummy", unlisted=True)
 
     try:
@@ -212,7 +227,8 @@ def mdpopups_update_html_sheet(
             wrapper_class=wrapper_class,
             template_vars=template_vars,
             template_env_options=template_env_options,
-        )
+            **kwargs
+        )  # type: str
     except Exception:
         mdpopups._log(traceback.format_exc())
         html = mdpopups.IDK

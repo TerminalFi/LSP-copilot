@@ -93,10 +93,7 @@ class CopilotTextCommand(CopilotCommandBase, LspTextCommand, metaclass=ABCMeta):
         if not get_setting(session, "telemetry", False):
             return
 
-        session.send_request(
-            Request(request, payload),
-            lambda _: None,
-        )
+        session.send_request(Request(request, payload), lambda _: None)
 
     @_provide_session(failed_return=False)
     def is_enabled(self, session: Session) -> bool:
@@ -116,10 +113,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
 
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
-        session.send_request(
-            Request(REQ_GET_VERSION, {}),
-            self._on_result_get_version,
-        )
+        session.send_request(Request(REQ_GET_VERSION, {}), self._on_result_get_version)
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
         message_dialog("Server version: {}", payload["version"])
@@ -218,7 +212,7 @@ class CopilotRejectCompletionCommand(CopilotTextCommand):
 class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
-        params = prepare_completion_request(view=self.view)
+        params = prepare_completion_request(self.view)
         if not params:
             return
 
@@ -227,18 +221,13 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         completion_manager.completions = []
 
         params["panelId"] = completion_manager.panel_id
-        session.send_request(
-            Request(REQ_GET_PANEL_COMPLETIONS, params),
-            self._on_result_get_panel_completions,
-        )
+        session.send_request(Request(REQ_GET_PANEL_COMPLETIONS, params), self._on_result_get_panel_completions)
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload["solutionCountTarget"]
         status_message("retrieving panel completions: {}", count)
 
-        completion_manager = ViewPanelCompletionManager(self.view)
-        completion_manager.completion_target_count = count
-        completion_manager.open()
+        ViewPanelCompletionManager(self.view).open(completion_target_count=count)
 
 
 class CopilotPreviousCompletionCommand(CopilotTextCommand):
