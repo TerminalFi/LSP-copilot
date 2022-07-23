@@ -151,6 +151,11 @@ class _PanelCompletion:
         text-align: left;
     }}
 
+    .{class_name} .synthesis-info {{
+        display: inline-block;
+        text-size: 1.2em;
+    }}
+
     .{class_name} .header {{
         display: block;
         margin-bottom: 1rem;
@@ -169,7 +174,6 @@ class _PanelCompletion:
         background: var(--copilot-close-background);
         border-color: var(--copilot-close-border);
         color: var(--copilot-close-foreground);
-        text-align: right;
     }}
 
     .{class_name} a.close i {{
@@ -191,11 +195,8 @@ class _PanelCompletion:
     COMPLETION_TEMPLATE = reformat(
         """
         <div class="navbar">
-            <a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a>
-        </div>
-        <br>
-        <div>
-            <h4>Synthesizing {index}/{total_solutions} solutions (Duplicates hidden)</h4>
+            <a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a>&nbsp;
+            <h4 class="synthesis-info">{synthesis_text} {index} unique solutions out of {total_solutions}. {finished_text}</h4>
         </div>
         <hr>
         {sections}
@@ -219,8 +220,10 @@ class _PanelCompletion:
         completions = self._synthesize(self.completion_manager.completions)
         return self.COMPLETION_TEMPLATE.format(
             close_panel=sublime.command_url("copilot_close_panel_completion", {"view_id": self.view.id()}),
+            synthesis_text="Synthesizing" if self.completion_manager.is_waiting else "Synthesized",
             index=len(completions),
             total_solutions=self.completion_manager.completion_target_count,
+            finished_text="" if self.completion_manager.is_waiting else "(Done)",
             sections="\n\n<hr>\n".join(
                 self.COMPLETION_SECTION_TEMPLATE.format(
                     header_items=" &nbsp;".join(self.completion_header_items(completion, self.view.id(), index)),

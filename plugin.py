@@ -149,7 +149,9 @@ class CopilotPlugin(NpmClientHandler):
         if not view:
             return
 
-        ViewPanelCompletionManager(view).reset()
+        completion_manager = ViewPanelCompletionManager(view)
+        completion_manager.is_waiting = False
+        completion_manager.update()
 
     @notification_handler(NTFY_STATUS_NOTIFICATION)
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
