@@ -219,7 +219,7 @@ class _PanelCompletion:
         completions = self._synthesize(self.completion_manager.completions)
         return self.COMPLETION_TEMPLATE.format(
             close_panel=sublime.command_url("copilot_close_panel_completion", {"view_id": self.view.id()}),
-            synthesis_text="Synthesizing" if self.completion_manager.is_waiting else "Synthesized",
+            synthesis_text="Synthesizing..." if self.completion_manager.is_waiting else "Synthesized",
             index=len(completions),
             total_solutions=self.completion_manager.completion_target_count,
             finished_text="" if self.completion_manager.is_waiting else "(Done)",
