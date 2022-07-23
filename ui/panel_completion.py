@@ -129,7 +129,7 @@ class _PanelCompletion:
     html {{
         --copilot-close-foreground: var(--foreground);
         --copilot-close-background: var(--background);
-        --copilot-close-border: var(--redish);
+        --copilot-close-border: var(--foreground);
         --copilot-accept-foreground: var(--foreground);
         --copilot-accept-background: var(--background);
         --copilot-accept-border: var(--greenish);
