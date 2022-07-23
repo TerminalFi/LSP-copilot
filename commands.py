@@ -43,6 +43,7 @@ from .utils import (
 REQUIRE_NOTHING = 0
 REQUIRE_SIGN_IN = 1 << 0
 REQUIRE_NOT_SIGN_IN = 1 << 1
+REQUIRE_AUTHORIZED = 1 << 2
 
 
 def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -66,18 +67,18 @@ def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_C
 
 class CopilotCommandBase(metaclass=ABCMeta):
     session_name = PACKAGE_NAME
-    requirement = REQUIRE_SIGN_IN
+    requirement = REQUIRE_SIGN_IN | REQUIRE_AUTHORIZED
 
     def _can_meet_requirement(self, session: Session) -> bool:
         if get_setting(session, "debug", False):
             return True
 
-        has_signed_in = CopilotPlugin.get_has_signed_in()
-        if ((self.requirement & REQUIRE_SIGN_IN) and not has_signed_in) or (
-            (self.requirement & REQUIRE_NOT_SIGN_IN) and has_signed_in
-        ):
-            return False
-        return True
+        has_signed_in, is_authorized = CopilotPlugin.get_account_status()
+        return not (
+            ((self.requirement & REQUIRE_SIGN_IN) and not has_signed_in)
+            or ((self.requirement & REQUIRE_NOT_SIGN_IN) and has_signed_in)
+            or ((self.requirement & REQUIRE_AUTHORIZED) and not is_authorized)
+        )
 
 
 class CopilotTextCommand(CopilotCommandBase, LspTextCommand, metaclass=ABCMeta):
@@ -247,10 +248,13 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
         if payload["status"] == "OK":
-            CopilotPlugin.set_has_signed_in(True)
-            message_dialog('Sign in OK with user "{}".', payload["user"])
+            CopilotPlugin.set_account_status(signed_in=True, authorized=True)
+            message_dialog('Signed in and authorized with user "{}".', payload["user"])
+        elif payload["status"] == "NotAuthorized":
+            CopilotPlugin.set_account_status(signed_in=True, authorized=False)
+            message_dialog("Your GitHub account doesn't subscribe to Copilot.", is_error_=True)
         else:
-            CopilotPlugin.set_has_signed_in(False)
+            CopilotPlugin.set_account_status(signed_in=False, authorized=False)
             message_dialog("You haven't signed in yet.")
 
 
@@ -269,11 +273,10 @@ class CopilotSignInCommand(CopilotTextCommand):
         session: Session,
         payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate],
     ) -> None:
-        CopilotPlugin.set_has_signed_in(False)
         if payload["status"] == "AlreadySignedIn":
-            CopilotPlugin.set_has_signed_in(True)
             return
-        # TODO: what will happen if the user has no access to Copilot?
+        CopilotPlugin.set_account_status(signed_in=False, authorized=False, quiet=True)
+
         user_code = payload.get("userCode")
         verification_uri = payload.get("verificationUri")
         if not (user_code and verification_uri):
@@ -291,17 +294,17 @@ class CopilotSignInCommand(CopilotTextCommand):
         )
 
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
-        if payload["status"] == "OK":
-            CopilotPlugin.set_has_signed_in(True)
-            message_dialog('Sign in OK with user "{}".', payload["user"])
+        self.view.run_command("copilot_check_status")
 
 
 class CopilotSignOutCommand(CopilotTextCommand):
+    requirement = REQUIRE_SIGN_IN
+
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
         session.send_request(Request(REQ_SIGN_OUT, {}), self._on_result_sign_out)
 
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
         if payload["status"] == "NotSignedIn":
-            CopilotPlugin.set_has_signed_in(False)
+            CopilotPlugin.set_account_status(signed_in=False, authorized=False)
             message_dialog("Sign out OK. Bye!")

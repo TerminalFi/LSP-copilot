@@ -57,7 +57,10 @@ class CopilotPlugin(NpmClientHandler):
     )
 
     plugin_mapping = weakref.WeakValueDictionary()  # type: weakref.WeakValueDictionary[int, CopilotPlugin]
+
+    # account status
     _has_signed_in = False
+    _is_authorized = False
 
     def __init__(self, session: "weakref.ref[Session]") -> None:
         super().__init__(session)
@@ -74,7 +77,10 @@ class CopilotPlugin(NpmClientHandler):
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
-            self.set_has_signed_in(result["status"] == "OK")
+            self.set_account_status(
+                signed_in=result["status"] in {"NotAuthorized", "OK"},
+                authorized=result["status"] == "OK",
+            )
 
         def on_set_editor_info(result: str, failed: bool) -> None:
             pass
@@ -101,17 +107,32 @@ class CopilotPlugin(NpmClientHandler):
         return (16, 0, 0)
 
     @classmethod
-    def get_has_signed_in(cls) -> bool:
-        return cls._has_signed_in
+    def get_account_status(cls) -> Tuple[bool, bool]:
+        """Return `(signed_in, authorized)`."""
+        return (cls._has_signed_in, cls._is_authorized)
 
     @classmethod
-    def set_has_signed_in(cls, value: bool) -> None:
-        cls._has_signed_in = value
-        if value:
-            icon, msg = "✈", "has been signed in."
-        else:
-            icon, msg = "⚠", "has NOT been signed in."
-        status_message(msg, icon_=icon, console_=True)
+    def set_account_status(
+        cls,
+        *,
+        signed_in: Optional[bool] = None,
+        authorized: Optional[bool] = None,
+        quiet: bool = False
+        # format delimiter
+    ) -> None:
+        if signed_in is not None:
+            cls._has_signed_in = signed_in
+        if authorized is not None:
+            cls._is_authorized = authorized
+
+        if not quiet:
+            if not cls._has_signed_in:
+                icon, msg = "❌", "has NOT been signed in."
+            elif not cls._is_authorized:
+                icon, msg = "⚠", "has signed in but not authorized."
+            else:
+                icon, msg = "✈", "has been signed in and authorized."
+            status_message(msg, icon_=icon, console_=True)
 
     @classmethod
     def plugin_from_view(cls, view: sublime.View) -> Optional["CopilotPlugin"]:
@@ -161,9 +182,10 @@ class CopilotPlugin(NpmClientHandler):
         completion_manager = ViewCompletionManager(view)
         completion_manager.hide()
 
+        has_signed_in, is_authorized = self.get_account_status()
         session = self.weaksession()
         sel = view.sel()
-        if not (self.get_has_signed_in() and session and len(sel) == 1):
+        if not (has_signed_in and is_authorized and session and len(sel) == 1):
             return
 
         params = prepare_completion_request(view)

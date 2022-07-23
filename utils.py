@@ -103,9 +103,13 @@ def get_view_language_id(view: sublime.View) -> str:
     return basescope2languageid(syntax.scope)
 
 
-def message_dialog(msg_: str, *args, console_: bool = False, **kwargs) -> None:
+def message_dialog(msg_: str, *args, is_error_: bool = False, console_: bool = False, **kwargs) -> None:
     full_msg = "[{}] {}".format(PACKAGE_NAME, msg_.format(*args, **kwargs))
-    sublime.message_dialog(full_msg)
+
+    if is_error_:
+        sublime.error_message(full_msg)
+    else:
+        sublime.message_dialog(full_msg)
 
     if console_:
         print(full_msg)
