@@ -195,7 +195,7 @@ class _PanelCompletion:
         """
         <div class="navbar">
             <a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a>&nbsp;
-            <h4 class="synthesis-info">{synthesis_text} {index} unique solutions out of {total_solutions}. {finished_text}</h4>
+            <h4 class="synthesis-info">{synthesis_info}</h4>
         </div>
         <hr>
         {sections}
@@ -217,12 +217,18 @@ class _PanelCompletion:
     @property
     def completion_content(self) -> str:
         completions = self._synthesize(self.completion_manager.completions)
+
+        if self.completion_manager.is_waiting:
+            synthesis_info = "⌛ Synthesizing {index} unique solutions out of {total_solutions}..."
+        else:
+            synthesis_info = "Synthesized {index} unique solutions out of {total_solutions}. (Done)"
+
         return self.COMPLETION_TEMPLATE.format(
             close_panel=sublime.command_url("copilot_close_panel_completion", {"view_id": self.view.id()}),
-            synthesis_text="Synthesizing..." if self.completion_manager.is_waiting else "Synthesized",
-            index=len(completions),
-            total_solutions=self.completion_manager.completion_target_count,
-            finished_text="" if self.completion_manager.is_waiting else "(Done)",
+            synthesis_info=synthesis_info.format(
+                index=len(completions),
+                total_solutions=self.completion_manager.completion_target_count,
+            ),
             sections="\n\n<hr>\n".join(
                 self.COMPLETION_SECTION_TEMPLATE.format(
                     header_items=" &nbsp;".join(self.completion_header_items(completion, self.view.id(), index)),
