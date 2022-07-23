@@ -1,9 +1,8 @@
 import textwrap
-from operator import itemgetter
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import Iterable, List, Optional
+from LSP.plugin.core.typing import Iterable, List, Optional, Tuple
 
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
@@ -231,7 +230,7 @@ class _PanelCompletion:
                     lang=get_view_language_id(self.view),
                     code=self._prepare_popup_code_display_text(completion["displayText"]),
                 )
-                for index, completion in enumerate(completions)
+                for index, completion in completions
             ),
         )
 
@@ -304,10 +303,14 @@ class _PanelCompletion:
         return display_text
 
     @staticmethod
-    def _synthesize(completions: Iterable[CopilotPayloadPanelSolution]) -> List[CopilotPayloadPanelSolution]:
+    def _synthesize(
+        completions: Iterable[CopilotPayloadPanelSolution],
+    ) -> List[Tuple[int, CopilotPayloadPanelSolution]]:
+        """Return sorted-by-`score` completions in the form of `[(completion_index, completion), ...]`."""
         return sorted(
-            unique(completions, key=itemgetter("completionText")),
-            key=itemgetter("score"),
+            # note that we must keep completion's original index
+            unique(enumerate(completions), key=lambda pair: pair[1]["completionText"]),
+            key=lambda pair: pair[1]["score"],
             reverse=True,
         )
 
