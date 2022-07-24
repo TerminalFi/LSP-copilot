@@ -7,7 +7,6 @@ from LSP.plugin.core.typing import Iterable, List, Optional, Tuple
 from ..types import CopilotPayloadPanelSolution
 from ..utils import (
     all_views,
-    find_transient_sheet_by_group,
     find_view_by_id,
     first,
     get_copilot_view_setting,
@@ -268,7 +267,7 @@ class _PanelCompletion:
         if not window:
             return
 
-        sheet = find_transient_sheet_by_group(window, self.completion_manager.group_id)
+        sheet = window.transient_sheet_in_group(self.completion_manager.group_id)
         if not isinstance(sheet, sublime.HtmlSheet):
             return
 
@@ -286,7 +285,7 @@ class _PanelCompletion:
         if not window:
             return
 
-        sheet = find_transient_sheet_by_group(window, self.completion_manager.group_id)
+        sheet = window.transient_sheet_in_group(self.completion_manager.group_id)
         if not isinstance(sheet, sublime.HtmlSheet):
             return
 
