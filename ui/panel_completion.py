@@ -4,7 +4,7 @@ import mdpopups
 import sublime
 from LSP.plugin.core.typing import Iterable, List, Optional, Tuple
 
-from ..types import CopilotPayloadPanelSolution
+from ..types import CopilotPayloadPanelSolution, StLayout
 from ..utils import (
     all_views,
     find_view_by_id,
@@ -25,15 +25,6 @@ class ViewPanelCompletionManager:
     # ------------- #
 
     @property
-    def group_id(self) -> int:
-        """The ID of the group which is used to show panel completions."""
-        return get_copilot_view_setting(self.view, "panel_group_id", -1)
-
-    @group_id.setter
-    def group_id(self, value: int) -> None:
-        set_copilot_view_setting(self.view, "panel_group_id", value)
-
-    @property
     def is_waiting(self) -> bool:
         """Whether the panel completions synthesis has been done."""
         return get_copilot_view_setting(self.view, "is_waiting_panel_completions", False)
@@ -41,6 +32,15 @@ class ViewPanelCompletionManager:
     @is_waiting.setter
     def is_waiting(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "is_waiting_panel_completions", value)
+
+    @property
+    def group_id(self) -> int:
+        """The ID of the group which is used to show panel completions."""
+        return get_copilot_view_setting(self.view, "panel_group_id", -1)
+
+    @group_id.setter
+    def group_id(self, value: int) -> None:
+        set_copilot_view_setting(self.view, "panel_group_id", value)
 
     @property
     def sheet_id(self) -> int:
@@ -52,12 +52,12 @@ class ViewPanelCompletionManager:
         set_copilot_view_setting(self.view, "panel_sheet_id", value)
 
     @property
-    def original_layout(self):
+    def original_layout(self) -> Optional[StLayout]:
         """The original window layout prior to panel presentation."""
-        return get_copilot_view_setting(self.view, "original_layout", {})
+        return get_copilot_view_setting(self.view, "original_layout", None)
 
     @original_layout.setter
-    def original_layout(self, value) -> None:
+    def original_layout(self, value: Optional[StLayout]) -> None:
         set_copilot_view_setting(self.view, "original_layout", value)
 
     @property
@@ -70,11 +70,6 @@ class ViewPanelCompletionManager:
         set_copilot_view_setting(self.view, "panel_completion_target_count", value)
 
     @property
-    def panel_id(self) -> str:
-        """The panel ID sent to Copilot `getPanelCompletions` request."""
-        return "copilot://{}".format(self.view.id())
-
-    @property
     def completions(self) -> List[CopilotPayloadPanelSolution]:
         """All `completions` in the view. Note that this is a copy."""
         return get_copilot_view_setting(self.view, "panel_completions", [])
@@ -82,6 +77,11 @@ class ViewPanelCompletionManager:
     @completions.setter
     def completions(self, value: List[CopilotPayloadPanelSolution]) -> None:
         set_copilot_view_setting(self.view, "panel_completions", value)
+
+    @property
+    def panel_id(self) -> str:
+        """The panel ID sent to Copilot `getPanelCompletions` request."""
+        return "copilot://{}".format(self.view.id())
 
     # -------------- #
     # normal methods #
@@ -292,6 +292,7 @@ class _PanelCompletion:
         sheet.close()
         if self.completion_manager.original_layout:
             window.set_layout(self.completion_manager.original_layout)
+            self.completion_manager.original_layout = None
 
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:

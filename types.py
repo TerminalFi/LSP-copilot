@@ -9,6 +9,16 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 StPoint = int
 StRegion = Tuple[StPoint, StPoint]
 
+StLayout = TypedDict(
+    "StLayout",
+    {
+        "cols": List[float],
+        "rows": List[float],
+        "cells": List[List[int]],
+    },
+    total=True,
+)
+
 # --------------- #
 # Copilot payload #
 # --------------- #
