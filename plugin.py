@@ -3,13 +3,14 @@ import os
 import weakref
 
 import sublime
-from LSP.plugin import Request, Session, filename_to_uri
-from LSP.plugin.core.types import basescope2languageid
+from LSP.plugin import Request, Session
 from LSP.plugin.core.typing import Optional, Tuple
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
     NTFY_LOG_MESSAGE,
+    NTFY_PANEL_SOLUTION,
+    NTFY_PANEL_SOLUTION_DONE,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
     PACKAGE_VERSION,
@@ -20,15 +21,17 @@ from .constants import (
 from .types import (
     CopilotPayloadCompletions,
     CopilotPayloadLogMessage,
+    CopilotPayloadPanelSolution,
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
 )
-from .ui import ViewCompletionManager
+from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
-    erase_copilot_view_setting,
-    get_project_relative_path,
+    all_views,
+    prepare_completion_request,
     preprocess_completions,
-    set_copilot_view_setting,
+    preprocess_panel_completions,
+    status_message,
 )
 
 
@@ -54,7 +57,10 @@ class CopilotPlugin(NpmClientHandler):
     )
 
     plugin_mapping = weakref.WeakValueDictionary()  # type: weakref.WeakValueDictionary[int, CopilotPlugin]
+
+    # account status
     _has_signed_in = False
+    _is_authorized = False
 
     def __init__(self, session: "weakref.ref[Session]") -> None:
         super().__init__(session)
@@ -62,15 +68,19 @@ class CopilotPlugin(NpmClientHandler):
         if sess:
             self.plugin_mapping[sess.window.id()] = self
 
-        # ST persists view setting after getting closed so we have to reset some status
-        for window in sublime.windows():
-            for view in window.views(include_transient=True):
-                erase_copilot_view_setting(view, "is_visible")
-                erase_copilot_view_setting(view, "is_waiting")
+        # Note that ST persists view settings after ST is closed. If the user closes ST
+        # during awaiting Copilot's response, the internal state management will be corrupted.
+        # So, we have to reset some status when started.
+        for view in all_views():
+            ViewCompletionManager(view).reset()
+            ViewPanelCompletionManager(view).reset()
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
-            self.set_has_signed_in(result.get("status") == "OK")
+            self.set_account_status(
+                signed_in=result["status"] in {"NotAuthorized", "OK"},
+                authorized=result["status"] == "OK",
+            )
 
         def on_set_editor_info(result: str, failed: bool) -> None:
             pass
@@ -97,18 +107,32 @@ class CopilotPlugin(NpmClientHandler):
         return (16, 0, 0)
 
     @classmethod
-    def get_has_signed_in(cls) -> bool:
-        return cls._has_signed_in
+    def get_account_status(cls) -> Tuple[bool, bool]:
+        """Return `(signed_in, authorized)`."""
+        return (cls._has_signed_in, cls._is_authorized)
 
     @classmethod
-    def set_has_signed_in(cls, value: bool) -> None:
-        cls._has_signed_in = value
-        if value:
-            msg = "✈ Copilot has been signed in."
-        else:
-            msg = "⚠ Copilot has NOT been signed in."
-        print("[{}] {}".format(PACKAGE_NAME, msg))
-        sublime.status_message(msg)
+    def set_account_status(
+        cls,
+        *,
+        signed_in: Optional[bool] = None,
+        authorized: Optional[bool] = None,
+        quiet: bool = False
+        # format delimiter
+    ) -> None:
+        if signed_in is not None:
+            cls._has_signed_in = signed_in
+        if authorized is not None:
+            cls._is_authorized = authorized
+
+        if not quiet:
+            if not cls._has_signed_in:
+                icon, msg = "❌", "has NOT been signed in."
+            elif not cls._is_authorized:
+                icon, msg = "⚠", "has signed in but not authorized."
+            else:
+                icon, msg = "✈", "has been signed in and authorized."
+            status_message(msg, icon_=icon, console_=True)
 
     @classmethod
     def plugin_from_view(cls, view: sublime.View) -> Optional["CopilotPlugin"]:
@@ -128,40 +152,50 @@ class CopilotPlugin(NpmClientHandler):
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
         pass
 
+    @notification_handler(NTFY_PANEL_SOLUTION)
+    def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
+        view = ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])
+        if not view:
+            return
+
+        preprocess_panel_completions(view, [payload])
+
+        completion_manager = ViewPanelCompletionManager(view)
+        completion_manager.append_completion(payload)
+        completion_manager.update()
+
+    @notification_handler(NTFY_PANEL_SOLUTION_DONE)
+    def _handle_panel_solution_done_notification(self, payload) -> None:
+        view = ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])
+        if not view:
+            return
+
+        completion_manager = ViewPanelCompletionManager(view)
+        completion_manager.is_waiting = False
+        completion_manager.update()
+
     @notification_handler(NTFY_STATUS_NOTIFICATION)
-    def _handle_status_notification(self, payload: CopilotPayloadStatusNotification) -> None:
+    def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
         pass
 
     def request_get_completions(self, view: sublime.View) -> None:
-        ViewCompletionManager(view).hide()
+        completion_manager = ViewCompletionManager(view)
+        completion_manager.hide()
 
+        has_signed_in, is_authorized = self.get_account_status()
         session = self.weaksession()
-        syntax = view.syntax()
         sel = view.sel()
-        if not (self.get_has_signed_in() and session and syntax and len(sel) == 1):
+        if not (has_signed_in and is_authorized and session and len(sel) == 1):
             return
 
-        cursor = sel[0]
-        file_path = view.file_name() or ""
-        row, col = view.rowcol(cursor.begin())
-        params = {
-            "doc": {
-                "source": view.substr(sublime.Region(0, view.size())),
-                "tabSize": view.settings().get("tab_size", 4),
-                "indentSize": 1,  # there is no such concept in ST
-                "insertSpaces": view.settings().get("translate_tabs_to_spaces", False),
-                "path": file_path,
-                "uri": file_path and filename_to_uri(file_path),
-                "relativePath": get_project_relative_path(file_path),
-                "languageId": basescope2languageid(syntax.scope),
-                "position": {"line": row, "character": col},
-            }
-        }
+        params = prepare_completion_request(view)
+        if not params:
+            return
 
-        set_copilot_view_setting(view, "is_waiting", True)
+        completion_manager.is_waiting = True
         session.send_request_async(
             Request(REQ_GET_COMPLETIONS, params),
-            functools.partial(self._on_get_completions, view, region=cursor.to_tuple()),
+            functools.partial(self._on_get_completions, view, region=sel[0].to_tuple()),
         )
 
     def _on_get_completions(
@@ -170,17 +204,17 @@ class CopilotPlugin(NpmClientHandler):
         payload: CopilotPayloadCompletions,
         region: Tuple[int, int],
     ) -> None:
-        set_copilot_view_setting(view, "is_waiting", False)
+        completion_manager = ViewCompletionManager(view)
+        completion_manager.is_waiting = False
 
         # re-request completions because the cursor position changed during awaiting Copilot's response
         if view.sel()[0].to_tuple() != region:
             self.request_get_completions(view)
             return
 
-        completions = payload.get("completions")
+        completions = payload["completions"]
         if not completions:
             return
 
         preprocess_completions(view, completions)
-
-        ViewCompletionManager(view).show(completions, 0)
+        completion_manager.show(completions, 0)

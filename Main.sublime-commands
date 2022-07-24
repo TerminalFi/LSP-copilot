@@ -4,6 +4,10 @@
         "command": "copilot_check_status"
     },
     {
+        "caption": "Copilot: Get Panel Completions",
+        "command": "copilot_get_panel_completions"
+    },
+    {
         "caption": "Copilot: Get Version",
         "command": "copilot_get_version"
     },

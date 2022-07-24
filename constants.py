@@ -10,7 +10,7 @@ COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 REQ_CHECK_STATUS = "checkStatus"  # done
 REQ_GET_COMPLETIONS = "getCompletions"  # done
 REQ_GET_COMPLETIONS_CYCLING = "getCompletionsCycling"
-REQ_GET_PANEL_COMPLETIONS = "getPanelCompletions"
+REQ_GET_PANEL_COMPLETIONS = "getPanelCompletions"  # done
 REQ_GET_VERSION = "getVersion"  # done
 REQ_NOTIFY_ACCEPTED = "notifyAccepted"  # done
 REQ_NOTIFY_REJECTED = "notifyRejected"  # done
@@ -27,3 +27,5 @@ REQ_SIGN_OUT = "signOut"  # done
 
 NTFY_LOG_MESSAGE = "LogMessage"  # done
 NTFY_STATUS_NOTIFICATION = "statusNotification"  # done
+NTFY_PANEL_SOLUTION = "PanelSolution"  # done
+NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"  # done

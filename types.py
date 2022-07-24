@@ -1,6 +1,27 @@
-from LSP.plugin.core.typing import Any, Callable, List, Literal, TypedDict, TypeVar
+from LSP.plugin.core.typing import Any, Callable, List, Literal, Tuple, TypedDict, TypeVar
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
+
+# ---------------------------- #
+# realted to Sublime Text APIs #
+# ---------------------------- #
+
+StPoint = int
+StRegion = Tuple[StPoint, StPoint]
+
+StLayout = TypedDict(
+    "StLayout",
+    {
+        "cols": List[float],
+        "rows": List[float],
+        "cells": List[List[int]],
+    },
+    total=True,
+)
+
+# --------------- #
+# Copilot payload #
+# --------------- #
 
 CopilotPayloadCompletionPosition = TypedDict(
     "CopilotPayloadCompletionPosition",
@@ -14,7 +35,7 @@ CopilotPayloadCompletionPosition = TypedDict(
 CopilotPayloadCompletionRange = TypedDict(
     "CopilotPayloadCompletionRange",
     {
-        "begin": CopilotPayloadCompletionPosition,
+        "start": CopilotPayloadCompletionPosition,
         "end": CopilotPayloadCompletionPosition,
     },
     total=True,
@@ -29,7 +50,8 @@ CopilotPayloadCompletion = TypedDict(
         "range": CopilotPayloadCompletionRange,
         "displayText": str,
         # injected for convenience
-        "positionSt": int,
+        "point": StPoint,
+        "region": StRegion,
     },
     total=True,
 )
@@ -82,7 +104,7 @@ CopilotPayloadSignInInitiate = TypedDict(
 CopilotPayloadSignInConfirm = TypedDict(
     "CopilotPayloadSignInConfirm",
     {
-        "status": Literal["AlreadySignedIn", "NotSignedIn", "OK"],
+        "status": Literal["AlreadySignedIn", "NotAuthorized", "NotSignedIn", "OK"],
         "user": str,
     },
     total=True,
@@ -112,6 +134,29 @@ CopilotPayloadStatusNotification = TypedDict(
     {
         "message": str,
         "status": Literal["InProgress", "Normal"],
+    },
+    total=True,
+)
+
+CopilotPayloadPanelSolution = TypedDict(
+    "CopilotPayloadPanelSolution",
+    {
+        "displayText": str,
+        "solutionId": str,
+        "score": int,
+        "panelId": str,
+        "completionText": str,
+        "range": CopilotPayloadCompletionRange,
+        # injected for convenience
+        "region": StRegion,
+    },
+    total=True,
+)
+
+CopilotPayloadPanelCompletionSolutionCount = TypedDict(
+    "CopilotPayloadPanelCompletionSolutionCount",
+    {
+        "solutionCountTarget": int,
     },
     total=True,
 )

@@ -3,31 +3,67 @@ from functools import partial
 
 import mdpopups
 import sublime
-from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.typing import List, Optional
 
-from .types import CopilotPayloadCompletion
-from .utils import clamp, get_copilot_view_setting, reformat, set_copilot_view_setting
+from ..types import CopilotPayloadCompletion
+from ..utils import clamp, get_copilot_view_setting, get_view_language_id, reformat, set_copilot_view_setting
 
 
 class ViewCompletionManager:
-    def __init__(self, view: sublime.View) -> None:
-        self.view = view
+    # ------------- #
+    # view settings #
+    # ------------- #
 
     @property
     def is_visible(self) -> bool:
         """Whether Copilot's completion popup is visible."""
         return get_copilot_view_setting(self.view, "is_visible", False)
 
+    @is_visible.setter
+    def is_visible(self, value: bool) -> None:
+        set_copilot_view_setting(self.view, "is_visible", value)
+
+    @property
+    def is_waiting(self) -> bool:
+        """Whether the view is waiting for Copilot's completion response."""
+        return get_copilot_view_setting(self.view, "is_waiting_completion", False)
+
+    @is_waiting.setter
+    def is_waiting(self, value: bool) -> None:
+        set_copilot_view_setting(self.view, "is_waiting_completion", value)
+
     @property
     def completions(self) -> List[CopilotPayloadCompletion]:
-        """All `completions` in the view."""
+        """All `completions` in the view. Note that this is a copy."""
         return get_copilot_view_setting(self.view, "completions", [])
+
+    @completions.setter
+    def completions(self, value: List[CopilotPayloadCompletion]) -> None:
+        set_copilot_view_setting(self.view, "completions", value)
 
     @property
     def completion_index(self) -> int:
         """The index of the current chosen completion."""
         return get_copilot_view_setting(self.view, "completion_index", 0)
+
+    @completion_index.setter
+    def completion_index(self, value: int) -> None:
+        set_copilot_view_setting(
+            self.view,
+            "completion_index",
+            self._tidy_completion_index(value),
+        )
+
+    # -------------- #
+    # normal methods #
+    # -------------- #
+
+    def __init__(self, view: sublime.View) -> None:
+        self.view = view
+
+    def reset(self) -> None:
+        self.is_visible = False
+        self.is_waiting = False
 
     @property
     def current_completion(self) -> Optional[CopilotPayloadCompletion]:
@@ -36,17 +72,11 @@ class ViewCompletionManager:
 
     def show_previous_completion(self) -> None:
         """Show the previous completion."""
-        self.show(
-            completion_index=self.completion_index - 1,
-            do_clamp=not self.view.settings().get("auto_complete_cycle", False),
-        )
+        self.show(completion_index=self.completion_index - 1)
 
     def show_next_completion(self) -> None:
         """Show the next completion."""
-        self.show(
-            completion_index=self.completion_index + 1,
-            do_clamp=not self.view.settings().get("auto_complete_cycle", False),
-        )
+        self.show(completion_index=self.completion_index + 1)
 
     def hide(self) -> None:
         """Hide Copilot's completion popup."""
@@ -58,43 +88,34 @@ class ViewCompletionManager:
         self,
         completions: Optional[List[CopilotPayloadCompletion]] = None,
         completion_index: Optional[int] = None,
-        do_clamp: bool = True,
     ) -> None:
         """Show Copilot's completion popup."""
-        # update completions
         if completions is not None:
-            set_copilot_view_setting(self.view, "completions", completions)
-        # update completion index
+            self.completions = completions
         if completion_index is not None:
-            set_copilot_view_setting(self.view, "completion_index", completion_index)
-        self._tidy_completion_index(do_clamp)
+            self.completion_index = completion_index
 
         completion = self.current_completion
         if not completion:
             return
 
         # the text after completion is the same
-        current_line = self.view.line(completion["positionSt"])
+        current_line = self.view.line(completion["point"])
         if completion["text"] == self.view.substr(current_line):
             return
 
         _PopupCompletion(self.view).show()
 
-    def _tidy_completion_index(self, do_clamp: bool = True) -> None:
-        """
-        Revise `completion_index` to a valid value, or `0` if `self.completions` is empty.
-
-        :param      do_clamp:  Clamp `completion_index` if it's out-of-bounds. Otherwise, treat it as cyclic.
-        """
+    def _tidy_completion_index(self, index: int) -> int:
+        """Revise `completion_index` to a valid value, or `0` if `self.completions` is empty."""
         completions_cnt = len(self.completions)
-        if completions_cnt:
-            if do_clamp:
-                new_index = clamp(self.completion_index, 0, completions_cnt - 1)
-            else:
-                new_index = self.completion_index % completions_cnt
-        else:
-            new_index = 0
-        set_copilot_view_setting(self.view, "completion_index", new_index)
+        if not completions_cnt:
+            return 0
+
+        # clamp if it's out-of-bounds or treat it as cyclic?
+        if self.view.settings().get("auto_complete_cycle", False):
+            return index % completions_cnt
+        return clamp(index, 0, completions_cnt - 1)
 
 
 class _PopupCompletion:
@@ -162,6 +183,11 @@ class _PopupCompletion:
         padding-left: 8px;
         padding-right: 8px;
     }}
+
+    .{class_name} a.panel {{
+        padding-left: 8px;
+        padding-right: 8px;
+    }}
     """.format(
         class_name=CSS_CLASS_NAME
     )
@@ -180,10 +206,9 @@ class _PopupCompletion:
 
     @property
     def popup_content(self) -> str:
-        syntax = self.view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
         return self.COMPLETION_TEMPLATE.format(
             header_items=" &nbsp;".join(self.popup_header_items),
-            lang=basescope2languageid(syntax.scope),
+            lang=get_view_language_id(self.view),
             code=self.popup_code,
         )
 
@@ -191,13 +216,13 @@ class _PopupCompletion:
     def popup_header_items(self) -> List[str]:
         completions_cnt = len(self.completion_manager.completions)
         header_items = [
-            '<a class="accept" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
-            '<a class="reject" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
+            '<a class="accept" title="Accept Completion" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
+            '<a class="reject" title="Reject Completion" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
         ]
         if completions_cnt > 1:
             header_items.append(
-                '<a class="prev" href="subl:copilot_previous_completion">◀</a>'
-                + '<a class="next" href="subl:copilot_next_completion">▶</a>'
+                '<a class="prev" title="Previous Completion" href="subl:copilot_previous_completion">◀</a>'
+                + '<a class="next" title="Next Completion" href="subl:copilot_next_completion">▶</a>'
             )
             header_items.append(
                 "({completion_index_1} of {completions_cnt})".format(
@@ -205,6 +230,9 @@ class _PopupCompletion:
                     completions_cnt=completions_cnt,
                 )
             )
+        header_items.append(
+            '<a class="panel" href="subl:copilot_get_panel_completions" title="Open Panel Completions">☰</a>'
+        )
         return header_items
 
     @property
@@ -214,7 +242,6 @@ class _PopupCompletion:
         return textwrap.dedent(self.completion["text"])
 
     def show(self) -> None:
-        set_copilot_view_setting(self.view, "is_visible", True)
         mdpopups.show_popup(
             view=self.view,
             content=self.popup_content,
@@ -226,6 +253,8 @@ class _PopupCompletion:
             wrapper_class=self.CSS_CLASS_NAME,
             on_hide=partial(set_copilot_view_setting, self.view, "is_visible", False),
         )
+        # It's tricky that the "on_hide" is async...
+        sublime.set_timeout_async(partial(set_copilot_view_setting, self.view, "is_visible", True))
 
     @staticmethod
     def hide(view: sublime.View) -> None:
