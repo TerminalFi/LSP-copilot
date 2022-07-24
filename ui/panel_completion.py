@@ -92,6 +92,7 @@ class ViewPanelCompletionManager:
 
     def reset(self) -> None:
         self.is_waiting = False
+        self.original_layout = None
 
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
         try:
