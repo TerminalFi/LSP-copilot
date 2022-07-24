@@ -36,15 +36,6 @@ from .utils import (
 )
 
 
-def plugin_loaded() -> None:
-    CopilotPlugin.setup()
-
-
-def plugin_unloaded() -> None:
-    CopilotPlugin.cleanup()
-    CopilotPlugin.plugin_mapping.clear()
-
-
 class CopilotPlugin(NpmClientHandler):
     package_name = PACKAGE_NAME
     server_directory = "language-server"
