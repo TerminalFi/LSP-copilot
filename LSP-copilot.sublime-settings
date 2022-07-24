@@ -16,5 +16,5 @@
 		"telemetry": false
 	},
 	// ST4 configuration
-	"selector": "source | text"
+	"selector": "source | text | embedding"
 }
