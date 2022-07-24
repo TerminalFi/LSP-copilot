@@ -36,9 +36,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             return None
 
         if key == "copilot.has_signed_in":
-            return test(CopilotPlugin.get_account_status()[0], operator, operand)
+            return test(CopilotPlugin.get_account_status().has_signed_in, operator, operand)
         if key == "copilot.is_authorized":
-            return test(CopilotPlugin.get_account_status()[1], operator, operand)
+            return test(CopilotPlugin.get_account_status().is_authorized, operator, operand)
         return None
 
 

@@ -19,6 +19,7 @@ from .constants import (
     REQ_SET_EDITOR_INFO,
 )
 from .types import (
+    AccountStatus,
     CopilotPayloadCompletions,
     CopilotPayloadLogMessage,
     CopilotPayloadPanelSolution,
@@ -107,9 +108,9 @@ class CopilotPlugin(NpmClientHandler):
         return (16, 0, 0)
 
     @classmethod
-    def get_account_status(cls) -> Tuple[bool, bool]:
-        """Return `(signed_in, authorized)`."""
-        return (cls._has_signed_in, cls._is_authorized)
+    def get_account_status(cls) -> AccountStatus:
+        """Return `(has_signed_in, is_authorized)`."""
+        return AccountStatus(cls._has_signed_in, cls._is_authorized)
 
     @classmethod
     def set_account_status(

@@ -1,6 +1,10 @@
+from collections import namedtuple
+
 from LSP.plugin.core.typing import Any, Callable, List, Literal, Tuple, TypedDict, TypeVar
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
+
+AccountStatus = namedtuple("AccountStatus", ["has_signed_in", "is_authorized"])
 
 # ---------------------------- #
 # realted to Sublime Text APIs #
