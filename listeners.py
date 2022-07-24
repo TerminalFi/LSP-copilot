@@ -27,6 +27,20 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         # close corresponding panel completion
         ViewPanelCompletionManager(self.view).close()
 
+    def on_query_context(self, key: str, operator: int, operand: Any, match_all: bool) -> Optional[bool]:
+        def test(a: Any, operator: int, b: Any) -> Optional[bool]:
+            if operator == sublime.OP_EQUAL:
+                return a == b
+            if operator == sublime.OP_NOT_EQUAL:
+                return a != b
+            return None
+
+        if key == "copilot.has_signed_in":
+            return test(CopilotPlugin.get_account_status()[0], operator, operand)
+        if key == "copilot.is_authorized":
+            return test(CopilotPlugin.get_account_status()[1], operator, operand)
+        return None
+
 
 class EventListener(sublime_plugin.EventListener):
     def on_window_command(

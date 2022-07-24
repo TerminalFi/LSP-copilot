@@ -50,7 +50,7 @@
     //     "command": "copilot_ask_completions",
     //     "context": [
     //         {
-    //             "key": "setting.lsp_active",
+    //             "key": "copilot.is_authorized",
     //         }
     //     ]
     // },
