@@ -34,6 +34,25 @@ On the first time use, follow the steps below:
     1. If you see a "sign in OK" dialog, LSP-copilot should start working since then.
 
 
+## FAQs
+
+### Pressing `Tab` commits autocompletion rather than Copilot's suggestion
+
+There is no way for a plugin to know which one is wanted. But you can define your own dedicate keybinding to commit
+Copilot's suggestion.
+
+```js
+{
+    "keys": ["YOUR_OWN_DEDICATE_KEYBINDING"],
+    "command": "copilot_accept_completion",
+    "context": [
+        {
+            "key": "setting.copilot.completion.is_visible"
+        }
+    ]
+},
+```
+
 [Copilot]: https://github.com/features/copilot
 [Copilot.vim]: https://github.com/github/copilot.vim/tree/release/copilot/dist
 [LSP]: https://packagecontrol.io/packages/LSP
