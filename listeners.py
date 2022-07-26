@@ -55,7 +55,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             return test(CopilotPlugin.get_account_status().is_authorized)
         return None
 
-    def on_post_text_command(self, command_name: str, args: dict):
+    def on_post_text_command(self, command_name: str, args: Optional[Dict[str, Any]]) -> None:
         if command_name != "auto_complete":
             return
 
