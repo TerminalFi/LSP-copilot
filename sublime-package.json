@@ -24,6 +24,11 @@
                       "description": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
                       "type": "boolean"
                     },
+                    "hook_to_auto_complete_command": {
+                      "default": true,
+                      "description": "Ask the server for completions when the auto_complete command is called.",
+                      "type": "boolean"
+                    },
                     "debug": {
                       "default": false,
                       "description": "Enables debug mode fo the LSP-copilot.",

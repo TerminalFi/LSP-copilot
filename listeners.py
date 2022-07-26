@@ -1,5 +1,9 @@
+import functools
+
 import sublime
 import sublime_plugin
+from LSP.plugin import Session
+from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
 from LSP.plugin.core.typing import Any, Dict, Optional, Tuple
 
 from .plugin import CopilotPlugin
@@ -8,17 +12,27 @@ from .utils import get_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
-    def on_modified_async(self) -> None:
+    def _get_session(self) -> Tuple[Optional[CopilotPlugin], Optional[Session]]:
         plugin = CopilotPlugin.plugin_from_view(self.view)
         if not plugin:
-            return
+            return None, None
 
         session = plugin.weaksession()
         if not session:
-            return
+            return plugin, None
 
-        if get_setting(session, "auto_ask_completions"):
-            self.view.run_command("copilot_ask_completions")
+        return plugin, session
+
+    def on_modified_async(self) -> None:
+        plugin, session = self._get_session()
+
+        if plugin and session and get_setting(session, "auto_ask_completions"):
+            debounced(
+                functools.partial(plugin.request_get_completions, self.view),
+                FEATURES_TIMEOUT,
+                lambda: not ViewCompletionManager(self.view).is_waiting,
+                async_thread=True,
+            )
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()
@@ -40,6 +54,15 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if key == "copilot.is_authorized":
             return test(CopilotPlugin.get_account_status().is_authorized)
         return None
+
+    def on_post_text_command(self, command_name: str, args: dict):
+        if command_name != "auto_complete":
+            return
+
+        _, session = self._get_session()
+
+        if session and get_setting(session, "hook_to_auto_complete_command"):
+            self.view.run_command("copilot_ask_completions")
 
 
 class EventListener(sublime_plugin.EventListener):
