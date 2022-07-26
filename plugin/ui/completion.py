@@ -1,4 +1,5 @@
 import textwrap
+from abc import ABCMeta, abstractmethod
 from functools import partial
 
 import mdpopups
@@ -83,6 +84,7 @@ class ViewCompletionManager:
         # prevent from hiding other plugin's popup
         if self.is_visible:
             _PopupCompletion.hide(self.view)
+            _PhantonCompletion.hide(self.view)
 
     def show(
         self,
@@ -105,6 +107,7 @@ class ViewCompletionManager:
             return
 
         _PopupCompletion(self.view).show()
+        _PhantonCompletion(self.view).show()
 
     def _tidy_completion_index(self, index: int) -> int:
         """Revise `completion_index` to a valid value, or `0` if `self.completions` is empty."""
@@ -118,7 +121,22 @@ class ViewCompletionManager:
         return clamp(index, 0, completions_cnt - 1)
 
 
-class _PopupCompletion:
+class BaseCompletion(metaclass=ABCMeta):
+    def __init__(self, view: sublime.View) -> None:
+        self.view = view
+        self.completion_manager = ViewCompletionManager(view)
+
+    @abstractmethod
+    def show(self) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def hide(cls, _: sublime.View) -> None:
+        pass
+
+
+class _PopupCompletion(BaseCompletion):
     CSS_CLASS_NAME = "copilot-completion-popup"
     CSS = """
     html {{
@@ -200,10 +218,6 @@ class _PopupCompletion:
         """
     )
 
-    def __init__(self, view: sublime.View) -> None:
-        self.view = view
-        self.completion_manager = ViewCompletionManager(view)
-
     @property
     def popup_content(self) -> str:
         return self.COMPLETION_TEMPLATE.format(
@@ -259,3 +273,78 @@ class _PopupCompletion:
     @staticmethod
     def hide(view: sublime.View) -> None:
         mdpopups.hide_popup(view)
+
+
+_phantom_sets_per_view = {}
+
+
+class _PhantonCompletion(BaseCompletion):
+    COPILOT_PHANTOM_COMPLETION = "copilot_phantom_completion"
+    PHANTOM_TEMPLATE = """
+    <body id="copilot-completion">
+        <style>
+            body {{
+                color: #808080;
+            }}
+        </style>
+        {body}
+    </body>
+    """
+
+    def __init__(self, view: sublime.View) -> None:
+        super().__init__(view)
+
+        self._phantom_set = self._get_phantom_set(view, True)
+
+    @classmethod
+    def _get_phantom_set(cls, view: sublime.View, init: bool = False) -> Optional[sublime.PhantomSet]:
+        view_id = view.id()
+        phantom_set = _phantom_sets_per_view.get(view_id, None)
+
+        if init:
+            phantom_set = sublime.PhantomSet(view, cls.COPILOT_PHANTOM_COMPLETION)
+            _phantom_sets_per_view[view_id] = phantom_set
+
+        return phantom_set
+
+    # def _build_phantom(self, content: str) -> sublime.Phantom:
+    #     return sublime.Phantom(
+    #         sublime.Region(self.region[0] + 1, self.region[1]),
+    #         self.PHANTOM_TEMPLATE.format(body=content),
+    #         sublime.LAYOUT_INLINE,
+    #     )
+
+    def show(self) -> None:
+        phantoms = []
+        completion = self.completion_manager.current_completion
+        assert completion
+        head, *tail = completion["displayText"].split("\n")
+
+        phantoms.append(
+            sublime.Phantom(
+                sublime.Region(completion["point"] + 1, completion["point"]),
+                self.PHANTOM_TEMPLATE.format(body=head),
+                sublime.LAYOUT_INLINE,
+            )
+        )
+
+        # if bool(tail):
+        #     pass
+        # else:
+        # it is required to add an empty phantom to prevent the cursor from jumping
+        phantoms.append(
+            sublime.Phantom(
+                sublime.Region(completion["point"], completion["point"]),
+                "",
+                sublime.LAYOUT_BLOCK,
+            )
+        )
+
+        self._phantom_set.update(phantoms)
+
+    @classmethod
+    def hide(cls, view: sublime.View) -> None:
+        phantom_set = cls._get_phantom_set(view)
+
+        if phantom_set:
+            phantom_set.update([])
