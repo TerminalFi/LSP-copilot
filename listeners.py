@@ -28,17 +28,17 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         ViewPanelCompletionManager(self.view).close()
 
     def on_query_context(self, key: str, operator: int, operand: Any, match_all: bool) -> Optional[bool]:
-        def test(a: Any, operator: int, b: Any) -> Optional[bool]:
+        def test(value: Any) -> Optional[bool]:
             if operator == sublime.OP_EQUAL:
-                return a == b
+                return value == operand
             if operator == sublime.OP_NOT_EQUAL:
-                return a != b
+                return value != operand
             return None
 
         if key == "copilot.has_signed_in":
-            return test(CopilotPlugin.get_account_status().has_signed_in, operator, operand)
+            return test(CopilotPlugin.get_account_status().has_signed_in)
         if key == "copilot.is_authorized":
-            return test(CopilotPlugin.get_account_status().is_authorized, operator, operand)
+            return test(CopilotPlugin.get_account_status().is_authorized)
         return None
 
 
@@ -54,6 +54,6 @@ class EventListener(sublime_plugin.EventListener):
         # if the user tries to close panel completion via Ctrl+W
         if isinstance(sheet, sublime.HtmlSheet) and command_name in {"close", "close_file"}:
             completion_manager = ViewPanelCompletionManager.from_sheet_id(sheet.id())
-            if completion_manager and len(completion_manager.view.buffer().views()) == 1:
+            if completion_manager:
                 completion_manager.close()
                 return ("noop", None)
