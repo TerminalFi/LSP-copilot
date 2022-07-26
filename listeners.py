@@ -17,11 +17,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if not plugin:
             return None, None
 
-        session = plugin.weaksession()
-        if not session:
-            return plugin, None
-
-        return plugin, session
+        return plugin, plugin.weaksession()
 
     def on_modified_async(self) -> None:
         plugin, session = self._get_session()
