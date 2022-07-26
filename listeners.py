@@ -13,7 +13,7 @@ from .utils import get_setting
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
     def _get_session(self) -> Tuple[Optional[CopilotPlugin], Optional[Session]]:
-        plugin = CopilotPlugin.plugin_from_view(self.view)
+        plugin = CopilotPlugin.from_view(self.view)
         if not plugin:
             return None, None
 
