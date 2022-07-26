@@ -59,10 +59,10 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if command_name != "auto_complete":
             return
 
-        _, session = self._get_session()
+        plugin, session = self._get_session()
 
-        if session and get_setting(session, "hook_to_auto_complete_command"):
-            self.view.run_command("copilot_ask_completions")
+        if plugin and session and get_setting(session, "hook_to_auto_complete_command"):
+            plugin.request_get_completions(self.view)
 
 
 class EventListener(sublime_plugin.EventListener):
