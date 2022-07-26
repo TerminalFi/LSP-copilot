@@ -25,7 +25,7 @@
                       "type": "boolean"
                     },
                     "hook_to_auto_complete_command": {
-                      "default": true,
+                      "default": false,
                       "markdownDescription": "Ask the server for completions when the `auto_complete` command is called.",
                       "type": "boolean"
                     },
