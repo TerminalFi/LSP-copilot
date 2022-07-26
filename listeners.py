@@ -9,7 +9,7 @@ from .utils import get_setting
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_modified_async(self) -> None:
-        plugin = CopilotPlugin.plugin_from_view(self.view)
+        plugin = CopilotPlugin.from_view(self.view)
         if not plugin:
             return
 

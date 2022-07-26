@@ -153,7 +153,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
-        plugin = CopilotPlugin.plugin_from_view(self.view)
+        plugin = CopilotPlugin.from_view(self.view)
         if not plugin:
             return
 

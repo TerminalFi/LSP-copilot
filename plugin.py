@@ -136,7 +136,7 @@ class CopilotPlugin(NpmClientHandler):
             status_message(msg, icon_=icon, console_=True)
 
     @classmethod
-    def plugin_from_view(cls, view: sublime.View) -> Optional["CopilotPlugin"]:
+    def from_view(cls, view: sublime.View) -> Optional["CopilotPlugin"]:
         window = view.window()
         if not window:
             return None
