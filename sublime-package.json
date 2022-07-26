@@ -21,6 +21,11 @@
                   "properties": {
                     "auto_ask_completions": {
                       "default": true,
+                      "description": "(Deprecated: Use `auto_get_completions`) Auto ask the server for completions. Otherwise, you have to trigger it manually.",
+                      "type": "boolean"
+                    },
+                    "auto_get_completions": {
+                      "default": true,
                       "description": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
                       "type": "boolean"
                     },

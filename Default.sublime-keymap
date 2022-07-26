@@ -47,7 +47,7 @@
     //     "keys": [
     //         "UNBOUND"
     //     ],
-    //     "command": "copilot_ask_completions",
+    //     "command": "copilot_get_completions",
     //     "context": [
     //         {
     //             "key": "copilot.is_authorized",

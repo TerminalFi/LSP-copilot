@@ -11,7 +11,7 @@
 	],
 	"initializationOptions": {},
 	"settings": {
-		"auto_ask_completions": true,
+		"auto_get_completions": true,
 		"debug": false,
 		"telemetry": false
 	},

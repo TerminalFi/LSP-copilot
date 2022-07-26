@@ -151,7 +151,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
         message_dialog("Server version: {}", payload["version"])
 
 
-class CopilotAskCompletionsCommand(CopilotTextCommand):
+class CopilotGetCompletionsCommand(CopilotTextCommand):
     def run(self, _: sublime.Edit) -> None:
         plugin = CopilotPlugin.from_view(self.view)
         if not plugin:
@@ -159,6 +159,20 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
 
         debounced(
             functools.partial(plugin.request_get_completions, self.view),
+            FEATURES_TIMEOUT,
+            lambda: not ViewCompletionManager(self.view).is_waiting,
+            async_thread=True,
+        )
+
+
+class CopilotGetCompletionCyclingCommand(CopilotTextCommand):
+    def run(self, _: sublime.Edit) -> None:
+        plugin = CopilotPlugin.from_view(self.view)
+        if not plugin:
+            return
+
+        debounced(
+            functools.partial(plugin.request_get_completions_cycle, self.view),
             FEATURES_TIMEOUT,
             lambda: not ViewCompletionManager(self.view).is_waiting,
             async_thread=True,

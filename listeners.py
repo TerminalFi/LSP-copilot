@@ -17,8 +17,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if not session:
             return
 
-        if get_setting(session, "auto_ask_completions"):
-            self.view.run_command("copilot_ask_completions")
+        # auto_ask_completions is deprecated
+        if get_setting(session, "auto_get_completions") or get_setting(session, "auto_ask_completions"):
+            self.view.run_command("copilot_get_completions")
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()
