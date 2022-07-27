@@ -1,4 +1,3 @@
-import functools
 from abc import ABCMeta
 from functools import partial, wraps
 
@@ -6,7 +5,6 @@ import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core import registry
 from LSP.plugin.core.registry import LspTextCommand, sublime_plugin
-from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
 from LSP.plugin.core.typing import Any, Callable, Optional, Union, cast
 
 from .constants import (
@@ -157,12 +155,7 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         if not plugin:
             return
 
-        debounced(
-            functools.partial(plugin.request_get_completions, self.view),
-            FEATURES_TIMEOUT,
-            lambda: not ViewCompletionManager(self.view).is_waiting,
-            async_thread=True,
-        )
+        plugin.request_get_completions(self.view)
 
 
 class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
