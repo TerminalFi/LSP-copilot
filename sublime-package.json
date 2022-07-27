@@ -36,7 +36,7 @@
                     },
                     "local_checks": {
                       "default": false,
-                      "markdownDescription": "Enables local checks. This feature is not fully understood yet.",
+                      "description": "Enables local checks. This feature is not fully understood yet.",
                       "type": "boolean"
                     },
                     "telemetry": {
