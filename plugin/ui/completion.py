@@ -1,13 +1,16 @@
+import html
 import textwrap
 from abc import ABCMeta, abstractmethod
 from functools import partial
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import List, Optional
+from LSP.plugin.core.typing import List, Optional, Union
 
 from ..types import CopilotPayloadCompletion
 from ..utils import clamp, get_copilot_view_setting, get_view_language_id, reformat, set_copilot_view_setting
+
+_phantom_sets_per_view = {}
 
 
 class ViewCompletionManager:
@@ -109,8 +112,12 @@ class ViewCompletionManager:
         if completion["text"] == self.view.substr(current_line):
             return
 
-        _PopupCompletion(self.view).show()
+        # TODO: make this configurable
+        # _PopupCompletion(self.view).show()
         _PhantomCompletion(self.view).show()
+
+        # It's tricky that the "on_hide" is async...
+        sublime.set_timeout_async(lambda: setattr(self, "is_visible", True))
 
     def _tidy_completion_index(self, index: int) -> int:
         """Revise `completion_index` to a valid value, or `0` if `self.completions` is empty."""
@@ -270,15 +277,10 @@ class _PopupCompletion(_BaseCompletion):
             wrapper_class=self.CSS_CLASS_NAME,
             on_hide=partial(set_copilot_view_setting, self.view, "is_visible", False),
         )
-        # It's tricky that the "on_hide" is async...
-        sublime.set_timeout_async(partial(set_copilot_view_setting, self.view, "is_visible", True))
 
     @staticmethod
     def hide(view: sublime.View) -> None:
         mdpopups.hide_popup(view)
-
-
-_phantom_sets_per_view = {}
 
 
 class _PhantomCompletion(_BaseCompletion):
@@ -289,10 +291,20 @@ class _PhantomCompletion(_BaseCompletion):
             body {{
                 color: #808080;
             }}
+
+            .copilot-completion-line {{
+                margin-top: {line_padding_top}px;
+                margin-bottom: {line_padding_bottom}px;
+            }}
+
+            .copilot-completion-line.first {{
+                margin-top: 0;
+            }}
         </style>
         {body}
     </body>
     """
+    PHANTOM_LINE_TEMPLATE = '<div class="copilot-completion-line {class_name}">{content}</div>'
 
     def __init__(self, view: sublime.View) -> None:
         super().__init__(view)
@@ -310,40 +322,49 @@ class _PhantomCompletion(_BaseCompletion):
 
         return phantom_set
 
-    # def _build_phantom(self, content: str) -> sublime.Phantom:
-    #     return sublime.Phantom(
-    #         sublime.Region(self.region[0] + 1, self.region[1]),
-    #         self.PHANTOM_TEMPLATE.format(body=content),
-    #         sublime.LAYOUT_INLINE,
-    #     )
+    def normalize_phantom_line(self, line: str) -> str:
+        # return re.sub(r"( {2,})", lambda m: "&nbsp;" * len(m.group(0)), html.escape(line))
+        return (
+            html.escape(line).replace(" ", "&nbsp;").replace("\t", "&nbsp;" * self.view.settings().get("tab_size", 4))
+        )
+
+    def _build_phantom(
+        self, lines: Union[str, List[str]], begin: int, end: Optional[int] = None, inline: bool = True
+    ) -> sublime.Phantom:
+        body = (
+            "".join(
+                self.PHANTOM_LINE_TEMPLATE.format(
+                    class_name=("first" if index == 0 else ""), content=self.normalize_phantom_line(line)
+                )
+                for index, line in enumerate(lines)
+            )
+            if isinstance(lines, list)
+            else self.normalize_phantom_line(lines)
+        )
+
+        return sublime.Phantom(
+            sublime.Region(begin, begin if end is None else end),
+            self.PHANTOM_TEMPLATE.format(
+                body=body,
+                line_padding_top=int(self.view.settings().get("line_padding_top", 0)) * 2,  # TODO: play with this more
+                line_padding_bottom=int(self.view.settings().get("line_padding_bottom", 0)) * 2,
+            ),
+            sublime.LAYOUT_INLINE if inline else sublime.LAYOUT_BLOCK,
+        )
 
     def show(self) -> None:
-        phantoms = []
         completion = self.completion_manager.current_completion
         assert completion
+
         head, *tail = completion["displayText"].split("\n")
 
-        phantoms.append(
-            sublime.Phantom(
-                sublime.Region(completion["point"] + 1, completion["point"]),
-                self.PHANTOM_TEMPLATE.format(body=head),
-                sublime.LAYOUT_INLINE,
-            )
+        self._phantom_set.update(
+            [
+                self._build_phantom(head, completion["point"] + 1, completion["point"]),
+                # even if the tail is empty it is required to add an empty phantom to prevent the cursor from jumping
+                self._build_phantom(tail or "", completion["point"], inline=False),
+            ]
         )
-
-        # if bool(tail):
-        #     pass
-        # else:
-        # it is required to add an empty phantom to prevent the cursor from jumping
-        phantoms.append(
-            sublime.Phantom(
-                sublime.Region(completion["point"], completion["point"]),
-                "",
-                sublime.LAYOUT_BLOCK,
-            )
-        )
-
-        self._phantom_set.update(phantoms)
 
     @classmethod
     def hide(cls, view: sublime.View) -> None:
