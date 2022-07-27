@@ -84,6 +84,8 @@ class ViewCompletionManager:
         if self.is_visible:
             _PopupCompletion.hide(self.view)
 
+        self.is_visible = False
+
     def show(
         self,
         completions: Optional[List[CopilotPayloadCompletion]] = None,
@@ -105,6 +107,8 @@ class ViewCompletionManager:
             return
 
         _PopupCompletion(self.view).show()
+
+        self.is_visible = True
 
     def _tidy_completion_index(self, index: int) -> int:
         """Revise `completion_index` to a valid value, or `0` if `self.completions` is empty."""
@@ -251,10 +255,7 @@ class _PopupCompletion:
             flags=sublime.COOPERATE_WITH_AUTO_COMPLETE,
             max_width=640,
             wrapper_class=self.CSS_CLASS_NAME,
-            on_hide=partial(set_copilot_view_setting, self.view, "is_visible", False),
         )
-        # It's tricky that the "on_hide" is async...
-        sublime.set_timeout_async(partial(set_copilot_view_setting, self.view, "is_visible", True))
 
     @staticmethod
     def hide(view: sublime.View) -> None:
