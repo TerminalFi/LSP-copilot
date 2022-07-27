@@ -5,7 +5,14 @@ import sublime
 from LSP.plugin.core.typing import List, Optional
 
 from ..types import CopilotPayloadCompletion
-from ..utils import clamp, get_copilot_view_setting, get_view_language_id, reformat, set_copilot_view_setting
+from ..utils import (
+    clamp,
+    fix_completion_syntax_highlight,
+    get_copilot_view_setting,
+    get_view_language_id,
+    reformat,
+    set_copilot_view_setting,
+)
 
 
 class ViewCompletionManager:
@@ -194,12 +201,14 @@ class _PopupCompletion:
     """.format(
         class_name=CSS_CLASS_NAME
     )
+    # We use many backticks to denote a fenced code block because if we are writing in Markdown,
+    # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
     COMPLETION_TEMPLATE = reformat(
         """
         <div class="header">{header_items}</div>
-        ```{lang}
+        ``````{lang}
         {code}
-        ```
+        ``````
         """
     )
 
@@ -242,7 +251,11 @@ class _PopupCompletion:
     def popup_code(self) -> str:
         self.completion = self.completion_manager.current_completion
         assert self.completion  # our code flow guarantees this
-        return textwrap.dedent(self.completion["text"])
+        return fix_completion_syntax_highlight(
+            self.view,
+            self.completion["point"],
+            textwrap.dedent(self.completion["text"]),
+        )
 
     def show(self) -> None:
         mdpopups.show_popup(
