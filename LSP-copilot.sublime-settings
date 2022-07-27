@@ -12,8 +12,9 @@
 	"initializationOptions": {},
 	"settings": {
 		"auto_ask_completions": true,
-		"hook_to_auto_complete_command": false,
 		"debug": false,
+		"hook_to_auto_complete_command": false,
+		"local_checks": false,
 		"telemetry": false
 	},
 	// ST4 configuration
