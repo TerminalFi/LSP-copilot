@@ -1,5 +1,4 @@
 import textwrap
-from functools import partial
 
 import mdpopups
 import sublime
