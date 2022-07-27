@@ -198,12 +198,14 @@ class _PopupCompletion:
     """.format(
         class_name=CSS_CLASS_NAME
     )
+    # We use many backticks to denote a fenced code block because if we are writing in Markdown,
+    # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
     COMPLETION_TEMPLATE = reformat(
         """
         <div class="header">{header_items}</div>
-        ```{lang}
+        ``````{lang}
         {code}
-        ```
+        ``````
         """
     )
 
