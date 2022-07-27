@@ -21,7 +21,7 @@
                   "properties": {
                     "auto_ask_completions": {
                       "default": true,
-                      "markdownDescription": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
+                      "description": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
                       "type": "boolean"
                     },
                     "debug": {
