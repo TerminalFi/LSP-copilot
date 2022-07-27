@@ -79,6 +79,9 @@ class ViewCompletionManager:
         """Show the next completion."""
         self.show(completion_index=self.completion_index + 1)
 
+    def handle_selection_change(self) -> None:
+        _PhantomCompletion.hide(self.view)
+
     def hide(self) -> None:
         """Hide Copilot's completion popup."""
         # prevent from hiding other plugin's popup

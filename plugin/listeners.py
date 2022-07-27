@@ -60,6 +60,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if plugin and session and get_setting(session, "hook_to_auto_complete_command"):
             plugin.request_get_completions(self.view)
 
+    def on_selection_modified_async(self) -> None:
+        ViewCompletionManager(self.view).handle_selection_change()
+
 
 class EventListener(sublime_plugin.EventListener):
     def on_window_command(
