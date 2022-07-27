@@ -100,7 +100,13 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     return value
 
 
-def get_view_language_id(view: sublime.View) -> str:
+def get_view_language_id(view: sublime.View, point: Optional[int] = None) -> str:
+    # if `point` is provided, find the language ID of the deepest "source", "text" or "embedding" scope at `point`
+    if point is not None:
+        for scope in reversed(view.scope_name(point).split(" ")):
+            if sublime.score_selector(scope, "source | text | embedding"):
+                return basescope2languageid(scope)
+    # find language ID of the base scope as the fallback
     syntax = view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
     return basescope2languageid(syntax.scope)
 

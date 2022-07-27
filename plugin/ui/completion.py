@@ -215,9 +215,11 @@ class _PopupCompletion:
 
     @property
     def popup_content(self) -> str:
+        self.completion = self.completion_manager.current_completion
+        assert self.completion  # our code flow guarantees this
         return self.COMPLETION_TEMPLATE.format(
             header_items=" &nbsp;".join(self.popup_header_items),
-            lang=get_view_language_id(self.view),
+            lang=get_view_language_id(self.view, self.completion["point"]),
             code=self.popup_code,
         )
 
