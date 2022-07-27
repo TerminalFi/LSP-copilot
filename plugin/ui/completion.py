@@ -84,7 +84,7 @@ class ViewCompletionManager:
         # prevent from hiding other plugin's popup
         if self.is_visible:
             _PopupCompletion.hide(self.view)
-            _PhantonCompletion.hide(self.view)
+            _PhantomCompletion.hide(self.view)
 
     def show(
         self,
@@ -107,7 +107,7 @@ class ViewCompletionManager:
             return
 
         _PopupCompletion(self.view).show()
-        _PhantonCompletion(self.view).show()
+        _PhantomCompletion(self.view).show()
 
     def _tidy_completion_index(self, index: int) -> int:
         """Revise `completion_index` to a valid value, or `0` if `self.completions` is empty."""
@@ -121,7 +121,7 @@ class ViewCompletionManager:
         return clamp(index, 0, completions_cnt - 1)
 
 
-class BaseCompletion(metaclass=ABCMeta):
+class _BaseCompletion(metaclass=ABCMeta):
     def __init__(self, view: sublime.View) -> None:
         self.view = view
         self.completion_manager = ViewCompletionManager(view)
@@ -136,7 +136,7 @@ class BaseCompletion(metaclass=ABCMeta):
         pass
 
 
-class _PopupCompletion(BaseCompletion):
+class _PopupCompletion(_BaseCompletion):
     CSS_CLASS_NAME = "copilot-completion-popup"
     CSS = """
     html {{
@@ -278,7 +278,7 @@ class _PopupCompletion(BaseCompletion):
 _phantom_sets_per_view = {}
 
 
-class _PhantonCompletion(BaseCompletion):
+class _PhantomCompletion(_BaseCompletion):
     COPILOT_PHANTOM_COMPLETION = "copilot_phantom_completion"
     PHANTOM_TEMPLATE = """
     <body id="copilot-completion">
