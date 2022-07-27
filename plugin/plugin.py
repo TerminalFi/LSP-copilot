@@ -16,6 +16,7 @@ from .constants import (
     PACKAGE_VERSION,
     REQ_CHECK_STATUS,
     REQ_GET_COMPLETIONS,
+    REQ_GET_COMPLETIONS_CYCLING,
     REQ_SET_EDITOR_INFO,
 )
 from .types import (
@@ -171,6 +172,12 @@ class CopilotPlugin(NpmClientHandler):
         pass
 
     def request_get_completions(self, view: sublime.View) -> None:
+        self._request_completions(view=view, request=REQ_GET_COMPLETIONS)
+
+    def request_get_completions_cycle(self, view: sublime.View) -> None:
+        self._request_completions(view=view, request=REQ_GET_COMPLETIONS_CYCLING)
+
+    def _request_completions(self, view: sublime.View, request: str) -> None:
         completion_manager = ViewCompletionManager(view)
         completion_manager.hide()
 
@@ -186,7 +193,7 @@ class CopilotPlugin(NpmClientHandler):
 
         completion_manager.is_waiting = True
         session.send_request_async(
-            Request(REQ_GET_COMPLETIONS, params),
+            Request(request, params),
             functools.partial(self._on_get_completions, view, region=sel[0].to_tuple()),
         )
 
