@@ -27,6 +27,14 @@ StLayout = TypedDict(
 # Copilot payload #
 # --------------- #
 
+CopilotPayloadCheckStatus = TypedDict(
+    "CopilotPayloadCheckStatus",
+    {
+        "local_checks": bool
+    },
+    total=True,
+)
+
 CopilotPayloadCompletionPosition = TypedDict(
     "CopilotPayloadCompletionPosition",
     {
