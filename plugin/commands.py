@@ -268,10 +268,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
     @_provide_session()
     def run(self, session: Session, _: sublime.Edit) -> None:
-        local_checks = session.config.settings.get("local_checks")
-        if local_checks is None:
-            local_checks = False
-
+        local_checks = get_setting(session, "local_checks", False)
         session.send_request(Request(REQ_CHECK_STATUS, {"local_checks": local_checks}), self._on_result_check_status)
 
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
