@@ -21,7 +21,12 @@
                   "properties": {
                     "auto_ask_completions": {
                       "default": true,
-                      "description": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
+                      "markdownDescription": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
+                      "type": "boolean"
+                    },
+                    "debug": {
+                      "default": false,
+                      "markdownDescription": "Enables `debug` mode fo the LSP-copilot. Enabling all commands regardless of status requirements.",
                       "type": "boolean"
                     },
                     "hook_to_auto_complete_command": {
@@ -29,9 +34,9 @@
                       "markdownDescription": "Ask the server for completions when the `auto_complete` command is called.",
                       "type": "boolean"
                     },
-                    "debug": {
+                    "local_checks": {
                       "default": false,
-                      "description": "Enables debug mode fo the LSP-copilot.",
+                      "markdownDescription": "Enables local checks. This feature is not fully understood yet.",
                       "type": "boolean"
                     },
                     "telemetry": {
