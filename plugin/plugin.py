@@ -173,6 +173,7 @@ class CopilotPlugin(NpmClientHandler):
 
     def request_get_completions(self, view: sublime.View) -> None:
         self._request_completions(view=view, request=REQ_GET_COMPLETIONS)
+        self.request_get_completions_cycling(view=view)
 
     def request_get_completions_cycling(self, view: sublime.View) -> None:
         self._request_completions(view=view, request=REQ_GET_COMPLETIONS_CYCLING)
