@@ -100,8 +100,6 @@ class ViewCompletionManager:
 
         self.is_visible = False
 
-        self.is_visible = False
-
     def show(
         self,
         completions: Optional[List[CopilotPayloadCompletion]] = None,
@@ -125,8 +123,6 @@ class ViewCompletionManager:
         # TODO: make this configurable
         # _PopupCompletion(self.view).show()
         _PhantomCompletion(self.view).show()
-
-        self.is_visible = True
 
         self.is_visible = True
 
