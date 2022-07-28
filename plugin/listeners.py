@@ -13,11 +13,11 @@ from .utils import get_copilot_view_setting, get_setting, set_copilot_view_setti
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
     @property
-    def _is_modifed(self) -> bool:
+    def _is_modified(self) -> bool:
         return get_copilot_view_setting(self.view, "_is_modified", False)
 
-    @_is_modifed.setter
-    def _is_modifed(self, value: bool) -> None:
+    @_is_modified.setter
+    def _is_modified(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "_is_modified", value)
 
     def _get_session(self) -> Tuple[Optional[CopilotPlugin], Optional[Session]]:
@@ -28,7 +28,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         return plugin, plugin.weaksession()
 
     def on_modified_async(self) -> None:
-        self._is_modifed = True
+        self._is_modified = True
         plugin, session = self._get_session()
 
         if plugin and session and get_setting(session, "auto_ask_completions"):
@@ -70,10 +70,10 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             plugin.request_get_completions(self.view)
 
     def on_selection_modified_async(self) -> None:
-        if not self._is_modifed:
+        if not self._is_modified:
             ViewCompletionManager(self.view).handle_selection_change()
 
-        self._is_modifed = False
+        self._is_modified = False
 
 
 class EventListener(sublime_plugin.EventListener):
