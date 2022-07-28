@@ -1,6 +1,7 @@
 import os
 import textwrap
 import traceback
+from itertools import takewhile
 
 import mdpopups
 import sublime
@@ -104,14 +105,9 @@ def get_view_language_id(view: sublime.View, point: int = 0) -> str:
     """Find the language ID of the deepest scope satisfying `source | text | embedding` at `point`."""
     for scope in reversed(view.scope_name(point).split(" ")):
         if sublime.score_selector(scope, "source | text | embedding"):
-            try:
-                # For some embedded languages, they are scoped as "EMBEDDED_LANG.embedded.PARENT_LANG"
-                # such as "source.php.embedded.html" and we only want those parts before "embedded".
-                scope_parts = scope.split(".")
-                scope = ".".join(scope_parts[: scope_parts.index("embedded")])
-            except ValueError:
-                pass
-            return basescope2languageid(scope)
+            # For some embedded languages, they are scoped as "EMBEDDED_LANG.embedded.PARENT_LANG"
+            # such as "source.php.embedded.html" and we only want those parts before "embedded".
+            return basescope2languageid(".".join(takewhile(lambda s: s != "embedded", scope.split("."))))
     return ""
 
 
