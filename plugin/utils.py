@@ -65,6 +65,12 @@ def first(items: Iterable[T], test: Optional[Callable[[T], bool]] = None, defaul
     return next(filter(test, items), default)
 
 
+def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -> str:
+    if view.match_selector(point, "source.php"):
+        return "<?php\n{}".format(code)
+    return code
+
+
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
     return view.settings().get("{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key), default)
 

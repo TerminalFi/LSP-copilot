@@ -1,14 +1,20 @@
 import html
 import textwrap
 from abc import ABCMeta, abstractmethod
-from functools import partial
 
 import mdpopups
 import sublime
 from LSP.plugin.core.typing import List, Optional, Union
 
 from ..types import CopilotPayloadCompletion
-from ..utils import clamp, get_copilot_view_setting, get_view_language_id, reformat, set_copilot_view_setting
+from ..utils import (
+    clamp,
+    fix_completion_syntax_highlight,
+    get_copilot_view_setting,
+    get_view_language_id,
+    reformat,
+    set_copilot_view_setting,
+)
 
 _phantom_sets_per_view = {}
 
@@ -94,6 +100,8 @@ class ViewCompletionManager:
 
         self.is_visible = False
 
+        self.is_visible = False
+
     def show(
         self,
         completions: Optional[List[CopilotPayloadCompletion]] = None,
@@ -117,6 +125,8 @@ class ViewCompletionManager:
         # TODO: make this configurable
         # _PopupCompletion(self.view).show()
         _PhantomCompletion(self.view).show()
+
+        self.is_visible = True
 
         self.is_visible = True
 
@@ -220,12 +230,14 @@ class _PopupCompletion(_BaseCompletion):
     """.format(
         class_name=CSS_CLASS_NAME
     )
+    # We use many backticks to denote a fenced code block because if we are writing in Markdown,
+    # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
     COMPLETION_TEMPLATE = reformat(
         """
         <div class="header">{header_items}</div>
-        ```{lang}
+        ``````{lang}
         {code}
-        ```
+        ``````
         """
     )
 
@@ -264,7 +276,11 @@ class _PopupCompletion(_BaseCompletion):
     def popup_code(self) -> str:
         self.completion = self.completion_manager.current_completion
         assert self.completion  # our code flow guarantees this
-        return textwrap.dedent(self.completion["text"])
+        return fix_completion_syntax_highlight(
+            self.view,
+            self.completion["point"],
+            textwrap.dedent(self.completion["text"]),
+        )
 
     def show(self) -> None:
         mdpopups.show_popup(
