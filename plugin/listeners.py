@@ -8,10 +8,18 @@ from LSP.plugin.core.typing import Any, Dict, Optional, Tuple
 
 from .plugin import CopilotPlugin
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import get_setting
+from .utils import get_copilot_view_setting, get_setting, set_copilot_view_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
+    @property
+    def _is_modifed(self) -> bool:
+        return get_copilot_view_setting(self.view, "_is_modified", False)
+
+    @_is_modifed.setter
+    def _is_modifed(self, value: bool) -> None:
+        set_copilot_view_setting(self.view, "_is_modified", value)
+
     def _get_session(self) -> Tuple[Optional[CopilotPlugin], Optional[Session]]:
         plugin = CopilotPlugin.from_view(self.view)
         if not plugin:
@@ -20,6 +28,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         return plugin, plugin.weaksession()
 
     def on_modified_async(self) -> None:
+        self._is_modifed = True
         plugin, session = self._get_session()
 
         if plugin and session and get_setting(session, "auto_ask_completions"):
@@ -61,7 +70,10 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             plugin.request_get_completions(self.view)
 
     def on_selection_modified_async(self) -> None:
-        ViewCompletionManager(self.view).handle_selection_change()
+        if not self._is_modifed:
+            ViewCompletionManager(self.view).handle_selection_change()
+
+        self._is_modifed = False
 
 
 class EventListener(sublime_plugin.EventListener):
