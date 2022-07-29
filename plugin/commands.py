@@ -5,7 +5,8 @@ import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core import registry
 from LSP.plugin.core.registry import LspTextCommand, sublime_plugin
-from LSP.plugin.core.typing import Any, Callable, Optional, Union, cast
+from LSP.plugin.core.typing import Any, Callable, Generator, Optional, Union, cast
+from LSP.plugin.core.windows import WindowManager
 
 from .constants import (
     PACKAGE_NAME,
@@ -84,6 +85,7 @@ class LspWindowCommand(sublime_plugin.WindowCommand):
         return self.session() is not None
 
     def session(self) -> Optional[Session]:
+        WindowManager.get_sessions = window_manager_get_sessions
         for session in registry.windows.lookup(self.window).get_sessions():
             if self.capability and not session.has_capability(self.capability):
                 continue
@@ -92,6 +94,11 @@ class LspWindowCommand(sublime_plugin.WindowCommand):
             return session
         else:
             return None
+
+
+# TODO: Delete when `4070-1.16.4` or later is released.
+def window_manager_get_sessions(self: WindowManager) -> Generator[Session, None, None]:
+    yield from self._sessions
 
 
 class CopilotCommandBase(metaclass=ABCMeta):
