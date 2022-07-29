@@ -27,14 +27,6 @@ StLayout = TypedDict(
 # Copilot payload #
 # --------------- #
 
-CopilotPayloadCheckStatus = TypedDict(
-    "CopilotPayloadCheckStatus",
-    {
-        "local_checks": bool
-    },
-    total=True,
-)
-
 CopilotPayloadCompletionPosition = TypedDict(
     "CopilotPayloadCompletionPosition",
     {
@@ -116,7 +108,7 @@ CopilotPayloadSignInInitiate = TypedDict(
 CopilotPayloadSignInConfirm = TypedDict(
     "CopilotPayloadSignInConfirm",
     {
-        "status": Literal["AlreadySignedIn", "NotAuthorized", "NotSignedIn", "OK"],
+        "status": Literal["AlreadySignedIn", "MaybeOk", "NotAuthorized", "NotSignedIn", "OK"],
         "user": str,
     },
     total=True,
