@@ -5,7 +5,8 @@ import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core import registry
 from LSP.plugin.core.registry import LspTextCommand, sublime_plugin
-from LSP.plugin.core.typing import Any, Callable, Optional, Union, cast
+from LSP.plugin.core.typing import Any, Callable, Generator, Optional, Union, cast
+from LSP.plugin.core.windows import WindowManager
 
 from .constants import (
     PACKAGE_NAME,
@@ -84,6 +85,13 @@ class LspWindowCommand(sublime_plugin.WindowCommand):
         return self.session() is not None
 
     def session(self) -> Optional[Session]:
+        if not hasattr(WindowManager, "get_sessions"):
+
+            def get_sessions(self: WindowManager) -> Generator[Session, None, None]:
+                yield from self._sessions
+
+            WindowManager.get_sessions = get_sessions
+
         for session in registry.windows.lookup(self.window).get_sessions():
             if self.capability and not session.has_capability(self.capability):
                 continue

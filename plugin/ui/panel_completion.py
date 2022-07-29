@@ -236,7 +236,7 @@ class _PanelCompletion:
                 self.COMPLETION_SECTION_TEMPLATE.format(
                     header_items=" &nbsp;".join(self.completion_header_items(completion, self.view.id(), index)),
                     score=completion["score"],
-                    lang=get_view_language_id(self.view),
+                    lang=get_view_language_id(self.view, completion["region"][1]),
                     code=fix_completion_syntax_highlight(
                         self.view,
                         completion["region"][1],
