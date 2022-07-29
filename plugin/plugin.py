@@ -1,4 +1,5 @@
 import functools
+import json
 import os
 import weakref
 
@@ -13,7 +14,6 @@ from .constants import (
     NTFY_PANEL_SOLUTION_DONE,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
-    PACKAGE_VERSION,
     REQ_CHECK_STATUS,
     REQ_GET_COMPLETIONS,
     REQ_GET_COMPLETIONS_CYCLING,
@@ -88,11 +88,21 @@ class CopilotPlugin(NpmClientHandler):
                 },
                 "editorPluginInfo": {
                     "name": PACKAGE_NAME,
-                    "version": PACKAGE_VERSION,
+                    "version": self.version(),
                 },
             },
             on_set_editor_info,
         )
+
+    @staticmethod
+    def version() -> str:
+        """Return this plugin's version. If it's not installed by Package Control, return `"unknown"`."""
+        try:
+            return json.loads(sublime.load_resource("Packages/{}/package-metadata.json".format(PACKAGE_NAME)))[
+                "version"
+            ]
+        except Exception:
+            return "unknown"
 
     @classmethod
     def minimum_node_version(cls) -> Tuple[int, int, int]:

@@ -1,12 +1,18 @@
 import textwrap
-from functools import partial
 
 import mdpopups
 import sublime
 from LSP.plugin.core.typing import List, Optional
 
 from ..types import CopilotPayloadCompletion
-from ..utils import clamp, get_copilot_view_setting, get_view_language_id, reformat, set_copilot_view_setting
+from ..utils import (
+    clamp,
+    fix_completion_syntax_highlight,
+    get_copilot_view_setting,
+    get_view_language_id,
+    reformat,
+    set_copilot_view_setting,
+)
 
 
 class ViewCompletionManager:
@@ -84,6 +90,8 @@ class ViewCompletionManager:
         if self.is_visible:
             _PopupCompletion.hide(self.view)
 
+        self.is_visible = False
+
     def show(
         self,
         completions: Optional[List[CopilotPayloadCompletion]] = None,
@@ -105,6 +113,8 @@ class ViewCompletionManager:
             return
 
         _PopupCompletion(self.view).show()
+
+        self.is_visible = True
 
     def _tidy_completion_index(self, index: int) -> int:
         """Revise `completion_index` to a valid value, or `0` if `self.completions` is empty."""
@@ -191,12 +201,14 @@ class _PopupCompletion:
     """.format(
         class_name=CSS_CLASS_NAME
     )
+    # We use many backticks to denote a fenced code block because if we are writing in Markdown,
+    # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
     COMPLETION_TEMPLATE = reformat(
         """
         <div class="header">{header_items}</div>
-        ```{lang}
+        ``````{lang}
         {code}
-        ```
+        ``````
         """
     )
 
@@ -206,9 +218,11 @@ class _PopupCompletion:
 
     @property
     def popup_content(self) -> str:
+        self.completion = self.completion_manager.current_completion
+        assert self.completion  # our code flow guarantees this
         return self.COMPLETION_TEMPLATE.format(
             header_items=" &nbsp;".join(self.popup_header_items),
-            lang=get_view_language_id(self.view),
+            lang=get_view_language_id(self.view, self.completion["point"]),
             code=self.popup_code,
         )
 
@@ -239,7 +253,11 @@ class _PopupCompletion:
     def popup_code(self) -> str:
         self.completion = self.completion_manager.current_completion
         assert self.completion  # our code flow guarantees this
-        return textwrap.dedent(self.completion["text"])
+        return fix_completion_syntax_highlight(
+            self.view,
+            self.completion["point"],
+            textwrap.dedent(self.completion["text"]),
+        )
 
     def show(self) -> None:
         mdpopups.show_popup(
@@ -251,10 +269,7 @@ class _PopupCompletion:
             flags=sublime.COOPERATE_WITH_AUTO_COMPLETE,
             max_width=640,
             wrapper_class=self.CSS_CLASS_NAME,
-            on_hide=partial(set_copilot_view_setting, self.view, "is_visible", False),
         )
-        # It's tricky that the "on_hide" is async...
-        sublime.set_timeout_async(partial(set_copilot_view_setting, self.view, "is_visible", True))
 
     @staticmethod
     def hide(view: sublime.View) -> None:

@@ -1,6 +1,7 @@
 import os
 import textwrap
 import traceback
+from itertools import takewhile
 
 import mdpopups
 import sublime
@@ -65,6 +66,12 @@ def first(items: Iterable[T], test: Optional[Callable[[T], bool]] = None, defaul
     return next(filter(test, items), default)
 
 
+def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -> str:
+    if view.match_selector(point, "source.php"):
+        return "<?php\n{}".format(code)
+    return code
+
+
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
     return view.settings().get("{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key), default)
 
@@ -94,9 +101,14 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
     return value
 
 
-def get_view_language_id(view: sublime.View) -> str:
-    syntax = view.syntax() or sublime.find_syntax_by_name("Plain Text")[0]
-    return basescope2languageid(syntax.scope)
+def get_view_language_id(view: sublime.View, point: int = 0) -> str:
+    """Find the language ID of the deepest scope satisfying `source | text | embedding` at `point`."""
+    for scope in reversed(view.scope_name(point).split(" ")):
+        if sublime.score_selector(scope, "source | text | embedding"):
+            # For some embedded languages, they are scoped as "EMBEDDED_LANG.embedded.PARENT_LANG"
+            # such as "source.php.embedded.html" and we only want those parts before "embedded".
+            return basescope2languageid(".".join(takewhile(lambda s: s != "embedded", scope.split("."))))
+    return ""
 
 
 def message_dialog(msg_: str, *args, error_: bool = False, console_: bool = False, **kwargs) -> None:

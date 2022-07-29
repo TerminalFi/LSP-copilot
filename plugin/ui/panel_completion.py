@@ -9,6 +9,7 @@ from ..utils import (
     all_views,
     find_view_by_id,
     first,
+    fix_completion_syntax_highlight,
     get_copilot_view_setting,
     get_view_language_id,
     mdpopups_update_transient_html_sheet,
@@ -201,12 +202,14 @@ class _PanelCompletion:
         {sections}
         """
     )
+    # We use many backticks to denote a fenced code block because if we are writing in Markdown,
+    # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
     COMPLETION_SECTION_TEMPLATE = reformat(
         """
         <div class="header">{header_items}</div>
-        ```{lang}
+        ``````{lang}
         {code}
-        ```
+        ``````
         """
     )
 
@@ -233,8 +236,12 @@ class _PanelCompletion:
                 self.COMPLETION_SECTION_TEMPLATE.format(
                     header_items=" &nbsp;".join(self.completion_header_items(completion, self.view.id(), index)),
                     score=completion["score"],
-                    lang=get_view_language_id(self.view),
-                    code=self._prepare_popup_code_display_text(completion["displayText"]),
+                    lang=get_view_language_id(self.view, completion["region"][1]),
+                    code=fix_completion_syntax_highlight(
+                        self.view,
+                        completion["region"][1],
+                        self._prepare_popup_code_display_text(completion["displayText"]),
+                    ),
                 )
                 for index, completion in completions
             ),

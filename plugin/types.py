@@ -108,7 +108,7 @@ CopilotPayloadSignInInitiate = TypedDict(
 CopilotPayloadSignInConfirm = TypedDict(
     "CopilotPayloadSignInConfirm",
     {
-        "status": Literal["AlreadySignedIn", "NotAuthorized", "NotSignedIn", "OK"],
+        "status": Literal["AlreadySignedIn", "MaybeOk", "NotAuthorized", "NotSignedIn", "OK"],
         "user": str,
     },
     total=True,
