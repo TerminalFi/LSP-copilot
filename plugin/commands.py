@@ -49,7 +49,7 @@ REQUIRE_AUTHORIZED = 1 << 2
 def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
-        def wrap(self: Any, *arg, **kwargs) -> Any:
+        def wrapped(self: Any, *arg, **kwargs) -> Any:
             """
             The first argument is always `self` for a decorated method.
             We want to provide `plugin` and `session` right after it. If we failed to find a `session`,
@@ -64,7 +64,7 @@ def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callabl
 
             return func(self, plugin, session, *arg, **kwargs)
 
-        return cast(T_Callable, wrap)
+        return cast(T_Callable, wrapped)
 
     return decorator
 
