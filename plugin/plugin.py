@@ -50,6 +50,7 @@ def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callab
             if not (
                 view.is_valid()
                 and not view.element()
+                and not view.is_read_only()
                 and not view_settings.get("command_mode")
                 and not view_settings.get("is_widget")
             ):
