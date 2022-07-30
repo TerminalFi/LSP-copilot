@@ -2,12 +2,13 @@ import os
 import textwrap
 import traceback
 from itertools import takewhile
+from operator import itemgetter
 
 import mdpopups
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.typing import Any, Callable, Dict, Generator, Iterable, List, Optional, TypeVar, Union
+from LSP.plugin.core.typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Set, TypeVar, Union
 from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
@@ -147,6 +148,18 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
 
 
 def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadCompletion]) -> None:
+    # in-place de-duplication
+    unique_indexes = set(
+        map(
+            itemgetter(0),
+            unique(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
+        )
+    )  # type: Set[int]
+    for index in range(len(completions) - 1, -1, -1):
+        if index not in unique_indexes:
+            del completions[index]
+
+    # inject extra information for convenience
     for completion in completions:
         completion["point"] = view.text_point(
             completion["position"]["line"],
@@ -187,9 +200,9 @@ def status_message(msg_: str, *args, icon_: Optional[str] = "✈", console_: boo
 
 def unique(items: Iterable[T], *, key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
     key = key or (lambda x: x)
-    seen = set()
+    seen = set()  # type: Set[int]
     for item in items:
-        k = key(item)
+        k = hash(key(item))
         if k not in seen:
             yield item
             seen.add(k)
