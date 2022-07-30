@@ -2,7 +2,6 @@ import functools
 
 import sublime
 import sublime_plugin
-from LSP.plugin import Session
 from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
 from LSP.plugin.core.typing import Any, Dict, Optional, Tuple
 
@@ -20,16 +19,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def _is_modified(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "_is_modified", value)
 
-    def _get_session(self) -> Tuple[Optional[CopilotPlugin], Optional[Session]]:
-        plugin = CopilotPlugin.from_view(self.view)
-        if not plugin:
-            return None, None
-
-        return plugin, plugin.weaksession()
-
     def on_modified_async(self) -> None:
         self._is_modified = True
-        plugin, session = self._get_session()
+        plugin, session = CopilotPlugin.plugin_session(self.view)
 
         if plugin and session and get_setting(session, "auto_ask_completions"):
             debounced(
@@ -64,7 +56,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if command_name != "auto_complete":
             return
 
-        plugin, session = self._get_session()
+        plugin, session = CopilotPlugin.plugin_session(self.view)
 
         if plugin and session and get_setting(session, "hook_to_auto_complete_command"):
             plugin.request_get_completions(self.view)
@@ -90,4 +82,4 @@ class EventListener(sublime_plugin.EventListener):
             completion_manager = ViewPanelCompletionManager.from_sheet_id(sheet.id())
             if completion_manager:
                 completion_manager.close()
-                return ("noop", None)
+                return "noop", None
