@@ -2,10 +2,11 @@ import functools
 import json
 import os
 import weakref
+from functools import wraps
 
 import sublime
 from LSP.plugin import Request, Session
-from LSP.plugin.core.typing import Optional, Tuple
+from LSP.plugin.core.typing import Any, Callable, Optional, Tuple, Union, cast
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
@@ -26,6 +27,7 @@ from .types import (
     CopilotPayloadPanelSolution,
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
+    T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
@@ -35,6 +37,31 @@ from .utils import (
     preprocess_panel_completions,
     status_message,
 )
+
+
+def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+    def decorator(func: T_Callable) -> T_Callable:
+        @wraps(func)
+        def wrapped(self: Any, view: sublime.View, *arg, **kwargs) -> Any:
+            """
+            The first two arguments have to be `self` and `view` for a decorated method.
+            If `view` doesn't meeting some requirements, it will be early failed and return `failed_return`.
+            """
+            view_settings = view.settings()
+            if not (
+                view.is_valid()
+                and not view.element()
+                and not view.is_read_only()
+                and not view_settings.get("command_mode")
+                and not view_settings.get("is_widget")
+            ):
+                return failed_return
+
+            return func(self, view, *arg, **kwargs)
+
+        return cast(T_Callable, wrapped)
+
+    return decorator
 
 
 class CopilotPlugin(NpmClientHandler):
@@ -147,6 +174,11 @@ class CopilotPlugin(NpmClientHandler):
             return None
         return self
 
+    @classmethod
+    def plugin_session(cls, view: sublime.View) -> Union[Tuple[None, None], Tuple["CopilotPlugin", Optional[Session]]]:
+        plugin = cls.from_view(view)
+        return (plugin, plugin.weaksession()) if plugin else (None, None)
+
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()
         return bool(session and session.session_view_for_view_async(view))
@@ -181,6 +213,7 @@ class CopilotPlugin(NpmClientHandler):
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
         pass
 
+    @_guard_view()
     def request_get_completions(self, view: sublime.View) -> None:
         self._request_completions(view=view, request=REQ_GET_COMPLETIONS)
         self.request_get_completions_cycling(view=view)

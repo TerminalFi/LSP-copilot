@@ -46,19 +46,23 @@ REQUIRE_NOT_SIGN_IN = 1 << 1
 REQUIRE_AUTHORIZED = 1 << 2
 
 
-def _provide_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
-        def wrap(self, *arg, **kwargs) -> Any:
+        def wrap(self: Any, *arg, **kwargs) -> Any:
             """
             The first argument is always `self` for a decorated method.
-            We want to provide `session` right after it. If we failed to find a `session`,
+            We want to provide `plugin` and `session` right after it. If we failed to find a `session`,
             then it will be early failed and return `failed_return`.
             """
-            session = self.session_by_name(self.session_name)
-            if not session:
+            if not isinstance(self, LspTextCommand):
+                raise RuntimeError('"_provide_session" decorator is only for LspTextCommand.')
+
+            plugin, session = CopilotPlugin.plugin_session(self.view)
+            if not (plugin and session):
                 return failed_return
-            return func(self, session, *arg, **kwargs)
+
+            return func(self, plugin, session, *arg, **kwargs)
 
         return cast(T_Callable, wrap)
 
@@ -133,8 +137,8 @@ class CopilotTextCommand(CopilotCommandBase, LspTextCommand, metaclass=ABCMeta):
 
         session.send_request(Request(request, payload), lambda _: None)
 
-    @_provide_session(failed_return=False)
-    def is_enabled(self, session: Session) -> bool:
+    @_provide_plugin_session(failed_return=False)
+    def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:
         return self._can_meet_requirement(session)
 
 
@@ -149,8 +153,8 @@ class CopilotWindowCommand(CopilotCommandBase, LspWindowCommand, metaclass=ABCMe
 class CopilotGetVersionCommand(CopilotTextCommand):
     requirement = REQUIRE_NOTHING
 
-    @_provide_session()
-    def run(self, session: Session, _: sublime.Edit) -> None:
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         session.send_request(Request(REQ_GET_VERSION, {}), self._on_result_get_version)
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
@@ -158,11 +162,8 @@ class CopilotGetVersionCommand(CopilotTextCommand):
 
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
-        plugin = CopilotPlugin.from_view(self.view)
-        if not plugin:
-            return
-
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         plugin.request_get_completions(self.view)
 
 
@@ -207,8 +208,8 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
-    @_provide_session()
-    def run(self, session: Session, edit: sublime.Edit) -> None:
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:
         completion_manager = ViewCompletionManager(self.view)
         if not completion_manager.is_visible:
             return
@@ -236,8 +237,8 @@ class CopilotAcceptCompletionCommand(CopilotTextCommand):
 
 
 class CopilotRejectCompletionCommand(CopilotTextCommand):
-    @_provide_session()
-    def run(self, session: Session, _: sublime.Edit) -> None:
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         completion_manager = ViewCompletionManager(self.view)
         completion_manager.hide()
 
@@ -250,8 +251,8 @@ class CopilotRejectCompletionCommand(CopilotTextCommand):
 
 
 class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
-    @_provide_session()
-    def run(self, session: Session, _: sublime.Edit) -> None:
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         params = prepare_completion_request(self.view)
         if not params:
             return
@@ -283,8 +284,8 @@ class CopilotNextCompletionCommand(CopilotTextCommand):
 class CopilotCheckStatusCommand(CopilotTextCommand):
     requirement = REQUIRE_NOTHING
 
-    @_provide_session()
-    def run(self, session: Session, _: sublime.Edit) -> None:
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         local_checks = get_setting(session, "local_checks", False)
         session.send_request(Request(REQ_CHECK_STATUS, {"localChecksOnly": local_checks}), self._on_result_check_status)
 
@@ -306,8 +307,8 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 class CopilotSignInCommand(CopilotTextCommand):
     requirement = REQUIRE_NOT_SIGN_IN
 
-    @_provide_session()
-    def run(self, session: Session, _: sublime.Edit) -> None:
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         session.send_request(
             Request(REQ_SIGN_IN_INITIATE, {}),
             partial(self._on_result_sign_in_initiate, session),
@@ -345,8 +346,8 @@ class CopilotSignInCommand(CopilotTextCommand):
 class CopilotSignOutCommand(CopilotTextCommand):
     requirement = REQUIRE_SIGN_IN
 
-    @_provide_session()
-    def run(self, session: Session, _: sublime.Edit) -> None:
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         session.send_request(Request(REQ_SIGN_OUT, {}), self._on_result_sign_out)
 
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
