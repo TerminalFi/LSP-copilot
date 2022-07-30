@@ -215,11 +215,12 @@ class CopilotPlugin(NpmClientHandler):
 
     @_guard_view()
     def request_get_completions(self, view: sublime.View) -> None:
-        self._request_completions(view=view, request=REQ_GET_COMPLETIONS)
-        self.request_get_completions_cycling(view=view)
+        self._request_completions(view, REQ_GET_COMPLETIONS)
+        self.request_get_completions_cycling(view)
 
+    @_guard_view()
     def request_get_completions_cycling(self, view: sublime.View) -> None:
-        self._request_completions(view=view, request=REQ_GET_COMPLETIONS_CYCLING)
+        self._request_completions(view, REQ_GET_COMPLETIONS_CYCLING)
 
     def _request_completions(self, view: sublime.View, request: str) -> None:
         completion_manager = ViewCompletionManager(view)

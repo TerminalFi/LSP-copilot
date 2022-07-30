@@ -168,11 +168,8 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
 
 
 class CopilotAskCompletionsCyclingCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
-        plugin = CopilotPlugin.from_view(self.view)
-        if not plugin:
-            return
-
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         plugin.request_get_completions_cycling(self.view)
 
 
