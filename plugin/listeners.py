@@ -2,7 +2,6 @@ import functools
 
 import sublime
 import sublime_plugin
-from LSP.plugin import Session
 from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
 from LSP.plugin.core.typing import Any, Dict, Optional, Tuple
 
@@ -12,13 +11,6 @@ from .utils import get_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
-    def _get_plugin_session(self) -> Tuple[Optional[CopilotPlugin], Optional[Session]]:
-        plugin = CopilotPlugin.from_view(self.view)
-        if not plugin:
-            return None, None
-
-        return plugin, plugin.weaksession()
-
     def on_modified_async(self) -> None:
         plugin, session = CopilotPlugin.plugin_session(self.view)
 
