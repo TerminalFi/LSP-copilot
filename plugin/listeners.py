@@ -12,7 +12,7 @@ from .utils import get_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
-    def _get_session(self) -> Tuple[Optional[CopilotPlugin], Optional[Session]]:
+    def _get_plugin_session(self) -> Tuple[Optional[CopilotPlugin], Optional[Session]]:
         plugin = CopilotPlugin.from_view(self.view)
         if not plugin:
             return None, None
@@ -20,7 +20,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         return plugin, plugin.weaksession()
 
     def on_modified_async(self) -> None:
-        plugin, session = self._get_session()
+        plugin, session = CopilotPlugin.plugin_session(self.view)
 
         if plugin and session and get_setting(session, "auto_ask_completions"):
             debounced(
@@ -55,7 +55,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if command_name != "auto_complete":
             return
 
-        plugin, session = self._get_session()
+        plugin, session = CopilotPlugin.plugin_session(self.view)
 
         if plugin and session and get_setting(session, "hook_to_auto_complete_command"):
             plugin.request_get_completions(self.view)
@@ -75,4 +75,4 @@ class EventListener(sublime_plugin.EventListener):
             completion_manager = ViewPanelCompletionManager.from_sheet_id(sheet.id())
             if completion_manager:
                 completion_manager.close()
-                return ("noop", None)
+                return "noop", None

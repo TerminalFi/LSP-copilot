@@ -5,7 +5,7 @@ import weakref
 
 import sublime
 from LSP.plugin import Request, Session
-from LSP.plugin.core.typing import Optional, Tuple
+from LSP.plugin.core.typing import Optional, Tuple, Union
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
@@ -145,6 +145,11 @@ class CopilotPlugin(NpmClientHandler):
         if not (self and self.is_valid_for_view(view)):
             return None
         return self
+
+    @classmethod
+    def plugin_session(cls, view: sublime.View) -> Union[Tuple[None, None], Tuple["CopilotPlugin", Optional[Session]]]:
+        plugin = cls.from_view(view)
+        return (plugin, plugin.weaksession()) if plugin else (None, None)
 
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()
