@@ -47,14 +47,15 @@ REQUIRE_AUTHORIZED = 1 << 2
 
 
 def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+    """
+    The first argument is always `self` for a decorated method.
+    We want to provide `plugin` and `session` right after it. If we failed to find a `session`,
+    then it will be early failed and return `failed_return`.
+    """
+
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrapped(self: Any, *arg, **kwargs) -> Any:
-            """
-            The first argument is always `self` for a decorated method.
-            We want to provide `plugin` and `session` right after it. If we failed to find a `session`,
-            then it will be early failed and return `failed_return`.
-            """
             if not isinstance(self, LspTextCommand):
                 raise RuntimeError('"_provide_session" decorator is only for LspTextCommand.')
 
@@ -320,8 +321,8 @@ class CopilotSignInCommand(CopilotTextCommand):
             return
         CopilotPlugin.set_account_status(signed_in=False, authorized=False, quiet=True)
 
-        user_code = payload.get("userCode")
-        verification_uri = payload.get("verificationUri")
+        user_code = payload.get("userCode", "")  # type: str
+        verification_uri = payload.get("verificationUri", "")  # type: str
         if not (user_code and verification_uri):
             return
         sublime.set_clipboard(user_code)

@@ -86,6 +86,7 @@ def erase_copilot_view_setting(view: sublime.View, key: str) -> None:
 
 
 def get_project_relative_path(path: str) -> str:
+    """Get the relative path regarding the project root directory. If not possible, return the path as-is."""
     relpath = path
     for folder in sublime.active_window().folders():
         try:
@@ -96,6 +97,7 @@ def get_project_relative_path(path: str) -> str:
 
 
 def get_setting(session: Session, key: str, default: Optional[Union[str, bool, List[str]]] = None) -> Any:
+    """Get the value of the `key` in "settings" in this plugin's "LSP-*.sublime-settings"."""
     value = session.config.settings.get(key)
     if value is None:
         return default
@@ -103,7 +105,8 @@ def get_setting(session: Session, key: str, default: Optional[Union[str, bool, L
 
 
 def get_view_language_id(view: sublime.View, point: int = 0) -> str:
-    """Find the language ID of the deepest scope satisfying `source | text | embedding` at `point`."""
+    """Find the language ID for the `view` at `point`."""
+    # the deepest scope satisfying `source | text | embedding` will be used to find language ID
     for scope in reversed(view.scope_name(point).split(" ")):
         if sublime.score_selector(scope, "source | text | embedding"):
             # For some embedded languages, they are scoped as "EMBEDDED_LANG.embedded.PARENT_LANG"
@@ -113,6 +116,15 @@ def get_view_language_id(view: sublime.View, point: int = 0) -> str:
 
 
 def message_dialog(msg_: str, *args, error_: bool = False, console_: bool = False, **kwargs) -> None:
+    """
+    Show a message dialog, whose message is prefixed with "[PACKAGE_NAME]".
+
+    :param      msg_:      The message
+    :param      args:      The arguments for `str.format`
+    :param      error_:    The error
+    :param      console_:  Show message in console as well?
+    :param      kwargs:    The keywords arguments for `str.format`
+    """
     full_msg = "[{}] {}".format(PACKAGE_NAME, msg_.format(*args, **kwargs))
     messenger = sublime.error_message if error_ else sublime.message_dialog
     messenger(full_msg)
@@ -122,6 +134,13 @@ def message_dialog(msg_: str, *args, error_: bool = False, console_: bool = Fals
 
 
 def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
+    """
+    Show an OK/cancel dialog, whose message is prefixed with "[PACKAGE_NAME]".
+
+    :param      msg_:      The message
+    :param      args:      The arguments for `str.format`
+    :param      kwargs:    The keywords arguments for `str.format`
+    """
     return sublime.ok_cancel_dialog("[{}] {}".format(PACKAGE_NAME, msg_.format(*args, **kwargs)))
 
 
@@ -148,6 +167,7 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
 
 
 def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadCompletion]) -> None:
+    """Preprocess the `completions` from "getCompletions" request."""
     # in-place de-duplication
     unique_indexes = set(
         map(
@@ -169,6 +189,7 @@ def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadC
 
 
 def preprocess_panel_completions(view: sublime.View, completions: List[CopilotPayloadPanelSolution]) -> None:
+    """Preprocess the `completions` from "getCompletionsCycling" request."""
     for completion in completions:
         _generate_completion_region(view, completion)
 
@@ -190,6 +211,15 @@ def remove_suffix(s: str, suffix: str) -> str:
 
 
 def status_message(msg_: str, *args, icon_: Optional[str] = "✈", console_: bool = False, **kwargs) -> None:
+    """
+    Show a status message in the status bar, whose message is prefixed with `icon` and "Copilot".
+
+    :param      msg_:      The message
+    :param      args:      The arguments for `str.format`
+    :param      icon_:     The icon
+    :param      console_:  Show message in console as well?
+    :param      kwargs:    The keywords arguments for `str.format`
+    """
     prefix = "{} ".format(icon_) if icon_ else ""
     full_msg = "{}Copilot {}".format(prefix, msg_.format(*args, **kwargs))
     sublime.status_message(full_msg)
@@ -199,6 +229,10 @@ def status_message(msg_: str, *args, icon_: Optional[str] = "✈", console_: boo
 
 
 def unique(items: Iterable[T], *, key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
+    """
+    Generate unique items from `items` by using `key` function on item as unique identifier.
+    If `key` is not provided, an item itself will be used as its unique identifier.
+    """
     key = key or (lambda x: x)
     seen = set()  # type: Set[int]
     for item in items:

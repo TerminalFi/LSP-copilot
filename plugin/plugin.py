@@ -40,13 +40,14 @@ from .utils import (
 
 
 def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+    """
+    The first two arguments have to be `self` and `view` for a decorated method.
+    If `view` doesn't meeting some requirements, it will be early failed and return `failed_return`.
+    """
+
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrapped(self: Any, view: sublime.View, *arg, **kwargs) -> Any:
-            """
-            The first two arguments have to be `self` and `view` for a decorated method.
-            If `view` doesn't meeting some requirements, it will be early failed and return `failed_return`.
-            """
             view_settings = view.settings()
             if not (
                 view.is_valid()
