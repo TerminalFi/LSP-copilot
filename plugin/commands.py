@@ -33,7 +33,7 @@ from .types import (
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     find_view_by_id,
-    get_setting,
+    get_session_setting,
     message_dialog,
     ok_cancel_dialog,
     prepare_completion_request,
@@ -112,7 +112,7 @@ class CopilotCommandBase(metaclass=ABCMeta):
     requirement = REQUIRE_SIGN_IN | REQUIRE_AUTHORIZED
 
     def _can_meet_requirement(self, session: Session) -> bool:
-        if get_setting(session, "debug", False):
+        if get_session_setting(session, "debug"):
             return True
 
         has_signed_in, is_authorized = CopilotPlugin.get_account_status()
@@ -133,7 +133,7 @@ class CopilotTextCommand(CopilotCommandBase, LspTextCommand, metaclass=ABCMeta):
         request: str,
         payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected],
     ) -> None:
-        if not get_setting(session, "telemetry", False):
+        if not get_session_setting(session, "telemetry"):
             return
 
         session.send_request(Request(request, payload), lambda _: None)
@@ -284,7 +284,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        local_checks = get_setting(session, "local_checks", False)
+        local_checks = get_session_setting(session, "local_checks")
         session.send_request(Request(REQ_CHECK_STATUS, {"localChecksOnly": local_checks}), self._on_result_check_status)
 
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
