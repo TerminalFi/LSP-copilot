@@ -192,6 +192,7 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
         # it seems that `completionText` always assume your cursor is at the end of the line
         source_line_region = self.view.line(sublime.Region(*completion["region"]))
         self.view.insert(edit, source_line_region.end(), completion["completionText"])
+        self.view.show(self.view.sel(), show_surrounds=False, animate=self.view.settings().get("animation_enabled"))
 
         completion_manager.close()
 
@@ -223,6 +224,7 @@ class CopilotAcceptCompletionCommand(CopilotTextCommand):
         source_line_region = self.view.line(completion["point"])
         self.view.erase(edit, source_line_region)
         self.view.insert(edit, source_line_region.begin(), completion["text"])
+        self.view.show(self.view.sel(), show_surrounds=False, animate=self.view.settings().get("animation_enabled"))
 
         # notify the current completion as accepted
         self._record_telemetry(session, REQ_NOTIFY_ACCEPTED, {"uuid": completion["uuid"]})
