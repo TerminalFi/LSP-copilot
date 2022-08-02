@@ -14,8 +14,6 @@ and entire functions in real-time right from your editor.
 
 ## Installation
 
-Currently, LSP-copilot is not on Package Control.
-
 1. Install [LSP][] and [LSP-copilot][] via Package Control.
 1. Restart Sublime Text.
 
