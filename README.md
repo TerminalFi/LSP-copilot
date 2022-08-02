@@ -16,10 +16,7 @@ and entire functions in real-time right from your editor.
 
 Currently, LSP-copilot is not on Package Control.
 
-1. Install [LSP][] via Package Control.
-1. Clone LSP-copilot to your `Packages` folder.
-    1. Run `sublime.packages_path()` in Sublime Text console. It will show the path of your `Packages` folder.
-    1. Open terminal in the `Packages` folder and then run `git clone git@github.com:TheSecEng/LSP-copilot.git`
+1. Install [LSP][] and [LSP-copilot][] via Package Control.
 1. Restart Sublime Text.
 
 ## Setup
@@ -56,3 +53,4 @@ Copilot's suggestion.
 [Copilot]: https://github.com/features/copilot
 [Copilot.vim]: https://github.com/github/copilot.vim/tree/release/copilot/dist
 [LSP]: https://packagecontrol.io/packages/LSP
+[LSP-copilot]: https://packagecontrol.io/packages/LSP-copilot
