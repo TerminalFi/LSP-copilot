@@ -4,7 +4,7 @@ from LSP.plugin.core.typing import Any, Dict, Optional, Tuple
 
 from .plugin import CopilotPlugin
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import get_setting
+from .utils import get_session_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
@@ -13,7 +13,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if (
             plugin
             and session
-            and get_setting(session, "auto_ask_completions")
+            and get_session_setting(session, "auto_ask_completions")
             and not ViewCompletionManager(self.view).is_waiting
         ):
             plugin.request_get_completions(self.view)
@@ -45,7 +45,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
         plugin, session = CopilotPlugin.plugin_session(self.view)
 
-        if plugin and session and get_setting(session, "hook_to_auto_complete_command"):
+        if plugin and session and get_session_setting(session, "hook_to_auto_complete_command"):
             plugin.request_get_completions(self.view)
 
 

@@ -127,12 +127,10 @@ def get_project_relative_path(path: str) -> str:
     return relpath
 
 
-def get_setting(session: Session, key: str, default: Optional[Union[str, bool, List[str]]] = None) -> Any:
+def get_session_setting(session: Session, key: str, default: Any = None) -> Any:
     """Get the value of the `key` in "settings" in this plugin's "LSP-*.sublime-settings"."""
     value = session.config.settings.get(key)
-    if value is None:
-        return default
-    return value
+    return default if value is None else value
 
 
 def get_view_language_id(view: sublime.View, point: int = 0) -> str:
@@ -185,9 +183,9 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
     return {
         "doc": {
             "source": view.substr(sublime.Region(0, view.size())),
-            "tabSize": view.settings().get("tab_size", 4),
+            "tabSize": view.settings().get("tab_size"),
             "indentSize": 1,  # there is no such concept in ST
-            "insertSpaces": view.settings().get("translate_tabs_to_spaces", False),
+            "insertSpaces": view.settings().get("translate_tabs_to_spaces"),
             "path": file_path,
             "uri": file_path and filename_to_uri(file_path),
             "relativePath": get_project_relative_path(file_path),
