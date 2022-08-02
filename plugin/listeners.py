@@ -1,8 +1,5 @@
-import functools
-
 import sublime
 import sublime_plugin
-from LSP.plugin.core.types import FEATURES_TIMEOUT, debounced
 from LSP.plugin.core.typing import Any, Dict, Optional, Tuple
 
 from .plugin import CopilotPlugin
@@ -13,14 +10,13 @@ from .utils import get_session_setting
 class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_modified_async(self) -> None:
         plugin, session = CopilotPlugin.plugin_session(self.view)
-
-        if plugin and session and get_session_setting(session, "auto_ask_completions"):
-            debounced(
-                functools.partial(plugin.request_get_completions, self.view),
-                FEATURES_TIMEOUT,
-                lambda: not ViewCompletionManager(self.view).is_waiting,
-                async_thread=True,
-            )
+        if (
+            plugin
+            and session
+            and get_session_setting(session, "auto_ask_completions")
+            and not ViewCompletionManager(self.view).is_waiting
+        ):
+            plugin.request_get_completions(self.view)
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()

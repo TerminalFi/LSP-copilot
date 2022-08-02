@@ -1,6 +1,8 @@
 import os
 import textwrap
+import threading
 import traceback
+from functools import wraps
 from itertools import takewhile
 from operator import itemgetter
 
@@ -8,11 +10,11 @@ import mdpopups
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Set, TypeVar, Union
+from LSP.plugin.core.typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Set, TypeVar, Union, cast
 from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
-from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution
+from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
 
 T = TypeVar("T")
 T_Number = TypeVar("T_Number", bound=Union[int, float])
@@ -49,6 +51,35 @@ def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T
     if max_val is not None and val > max_val:  # type: ignore
         return max_val
     return val
+
+
+def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
+    """
+    Debounce a function so that it's called after `time_s` seconds.
+    If it's called multiple times in the time frame, it will only run the last call.
+
+    Taken and modified from https://github.com/salesforce/decorator-operations
+    """
+
+    def decorator(func: T_Callable) -> T_Callable:
+        @wraps(func)
+        def debounced(*args: Any, **kwargs: Any) -> None:
+            def call_function() -> Any:
+                delattr(debounced, "_timer")
+                return func(*args, **kwargs)
+
+            timer = getattr(debounced, "_timer", None)  # type: Optional[threading.Timer]
+            if timer is not None:
+                timer.cancel()
+
+            timer = threading.Timer(time_s, call_function)
+            timer.start()
+            setattr(debounced, "_timer", timer)
+
+        setattr(debounced, "_timer", None)
+        return cast(T_Callable, debounced)
+
+    return decorator
 
 
 def find_sheet_by_id(id: int) -> Optional[sublime.Sheet]:
