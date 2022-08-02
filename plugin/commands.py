@@ -33,7 +33,7 @@ from .types import (
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     find_view_by_id,
-    get_setting,
+    get_session_setting,
     message_dialog,
     ok_cancel_dialog,
     prepare_completion_request,
@@ -47,14 +47,15 @@ REQUIRE_AUTHORIZED = 1 << 2
 
 
 def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+    """
+    The first argument is always `self` for a decorated method.
+    We want to provide `plugin` and `session` right after it. If we failed to find a `session`,
+    then it will be early failed and return `failed_return`.
+    """
+
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrapped(self: Any, *arg, **kwargs) -> Any:
-            """
-            The first argument is always `self` for a decorated method.
-            We want to provide `plugin` and `session` right after it. If we failed to find a `session`,
-            then it will be early failed and return `failed_return`.
-            """
             if not isinstance(self, LspTextCommand):
                 raise RuntimeError('"_provide_session" decorator is only for LspTextCommand.')
 
@@ -111,7 +112,7 @@ class CopilotCommandBase(metaclass=ABCMeta):
     requirement = REQUIRE_SIGN_IN | REQUIRE_AUTHORIZED
 
     def _can_meet_requirement(self, session: Session) -> bool:
-        if get_setting(session, "debug", False):
+        if get_session_setting(session, "debug"):
             return True
 
         has_signed_in, is_authorized = CopilotPlugin.get_account_status()
@@ -132,7 +133,7 @@ class CopilotTextCommand(CopilotCommandBase, LspTextCommand, metaclass=ABCMeta):
         request: str,
         payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected],
     ) -> None:
-        if not get_setting(session, "telemetry", False):
+        if not get_session_setting(session, "telemetry"):
             return
 
         session.send_request(Request(request, payload), lambda _: None)
@@ -167,12 +168,6 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
         plugin.request_get_completions(self.view)
 
 
-class CopilotAskCompletionsCyclingCommand(CopilotTextCommand):
-    @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        plugin.request_get_completions_cycling(self.view)
-
-
 class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
     def run(self, view_id: int, completion_index: int) -> None:
         view = find_view_by_id(view_id)
@@ -191,6 +186,7 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
         # it seems that `completionText` always assume your cursor is at the end of the line
         source_line_region = self.view.line(sublime.Region(*completion["region"]))
         self.view.insert(edit, source_line_region.end(), completion["completionText"])
+        self.view.show(self.view.sel(), show_surrounds=False, animate=self.view.settings().get("animation_enabled"))
 
         completion_manager.close()
 
@@ -222,6 +218,7 @@ class CopilotAcceptCompletionCommand(CopilotTextCommand):
         source_line_region = self.view.line(completion["point"])
         self.view.erase(edit, source_line_region)
         self.view.insert(edit, source_line_region.begin(), completion["text"])
+        self.view.show(self.view.sel(), show_surrounds=False, animate=self.view.settings().get("animation_enabled"))
 
         # notify the current completion as accepted
         self._record_telemetry(session, REQ_NOTIFY_ACCEPTED, {"uuid": completion["uuid"]})
@@ -283,7 +280,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        local_checks = get_setting(session, "local_checks", False)
+        local_checks = get_session_setting(session, "local_checks")
         session.send_request(Request(REQ_CHECK_STATUS, {"localChecksOnly": local_checks}), self._on_result_check_status)
 
     def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
@@ -320,8 +317,8 @@ class CopilotSignInCommand(CopilotTextCommand):
             return
         CopilotPlugin.set_account_status(signed_in=False, authorized=False, quiet=True)
 
-        user_code = payload.get("userCode")
-        verification_uri = payload.get("verificationUri")
+        user_code = payload.get("userCode", "")  # type: str
+        verification_uri = payload.get("verificationUri", "")  # type: str
         if not (user_code and verification_uri):
             return
         sublime.set_clipboard(user_code)

@@ -32,6 +32,7 @@ from .types import (
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     all_views,
+    debounce,
     prepare_completion_request,
     preprocess_completions,
     preprocess_panel_completions,
@@ -40,13 +41,14 @@ from .utils import (
 
 
 def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+    """
+    The first two arguments have to be `self` and `view` for a decorated method.
+    If `view` doesn't meeting some requirements, it will be early failed and return `failed_return`.
+    """
+
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrapped(self: Any, view: sublime.View, *arg, **kwargs) -> Any:
-            """
-            The first two arguments have to be `self` and `view` for a decorated method.
-            If `view` doesn't meeting some requirements, it will be early failed and return `failed_return`.
-            """
             view_settings = view.settings()
             if not (
                 view.is_valid()
@@ -214,15 +216,12 @@ class CopilotPlugin(NpmClientHandler):
         pass
 
     @_guard_view()
+    @debounce()
     def request_get_completions(self, view: sublime.View) -> None:
-        self._request_completions(view, REQ_GET_COMPLETIONS)
-        self.request_get_completions_cycling(view)
-
-    @_guard_view()
-    def request_get_completions_cycling(self, view: sublime.View) -> None:
+        self._request_completions(view, REQ_GET_COMPLETIONS, no_callback=True)
         self._request_completions(view, REQ_GET_COMPLETIONS_CYCLING)
 
-    def _request_completions(self, view: sublime.View, request: str) -> None:
+    def _request_completions(self, view: sublime.View, request: str, *, no_callback: bool = False) -> None:
         completion_manager = ViewCompletionManager(view)
         completion_manager.hide()
 
@@ -236,11 +235,13 @@ class CopilotPlugin(NpmClientHandler):
         if not params:
             return
 
-        completion_manager.is_waiting = True
-        session.send_request_async(
-            Request(request, params),
-            functools.partial(self._on_get_completions, view, region=sel[0].to_tuple()),
-        )
+        if no_callback:
+            callback = lambda _: None
+        else:
+            completion_manager.is_waiting = True
+            callback = functools.partial(self._on_get_completions, view, region=sel[0].to_tuple())
+
+        session.send_request_async(Request(request, params), callback)
 
     def _on_get_completions(
         self,
@@ -251,8 +252,12 @@ class CopilotPlugin(NpmClientHandler):
         completion_manager = ViewCompletionManager(view)
         completion_manager.is_waiting = False
 
+        sel = view.sel()
+        if len(sel) != 1:
+            return
+
         # re-request completions because the cursor position changed during awaiting Copilot's response
-        if view.sel()[0].to_tuple() != region:
+        if sel[0].to_tuple() != region:
             self.request_get_completions(view)
             return
 

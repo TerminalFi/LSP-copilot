@@ -302,6 +302,8 @@ class _PanelCompletion:
             window.set_layout(self.completion_manager.original_layout)
             self.completion_manager.original_layout = None
 
+        window.focus_view(self.view)
+
     @staticmethod
     def _prepare_popup_code_display_text(display_text: str) -> str:
         # The returned completion is in the form of
