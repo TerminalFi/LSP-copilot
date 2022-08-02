@@ -123,7 +123,7 @@ class ViewCompletionManager:
             return 0
 
         # clamp if it's out-of-bounds or treat it as cyclic?
-        if self.view.settings().get("auto_complete_cycle", False):
+        if self.view.settings().get("auto_complete_cycle"):
             return index % completions_cnt
         return clamp(index, 0, completions_cnt - 1)
 
