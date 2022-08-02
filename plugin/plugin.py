@@ -252,8 +252,12 @@ class CopilotPlugin(NpmClientHandler):
         completion_manager = ViewCompletionManager(view)
         completion_manager.is_waiting = False
 
+        sel = view.sel()
+        if len(sel) != 1:
+            return
+
         # re-request completions because the cursor position changed during awaiting Copilot's response
-        if view.sel()[0].to_tuple() != region:
+        if sel[0].to_tuple() != region:
             self.request_get_completions(view)
             return
 
