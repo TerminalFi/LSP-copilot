@@ -19,7 +19,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_modified_async(self) -> None:
         self._is_modified = True
         plugin, session = CopilotPlugin.plugin_session(self.view)
-        
+
         if (
             plugin
             and session
