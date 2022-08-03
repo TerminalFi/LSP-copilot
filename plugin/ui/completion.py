@@ -144,6 +144,8 @@ class _BaseCompletion(metaclass=ABCMeta):
         self.view = view
         self.completion_manager = ViewCompletionManager(view)
 
+        self._settings = self.view.settings()
+
     @abstractmethod
     def show(self) -> None:
         pass
@@ -337,7 +339,7 @@ class _PhantomCompletion(_BaseCompletion):
         return _view_to_phantom_set[view_id]
 
     def normalize_phantom_line(self, line: str) -> str:
-        return html.escape(line).replace(" ", "&nbsp;").replace("\t", "&nbsp;" * self.view.settings().get("tab_size"))
+        return html.escape(line).replace(" ", "&nbsp;").replace("\t", "&nbsp;" * self._settings.get("tab_size"))
 
     def _build_phantom(
         self,
@@ -348,8 +350,6 @@ class _PhantomCompletion(_BaseCompletion):
         inline: bool = True
         # format separator
     ) -> sublime.Phantom:
-        view_settings = self.view.settings()
-
         body = (
             self.normalize_phantom_line(lines)
             if isinstance(lines, str)
@@ -366,8 +366,8 @@ class _PhantomCompletion(_BaseCompletion):
             sublime.Region(begin, begin if end is None else end),
             self.PHANTOM_TEMPLATE.format(
                 body=body,
-                line_padding_top=int(view_settings.get("line_padding_top")) * 2,  # TODO: play with this more
-                line_padding_bottom=int(view_settings.get("line_padding_bottom")) * 2,
+                line_padding_top=int(self._settings.get("line_padding_top")) * 2,  # TODO: play with this more
+                line_padding_bottom=int(self._settings.get("line_padding_bottom")) * 2,
             ),
             sublime.LAYOUT_INLINE if inline else sublime.LAYOUT_BLOCK,
         )
