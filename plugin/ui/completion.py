@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import Dict, List, Optional, Sequence
+from LSP.plugin.core.typing import Dict, List, Optional, Sequence, Union
 
 from ..types import CopilotPayloadCompletion
 from ..utils import (
@@ -339,19 +339,31 @@ class _PhantomCompletion(_BaseCompletion):
     def normalize_phantom_line(self, line: str) -> str:
         return html.escape(line).replace(" ", "&nbsp;").replace("\t", "&nbsp;" * self.view.settings().get("tab_size"))
 
-    def _build_phantom(self, lines: Sequence[str], region: sublime.Region, *, inline: bool = True) -> sublime.Phantom:
+    def _build_phantom(
+        self,
+        lines: Union[str, Sequence[str]],
+        begin: int,
+        end: Optional[int] = None,
+        *,
+        inline: bool = True
+        # format separator
+    ) -> sublime.Phantom:
         view_settings = self.view.settings()
 
-        body = "".join(
-            self.PHANTOM_LINE_TEMPLATE.format(
-                class_name="rest" if index else "first",
-                content=self.normalize_phantom_line(line),
+        body = (
+            self.normalize_phantom_line(lines)
+            if isinstance(lines, str)
+            else "".join(
+                self.PHANTOM_LINE_TEMPLATE.format(
+                    class_name=("rest" if index else "first"),
+                    content=self.normalize_phantom_line(line),
+                )
+                for index, line in enumerate(lines)
             )
-            for index, line in enumerate(lines)
         )
 
         return sublime.Phantom(
-            region,
+            sublime.Region(begin, begin if end is None else end),
             self.PHANTOM_TEMPLATE.format(
                 body=body,
                 line_padding_top=int(view_settings.get("line_padding_top")) * 2,  # TODO: play with this more
@@ -369,9 +381,9 @@ class _PhantomCompletion(_BaseCompletion):
         assert self._phantom_set
         self._phantom_set.update(
             [
-                self._build_phantom([first_line], sublime.Region(completion["point"] + 1, completion["point"])),
+                self._build_phantom([first_line], completion["point"] + 1, completion["point"]),
                 # an empty phantom is required to prevent the cursor from jumping, even if there is only one line
-                self._build_phantom(rest_lines, sublime.Region(completion["point"]), inline=False),
+                self._build_phantom(rest_lines, completion["point"], inline=False),
             ]
         )
 
