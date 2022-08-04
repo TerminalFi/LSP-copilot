@@ -381,7 +381,7 @@ class _PhantomCompletion(_BaseCompletion):
         assert self._phantom_set
         self._phantom_set.update(
             [
-                self._build_phantom([first_line], completion["point"] + 1, completion["point"]),
+                self._build_phantom(first_line, completion["point"] + 1, completion["point"]),
                 # an empty phantom is required to prevent the cursor from jumping, even if there is only one line
                 self._build_phantom(rest_lines, completion["point"], inline=False),
             ]
