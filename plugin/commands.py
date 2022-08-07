@@ -3,10 +3,8 @@ from functools import partial, wraps
 
 import sublime
 from LSP.plugin import Request, Session
-from LSP.plugin.core import registry
-from LSP.plugin.core.registry import LspTextCommand, sublime_plugin
-from LSP.plugin.core.typing import Any, Callable, Generator, Optional, Union, cast
-from LSP.plugin.core.windows import WindowManager
+from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
+from LSP.plugin.core.typing import Any, Callable, Union, cast
 
 from .constants import (
     PACKAGE_NAME,
@@ -68,43 +66,6 @@ def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callabl
         return cast(T_Callable, wrapped)
 
     return decorator
-
-
-# TODO: This is just a copy of `LspWindowCommand`.
-#       We should use LSP's `LspWindowCommand` when `4070-1.16.4` or later is released.
-class LspWindowCommand(sublime_plugin.WindowCommand):
-    """
-    Inherit from this class to define requests which are not bound to a particular view. This allows to run requests
-    for example from links in HtmlSheets or when an unrelated file has focus.
-    """
-
-    # When this is defined in a derived class, the command is enabled only if there exists a session with the given
-    # capability attached to a view in the window.
-    capability = ""
-
-    # When this is defined in a derived class, the command is enabled only if there exists a session with the given
-    # name attached to a view in the window.
-    session_name = ""
-
-    def is_enabled(self) -> bool:
-        return self.session() is not None
-
-    def session(self) -> Optional[Session]:
-        if not hasattr(WindowManager, "get_sessions"):
-
-            def get_sessions(self: WindowManager) -> Generator[Session, None, None]:
-                yield from self._sessions
-
-            WindowManager.get_sessions = get_sessions
-
-        for session in registry.windows.lookup(self.window).get_sessions():
-            if self.capability and not session.has_capability(self.capability):
-                continue
-            if self.session_name and session.config.name != self.session_name:
-                continue
-            return session
-        else:
-            return None
 
 
 class CopilotCommandBase(metaclass=ABCMeta):
