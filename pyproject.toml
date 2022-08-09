@@ -27,6 +27,10 @@ skip_glob = [
   "venv/**",
 ]
 
+[tool.pycln]
+all = true
+exclude = '(\.git|\.?venv|\.mypy_cache|br-.*|branch-.*|libs|stubs|typings)/'
+
 [tool.black]
 line-length = 120
 target-version = ['py33']

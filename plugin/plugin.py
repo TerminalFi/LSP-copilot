@@ -236,7 +236,7 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         if no_callback:
-            callback = lambda _: None
+            callback = lambda _: None  # noqa: E731
         else:
             completion_manager.is_waiting = True
             callback = functools.partial(self._on_get_completions, view, region=sel[0].to_tuple())
