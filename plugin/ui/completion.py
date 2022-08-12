@@ -307,6 +307,7 @@ class _PhantomCompletion(_BaseCompletion):
         <style>
             body {{
                 color: #808080;
+                font-style: italic;
             }}
 
             .copilot-completion-line {{
