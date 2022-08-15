@@ -350,6 +350,7 @@ class _PhantomCompletion(_BaseCompletion):
             }}
 
             .copilot-completion-line {{
+                line-height: 0;
                 margin-top: {line_padding_top}px;
                 margin-bottom: {line_padding_bottom}px;
             }}
