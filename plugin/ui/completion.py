@@ -133,10 +133,16 @@ class ViewCompletionManager:
         self.show(completion_index=self.completion_index + 1)
 
     def handle_selection_change(self) -> None:
-        if not self.is_phantom():
+        if not self.is_phantom() or not self.is_visible:
             return
 
-        self.completion_style_type.hide(self.view)
+        self.hide()
+
+    def handle_text_change(self) -> None:
+        if not self.is_phantom() or not self.is_visible:
+            return
+
+        self.hide()
 
     def handle_close(self) -> None:
         if not self.is_phantom():

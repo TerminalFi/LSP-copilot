@@ -20,12 +20,13 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         self._is_modified = True
         plugin, session = CopilotPlugin.plugin_session(self.view)
 
-        if (
-            plugin
-            and session
-            and get_session_setting(session, "auto_ask_completions")
-            and not ViewCompletionManager(self.view).is_waiting
-        ):
+        if not plugin or not session:
+            return
+
+        vcm = ViewCompletionManager(self.view)
+        vcm.handle_text_change()
+
+        if get_session_setting(session, "auto_ask_completions") and not vcm.is_waiting:
             plugin.request_get_completions(self.view)
 
     def on_deactivated_async(self) -> None:
