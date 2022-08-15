@@ -122,8 +122,8 @@ class ViewCompletionManager:
             return
 
         # TODO: make this configurable
-        # _PopupCompletion(self.view).show()
-        _PhantomCompletion(self.view).show()
+        # _PopupCompletion(self.view, self.current_completion, self.completion_index, len(self.completions)).show()
+        _PhantomCompletion(self.view, self.current_completion, self.completion_index, len(self.completions)).show()
 
         self.is_visible = True
 
@@ -140,9 +140,13 @@ class ViewCompletionManager:
 
 
 class _BaseCompletion(metaclass=ABCMeta):
-    def __init__(self, view: sublime.View) -> None:
+    def __init__(
+        self, view: sublime.View, completion: CopilotPayloadCompletion, index: int = 0, count: int = 1
+    ) -> None:
         self.view = view
-        self.completion_manager = ViewCompletionManager(view)
+        self.completion = completion
+        self.index = index
+        self.count = count
 
         self._settings = self.view.settings()
 
@@ -242,8 +246,6 @@ class _PopupCompletion(_BaseCompletion):
 
     @property
     def popup_content(self) -> str:
-        self.completion = self.completion_manager.current_completion
-        assert self.completion  # our code flow guarantees this
         return self.COMPLETION_TEMPLATE.format(
             header_items=" &nbsp;".join(self.popup_header_items),
             lang=get_view_language_id(self.view, self.completion["point"]),
@@ -252,20 +254,19 @@ class _PopupCompletion(_BaseCompletion):
 
     @property
     def popup_header_items(self) -> List[str]:
-        completions_cnt = len(self.completion_manager.completions)
         header_items = [
             '<a class="accept" title="Accept Completion" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
             '<a class="reject" title="Reject Completion" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
         ]
-        if completions_cnt > 1:
+        if self.count > 1:
             header_items.append(
                 '<a class="prev" title="Previous Completion" href="subl:copilot_previous_completion">◀</a>'
                 + '<a class="next" title="Next Completion" href="subl:copilot_next_completion">▶</a>'
             )
             header_items.append(
                 "({completion_index_1} of {completions_cnt})".format(
-                    completion_index_1=self.completion_manager.completion_index + 1,  # 1-based index
-                    completions_cnt=completions_cnt,
+                    completion_index_1=self.index + 1,  # 1-based index
+                    completions_cnt=self.count,
                 )
             )
         header_items.append(
@@ -275,8 +276,6 @@ class _PopupCompletion(_BaseCompletion):
 
     @property
     def popup_code(self) -> str:
-        self.completion = self.completion_manager.current_completion
-        assert self.completion  # our code flow guarantees this
         return fix_completion_syntax_highlight(
             self.view,
             self.completion["point"],
@@ -324,8 +323,10 @@ class _PhantomCompletion(_BaseCompletion):
     """
     PHANTOM_LINE_TEMPLATE = '<div class="copilot-completion-line {class_name}">{content}</div>'
 
-    def __init__(self, view: sublime.View) -> None:
-        super().__init__(view)
+    def __init__(
+        self, view: sublime.View, completion: CopilotPayloadCompletion, index: int = 0, count: int = 1
+    ) -> None:
+        super().__init__(view, completion, index, count)
 
         self._phantom_set = self._get_phantom_set(view)
 
@@ -374,17 +375,15 @@ class _PhantomCompletion(_BaseCompletion):
         )
 
     def show(self) -> None:
-        completion = self.completion_manager.current_completion
-        assert completion
-
-        first_line, *rest_lines = completion["displayText"].splitlines()
+        first_line, *rest_lines = self.completion["displayText"].splitlines()
 
         assert self._phantom_set
+        self._phantom_set.update([])
         self._phantom_set.update(
             [
-                self._build_phantom(first_line, completion["point"] + 1, completion["point"]),
+                self._build_phantom(first_line, self.completion["point"] + 1, self.completion["point"]),
                 # an empty phantom is required to prevent the cursor from jumping, even if there is only one line
-                self._build_phantom(rest_lines, completion["point"], inline=False),
+                self._build_phantom(rest_lines, self.completion["point"], inline=False),
             ]
         )
 
