@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import Dict, List, Optional, Sequence, Union
+from LSP.plugin.core.typing import Dict, List, Optional, Sequence, Type, Union
 
 from ..types import CopilotPayloadCompletion
 from ..utils import (
@@ -20,7 +20,31 @@ from ..utils import (
 _view_to_phantom_set = {}  # type: Dict[int, sublime.PhantomSet]
 
 
+class _BaseCompletion(metaclass=ABCMeta):
+    def __init__(
+        self, view: sublime.View, completion: CopilotPayloadCompletion, index: int = 0, count: int = 1
+    ) -> None:
+        self.view = view
+        self.completion = completion
+        self.index = index
+        self.count = count
+
+        self._settings = self.view.settings()
+
+    @abstractmethod
+    def show(self) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def hide(cls, _: sublime.View) -> None:
+        pass
+
+
 class ViewCompletionManager:
+    COMPLETION_STYLE_PHANTOM = "phantom"
+    COMPLETION_STYLES = ["popup", COMPLETION_STYLE_PHANTOM]
+
     # ------------- #
     # view settings #
     # ------------- #
@@ -53,6 +77,19 @@ class ViewCompletionManager:
         set_copilot_view_setting(self.view, "completions", value)
 
     @property
+    def completion_style(self) -> str:
+        """The completion style."""
+        return get_copilot_view_setting(self.view, "completion_style", self.COMPLETION_STYLES[0])
+
+    @completion_style.setter
+    def completion_style(self, value: str) -> None:
+        set_copilot_view_setting(
+            self.view,
+            "completion_style",
+            value if value in self.COMPLETION_STYLES else self.COMPLETION_STYLES[0],
+        )
+
+    @property
     def completion_index(self) -> int:
         """The index of the current chosen completion."""
         return get_copilot_view_setting(self.view, "completion_index", 0)
@@ -81,6 +118,13 @@ class ViewCompletionManager:
         """The current chosen `completion`."""
         return self.completions[self.completion_index] if self.completions else None
 
+    @property
+    def completion_style_type(self) -> Type[_BaseCompletion]:
+        return globals().get("_{}Completion".format(self.completion_style.capitalize()))
+
+    def is_phantom(self) -> bool:
+        return self.completion_style == self.COMPLETION_STYLE_PHANTOM
+
     def show_previous_completion(self) -> None:
         """Show the previous completion."""
         self.show(completion_index=self.completion_index - 1)
@@ -90,7 +134,10 @@ class ViewCompletionManager:
         self.show(completion_index=self.completion_index + 1)
 
     def handle_selection_change(self) -> None:
-        _PhantomCompletion.hide(self.view)
+        if not self.is_phantom():
+            return
+
+        self.completion_style_type.hide(self.view)
 
     def hide(self) -> None:
         """Hide Copilot's completion popup."""
@@ -105,12 +152,15 @@ class ViewCompletionManager:
         self,
         completions: Optional[List[CopilotPayloadCompletion]] = None,
         completion_index: Optional[int] = None,
+        completion_style: Optional[str] = None,
     ) -> None:
         """Show Copilot's completion popup."""
         if completions is not None:
             self.completions = completions
         if completion_index is not None:
             self.completion_index = completion_index
+        if completion_style is not None:
+            self.completion_style = completion_style
 
         completion = self.current_completion
         if not completion:
@@ -121,9 +171,9 @@ class ViewCompletionManager:
         if completion["text"] == self.view.substr(current_line):
             return
 
-        # TODO: make this configurable
-        # _PopupCompletion(self.view, self.current_completion, self.completion_index, len(self.completions)).show()
-        _PhantomCompletion(self.view, self.current_completion, self.completion_index, len(self.completions)).show()
+        self.completion_style_type(
+            self.view, self.current_completion, self.completion_index, len(self.completions)
+        ).show()
 
         self.is_visible = True
 
@@ -137,27 +187,6 @@ class ViewCompletionManager:
         if self.view.settings().get("auto_complete_cycle"):
             return index % completions_cnt
         return clamp(index, 0, completions_cnt - 1)
-
-
-class _BaseCompletion(metaclass=ABCMeta):
-    def __init__(
-        self, view: sublime.View, completion: CopilotPayloadCompletion, index: int = 0, count: int = 1
-    ) -> None:
-        self.view = view
-        self.completion = completion
-        self.index = index
-        self.count = count
-
-        self._settings = self.view.settings()
-
-    @abstractmethod
-    def show(self) -> None:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def hide(cls, _: sublime.View) -> None:
-        pass
 
 
 class _PopupCompletion(_BaseCompletion):

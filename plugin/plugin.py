@@ -33,6 +33,7 @@ from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     all_views,
     debounce,
+    get_session_setting,
     prepare_completion_request,
     preprocess_completions,
     preprocess_panel_completions,
@@ -252,6 +253,10 @@ class CopilotPlugin(NpmClientHandler):
         completion_manager = ViewCompletionManager(view)
         completion_manager.is_waiting = False
 
+        session = self.weaksession()
+        if not session:
+            return
+
         sel = view.sel()
         if len(sel) != 1:
             return
@@ -266,4 +271,4 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         preprocess_completions(view, completions)
-        completion_manager.show(completions, 0)
+        completion_manager.show(completions, 0, get_session_setting(session, "completion_style"))

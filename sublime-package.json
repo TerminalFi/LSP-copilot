@@ -43,6 +43,15 @@
                       "default": false,
                       "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` completions.",
                       "type": "boolean"
+                    },
+                    "completion_style": {
+                      "default": "popup",
+                      "markdownDescription": "Completion style. `popup` is the default, `phantom` is experimental(there are [well-known issues](https://github.com/TheSecEng/LSP-copilot/issues)).",
+                      "type": "string",
+                      "enum": [
+                        "popup",
+                        "phantom"
+                      ]
                     }
                   }
                 }
