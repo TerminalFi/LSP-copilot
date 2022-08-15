@@ -134,7 +134,7 @@ CopilotPayloadLogMessage = TypedDict(
 )
 
 CopilotPayloadStatusNotification = TypedDict(
-    "CopiloPayloadStatusNotification",
+    "CopilotPayloadStatusNotification",
     {
         "message": str,
         "status": Literal["InProgress", "Normal"],

@@ -1,5 +1,7 @@
 # LSP-copilot
 
+![Copilot](https://raw.githubusercontent.com/TheSecEng/LSP-copilot/master/docs/screenshot.png)
+
 GitHub Copilot support for Sublime Text LSP plugin provided through [Copilot.vim][].
 
 This plugin uses [Copilot][] distribution which uses OpenAI Codex to suggest codes
