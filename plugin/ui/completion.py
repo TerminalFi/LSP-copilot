@@ -16,7 +16,6 @@ from ..utils import (
     set_copilot_view_setting,
 )
 
-# @todo When a view is closed, it should be deleted from this dict.
 _view_to_phantom_set = {}  # type: Dict[int, sublime.PhantomSet]
 
 
@@ -138,6 +137,12 @@ class ViewCompletionManager:
             return
 
         self.completion_style_type.hide(self.view)
+
+    def handle_close(self) -> None:
+        if not self.is_phantom():
+            return
+
+        self.completion_style_type.close(self.view)
 
     def hide(self) -> None:
         """Hide Copilot's completion popup."""
@@ -419,3 +424,7 @@ class _PhantomCompletion(_BaseCompletion):
     @classmethod
     def hide(cls, view: sublime.View) -> None:
         cls._get_phantom_set(view).update([])
+
+    @classmethod
+    def close(cls, view: sublime.View) -> None:
+        del _view_to_phantom_set[view.id()]

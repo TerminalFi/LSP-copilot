@@ -35,6 +35,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         # close corresponding panel completion
         ViewPanelCompletionManager(self.view).close()
 
+    def on_close(self) -> None:
+        ViewCompletionManager(self.view).handle_close()
+
     def on_query_context(self, key: str, operator: int, operand: Any, match_all: bool) -> Optional[bool]:
         def test(value: Any) -> Optional[bool]:
             if operator == sublime.OP_EQUAL:
