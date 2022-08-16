@@ -175,7 +175,7 @@ class ViewCompletionManager:
 
 
 class _BaseCompletion(metaclass=ABCMeta):
-    STYLE_TYPE = ""
+    name = ""
 
     def __init__(
         self,
