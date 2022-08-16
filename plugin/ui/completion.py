@@ -99,7 +99,7 @@ class ViewCompletionManager:
 
     @property
     def is_phantom(self) -> bool:
-        return self.completion_style == _PhantomCompletion.STYLE_TYPE
+        return self.completion_style == _PhantomCompletion.name
 
     def show_previous_completion(self) -> None:
         """Show the previous completion."""
