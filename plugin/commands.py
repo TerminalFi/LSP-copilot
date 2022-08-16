@@ -68,7 +68,7 @@ def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callabl
     return decorator
 
 
-class CopilotCommandBase(metaclass=ABCMeta):
+class BaseCopilotCommand(metaclass=ABCMeta):
     session_name = PACKAGE_NAME
     requirement = REQUIRE_SIGN_IN | REQUIRE_AUTHORIZED
 
@@ -84,7 +84,7 @@ class CopilotCommandBase(metaclass=ABCMeta):
         )
 
 
-class CopilotTextCommand(CopilotCommandBase, LspTextCommand, metaclass=ABCMeta):
+class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, metaclass=ABCMeta):
     def want_event(self) -> bool:
         return False
 
@@ -104,7 +104,7 @@ class CopilotTextCommand(CopilotCommandBase, LspTextCommand, metaclass=ABCMeta):
         return self._can_meet_requirement(session)
 
 
-class CopilotWindowCommand(CopilotCommandBase, LspWindowCommand, metaclass=ABCMeta):
+class CopilotWindowCommand(BaseCopilotCommand, LspWindowCommand, metaclass=ABCMeta):
     def is_enabled(self) -> bool:
         session = self.session()
         if not session:
