@@ -202,7 +202,7 @@ class _BaseCompletion(metaclass=ABCMeta):
 
 
 class _PopupCompletion(_BaseCompletion):
-    STYLE_TYPE = "popup"
+    name = "popup"
 
     CSS_CLASS_NAME = "copilot-completion-popup"
     CSS = """
