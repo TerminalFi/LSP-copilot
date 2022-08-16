@@ -92,7 +92,7 @@ class ViewCompletionManager:
 
     @property
     def completion_style_type(self) -> Type["_BaseCompletion"]:
-        completion_cls = first(_BaseCompletion.__subclasses__(), lambda t: t.STYLE_TYPE == self.completion_style)
+        completion_cls = first(_BaseCompletion.__subclasses__(), lambda t: t.name == self.completion_style)
         if completion_cls:
             return completion_cls
         raise RuntimeError("Unknown completion style type: {}".format(self.completion_style))
