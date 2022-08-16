@@ -343,7 +343,7 @@ class _PopupCompletion(_BaseCompletion):
 
 
 class _PhantomCompletion(_BaseCompletion):
-    STYLE_TYPE = "phantom"
+    name = "phantom"
 
     COPILOT_PHANTOM_COMPLETION = "copilot_phantom_completion"
     PHANTOM_TEMPLATE = """
