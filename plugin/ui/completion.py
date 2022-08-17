@@ -1,18 +1,23 @@
+import html
 import textwrap
+from abc import ABCMeta, abstractmethod
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import List, Optional
+from LSP.plugin.core.typing import Dict, List, Optional, Sequence, Type, Union
 
 from ..types import CopilotPayloadCompletion
 from ..utils import (
     clamp,
+    first,
     fix_completion_syntax_highlight,
     get_copilot_view_setting,
     get_view_language_id,
     reformat,
     set_copilot_view_setting,
 )
+
+_view_to_phantom_set = {}  # type: Dict[int, sublime.PhantomSet]
 
 
 class ViewCompletionManager:
@@ -48,6 +53,15 @@ class ViewCompletionManager:
         set_copilot_view_setting(self.view, "completions", value)
 
     @property
+    def completion_style(self) -> str:
+        """The completion style."""
+        return get_copilot_view_setting(self.view, "completion_style", "")
+
+    @completion_style.setter
+    def completion_style(self, value: str) -> None:
+        set_copilot_view_setting(self.view, "completion_style", value)
+
+    @property
     def completion_index(self) -> int:
         """The index of the current chosen completion."""
         return get_copilot_view_setting(self.view, "completion_index", 0)
@@ -76,6 +90,17 @@ class ViewCompletionManager:
         """The current chosen `completion`."""
         return self.completions[self.completion_index] if self.completions else None
 
+    @property
+    def completion_style_type(self) -> Type["_BaseCompletion"]:
+        completion_cls = first(_BaseCompletion.__subclasses__(), lambda t: t.name == self.completion_style)
+        if completion_cls:
+            return completion_cls
+        raise RuntimeError("Unknown completion style type: {}".format(self.completion_style))
+
+    @property
+    def is_phantom(self) -> bool:
+        return self.completion_style == _PhantomCompletion.name
+
     def show_previous_completion(self) -> None:
         """Show the previous completion."""
         self.show(completion_index=self.completion_index - 1)
@@ -84,11 +109,29 @@ class ViewCompletionManager:
         """Show the next completion."""
         self.show(completion_index=self.completion_index + 1)
 
+    def handle_selection_change(self) -> None:
+        if not (self.is_phantom and self.is_visible):
+            return
+
+        self.hide()
+
+    def handle_text_change(self) -> None:
+        if not (self.is_phantom and self.is_visible):
+            return
+
+        self.hide()
+
+    def handle_close(self) -> None:
+        if not self.is_phantom:
+            return
+
+        self.completion_style_type.close(self.view)
+
     def hide(self) -> None:
         """Hide Copilot's completion popup."""
         # prevent from hiding other plugin's popup
         if self.is_visible:
-            _PopupCompletion.hide(self.view)
+            self.completion_style_type.hide(self.view)
 
         self.is_visible = False
 
@@ -96,12 +139,15 @@ class ViewCompletionManager:
         self,
         completions: Optional[List[CopilotPayloadCompletion]] = None,
         completion_index: Optional[int] = None,
+        completion_style: Optional[str] = None,
     ) -> None:
         """Show Copilot's completion popup."""
         if completions is not None:
             self.completions = completions
         if completion_index is not None:
             self.completion_index = completion_index
+        if completion_style is not None:
+            self.completion_style = completion_style
 
         completion = self.current_completion
         if not completion:
@@ -112,7 +158,7 @@ class ViewCompletionManager:
         if completion["text"] == self.view.substr(current_line):
             return
 
-        _PopupCompletion(self.view).show()
+        self.completion_style_type(self.view, completion, self.completion_index, len(self.completions)).show()
 
         self.is_visible = True
 
@@ -128,7 +174,36 @@ class ViewCompletionManager:
         return clamp(index, 0, completions_cnt - 1)
 
 
-class _PopupCompletion:
+class _BaseCompletion(metaclass=ABCMeta):
+    name = ""
+
+    def __init__(
+        self,
+        view: sublime.View,
+        completion: CopilotPayloadCompletion,
+        index: int = 0,
+        count: int = 1,
+    ) -> None:
+        self.view = view
+        self.completion = completion
+        self.index = index
+        self.count = count
+
+        self._settings = self.view.settings()
+
+    @abstractmethod
+    def show(self) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def hide(cls, view: sublime.View) -> None:
+        pass
+
+
+class _PopupCompletion(_BaseCompletion):
+    name = "popup"
+
     CSS_CLASS_NAME = "copilot-completion-popup"
     CSS = """
     html {{
@@ -212,14 +287,8 @@ class _PopupCompletion:
         """
     )
 
-    def __init__(self, view: sublime.View) -> None:
-        self.view = view
-        self.completion_manager = ViewCompletionManager(view)
-
     @property
     def popup_content(self) -> str:
-        self.completion = self.completion_manager.current_completion
-        assert self.completion  # our code flow guarantees this
         return self.COMPLETION_TEMPLATE.format(
             header_items=" &nbsp;".join(self.popup_header_items),
             lang=get_view_language_id(self.view, self.completion["point"]),
@@ -228,20 +297,19 @@ class _PopupCompletion:
 
     @property
     def popup_header_items(self) -> List[str]:
-        completions_cnt = len(self.completion_manager.completions)
         header_items = [
             '<a class="accept" title="Accept Completion" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
             '<a class="reject" title="Reject Completion" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
         ]
-        if completions_cnt > 1:
+        if self.count > 1:
             header_items.append(
                 '<a class="prev" title="Previous Completion" href="subl:copilot_previous_completion">◀</a>'
                 + '<a class="next" title="Next Completion" href="subl:copilot_next_completion">▶</a>'
             )
             header_items.append(
                 "({completion_index_1} of {completions_cnt})".format(
-                    completion_index_1=self.completion_manager.completion_index + 1,  # 1-based index
-                    completions_cnt=completions_cnt,
+                    completion_index_1=self.index + 1,  # 1-based index
+                    completions_cnt=self.count,
                 )
             )
         header_items.append(
@@ -251,8 +319,6 @@ class _PopupCompletion:
 
     @property
     def popup_code(self) -> str:
-        self.completion = self.completion_manager.current_completion
-        assert self.completion  # our code flow guarantees this
         return fix_completion_syntax_highlight(
             self.view,
             self.completion["point"],
@@ -274,3 +340,107 @@ class _PopupCompletion:
     @staticmethod
     def hide(view: sublime.View) -> None:
         mdpopups.hide_popup(view)
+
+
+class _PhantomCompletion(_BaseCompletion):
+    name = "phantom"
+
+    COPILOT_PHANTOM_COMPLETION = "copilot_phantom_completion"
+    PHANTOM_TEMPLATE = """
+    <body id="copilot-completion">
+        <style>
+            body {{
+                color: #808080;
+                font-style: italic;
+            }}
+
+            .copilot-completion-line {{
+                line-height: 0;
+                margin-top: {line_padding_top}px;
+                margin-bottom: {line_padding_bottom}px;
+            }}
+
+            .copilot-completion-line.first {{
+                margin-top: 0;
+            }}
+        </style>
+        {body}
+    </body>
+    """
+    PHANTOM_LINE_TEMPLATE = '<div class="copilot-completion-line {class_name}">{content}</div>'
+
+    def __init__(
+        self,
+        view: sublime.View,
+        completion: CopilotPayloadCompletion,
+        index: int = 0,
+        count: int = 1,
+    ) -> None:
+        super().__init__(view, completion, index, count)
+
+        self._phantom_set = self._get_phantom_set(view)
+
+    @classmethod
+    def _get_phantom_set(cls, view: sublime.View) -> sublime.PhantomSet:
+        view_id = view.id()
+
+        # create phantom set if there is no existing one
+        if not _view_to_phantom_set.get(view_id):
+            _view_to_phantom_set[view_id] = sublime.PhantomSet(view, cls.COPILOT_PHANTOM_COMPLETION)
+
+        return _view_to_phantom_set[view_id]
+
+    def normalize_phantom_line(self, line: str) -> str:
+        return html.escape(line).replace(" ", "&nbsp;").replace("\t", "&nbsp;" * self._settings.get("tab_size"))
+
+    def _build_phantom(
+        self,
+        lines: Union[str, Sequence[str]],
+        begin: int,
+        end: Optional[int] = None,
+        *,
+        inline: bool = True
+        # format separator
+    ) -> sublime.Phantom:
+        body = (
+            self.normalize_phantom_line(lines)
+            if isinstance(lines, str)
+            else "".join(
+                self.PHANTOM_LINE_TEMPLATE.format(
+                    class_name=("rest" if index else "first"),
+                    content=self.normalize_phantom_line(line),
+                )
+                for index, line in enumerate(lines)
+            )
+        )
+
+        return sublime.Phantom(
+            sublime.Region(begin, begin if end is None else end),
+            self.PHANTOM_TEMPLATE.format(
+                body=body,
+                line_padding_top=int(self._settings.get("line_padding_top")) * 2,  # TODO: play with this more
+                line_padding_bottom=int(self._settings.get("line_padding_bottom")) * 2,
+            ),
+            sublime.LAYOUT_INLINE if inline else sublime.LAYOUT_BLOCK,
+        )
+
+    def show(self) -> None:
+        first_line, *rest_lines = self.completion["displayText"].splitlines()
+
+        assert self._phantom_set
+        self._phantom_set.update([])
+        self._phantom_set.update(
+            [
+                self._build_phantom(first_line, self.completion["point"] + 1, self.completion["point"]),
+                # an empty phantom is required to prevent the cursor from jumping, even if there is only one line
+                self._build_phantom(rest_lines, self.completion["point"], inline=False),
+            ]
+        )
+
+    @classmethod
+    def hide(cls, view: sublime.View) -> None:
+        cls._get_phantom_set(view).update([])
+
+    @classmethod
+    def close(cls, view: sublime.View) -> None:
+        del _view_to_phantom_set[view.id()]

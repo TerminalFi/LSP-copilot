@@ -4,18 +4,29 @@ from LSP.plugin.core.typing import Any, Dict, Optional, Tuple
 
 from .plugin import CopilotPlugin
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import get_session_setting
+from .utils import get_copilot_view_setting, get_session_setting, set_copilot_view_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
+    @property
+    def _is_modified(self) -> bool:
+        return get_copilot_view_setting(self.view, "_is_modified", False)
+
+    @_is_modified.setter
+    def _is_modified(self, value: bool) -> None:
+        set_copilot_view_setting(self.view, "_is_modified", value)
+
     def on_modified_async(self) -> None:
+        self._is_modified = True
         plugin, session = CopilotPlugin.plugin_session(self.view)
-        if (
-            plugin
-            and session
-            and get_session_setting(session, "auto_ask_completions")
-            and not ViewCompletionManager(self.view).is_waiting
-        ):
+
+        if not plugin or not session:
+            return
+
+        vcm = ViewCompletionManager(self.view)
+        vcm.handle_text_change()
+
+        if get_session_setting(session, "auto_ask_completions") and not vcm.is_waiting:
             plugin.request_get_completions(self.view)
 
     def on_deactivated_async(self) -> None:
@@ -24,6 +35,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_pre_close(self) -> None:
         # close corresponding panel completion
         ViewPanelCompletionManager(self.view).close()
+
+    def on_close(self) -> None:
+        ViewCompletionManager(self.view).handle_close()
 
     def on_query_context(self, key: str, operator: int, operand: Any, match_all: bool) -> Optional[bool]:
         def test(value: Any) -> Optional[bool]:
@@ -47,6 +61,12 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
         if plugin and session and get_session_setting(session, "hook_to_auto_complete_command"):
             plugin.request_get_completions(self.view)
+
+    def on_selection_modified_async(self) -> None:
+        if not self._is_modified:
+            ViewCompletionManager(self.view).handle_selection_change()
+
+        self._is_modified = False
 
 
 class EventListener(sublime_plugin.EventListener):
