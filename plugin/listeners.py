@@ -84,3 +84,5 @@ class EventListener(sublime_plugin.EventListener):
             if completion_manager:
                 completion_manager.close()
                 return "noop", None
+
+        return None
