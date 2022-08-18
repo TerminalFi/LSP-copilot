@@ -2,11 +2,14 @@
 # ignore_missing_imports = False
 check_untyped_defs = true
 strict_optional = true
-mypy_path = 'typings:stubs'
+mypy_path = 'typings/lsp_utils/st3:typings/ST-API-stubs/typings:typings/sublime-markdown-popups/st3:typings:stubs'
 
 [[tool.mypy.overrides]]
 module = [
-    # "plugin.libs.*",
+    "LSP.*",
+    "lsp_utils.*",
+    "mdpopups.*",
+    "sublime_lib.*",
 ]
 ignore_errors = true
 ignore_missing_imports = true

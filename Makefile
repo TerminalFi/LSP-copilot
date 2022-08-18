@@ -1,13 +1,17 @@
+$(VERBOSE).SILENT:
+
 .PHONY: all
-all: fix
+all:
 
 .PHONY: check
 check:
-	# mypy -p plugin
-	flake8 .
-	pycln --config pyproject.toml --check .
-	black --check .
-	isort --check .
+	( \
+		$(MAKE) -f Makefile.check pre-check; \
+		$(MAKE) -f Makefile.check check; \
+		EXIT_CODE=$$?; \
+		$(MAKE) -f Makefile.check post-check; \
+		exit $$EXIT_CODE \
+	)
 
 .PHONY: fix
 fix:

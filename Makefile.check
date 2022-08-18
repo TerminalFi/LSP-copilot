@@ -1,0 +1,20 @@
+$(VERBOSE).SILENT:
+
+.PHONY: all
+all:
+
+.PHONY: pre-check
+pre-check:
+	touch typings/LSP/__init__.py
+
+.PHONY: check
+check:
+	mypy -p plugin
+	flake8 .
+	pycln --config pyproject.toml --check .
+	black --check .
+	isort --check .
+
+.PHONY: post-check
+post-check:
+	rm -f typings/LSP/__init__.py

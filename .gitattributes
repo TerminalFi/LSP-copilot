@@ -10,6 +10,7 @@
 codecov.yml export-ignore
 docs/ export-ignore
 Makefile export-ignore
+Makefile.* export-ignore
 mkdocs.yml export-ignore
 mypy.ini export-ignore
 pyproject.toml export-ignore
