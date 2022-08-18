@@ -1,0 +1,12 @@
+[submodule "typings/LSP"]
+	path = typings/LSP
+	url = https://github.com/sublimelsp/LSP.git
+[submodule "typings/sublime-markdown-popups"]
+	path = typings/sublime-markdown-popups
+	url = https://github.com/facelessuser/sublime-markdown-popups.git
+[submodule "typings/lsp_utils"]
+	path = typings/lsp_utils
+	url = https://github.com/sublimelsp/lsp_utils.git
+[submodule "typings/ST-API-stubs"]
+	path = typings/ST-API-stubs
+	url = https://github.com/jfcherng-sublime/ST-API-stubs.git

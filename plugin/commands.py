@@ -100,7 +100,7 @@ class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, metaclass=ABCMeta):
         session.send_request(Request(request, payload), lambda _: None)
 
     @_provide_plugin_session(failed_return=False)
-    def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:
+    def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:  # type: ignore
         return self._can_meet_requirement(session)
 
 
@@ -278,8 +278,8 @@ class CopilotSignInCommand(CopilotTextCommand):
             return
         CopilotPlugin.set_account_status(signed_in=False, authorized=False, quiet=True)
 
-        user_code = payload.get("userCode", "")  # type: str
-        verification_uri = payload.get("verificationUri", "")  # type: str
+        user_code = str(payload.get("userCode", ""))
+        verification_uri = str(payload.get("verificationUri", ""))
         if not (user_code and verification_uri):
             return
         sublime.set_clipboard(user_code)
