@@ -9,10 +9,8 @@ and entire functions in real-time right from your editor.
 
 ## Prerequisites
 
-* Network connection.
+* Public network connection.
 * Active GitHub Copilot subscription.
-
-    Note that GitHub Copilot is free until August 22, 2022. You can start your trail on [this][Copilot] page.
 
 ## Installation
 
