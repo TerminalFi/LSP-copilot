@@ -41,6 +41,14 @@ from .utils import (
 )
 
 
+def plugin_loaded() -> None:
+    CopilotPlugin.setup()
+
+
+def plugin_unloaded() -> None:
+    CopilotPlugin.cleanup()
+
+
 def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     """
     The first two arguments have to be `self` and `view` for a decorated method.
