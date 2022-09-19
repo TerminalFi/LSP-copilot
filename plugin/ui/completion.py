@@ -200,6 +200,10 @@ class _BaseCompletion(metaclass=ABCMeta):
     def hide(cls, view: sublime.View) -> None:
         pass
 
+    @classmethod
+    def close(cls, view: sublime.View) -> None:
+        pass
+
 
 class _PopupCompletion(_BaseCompletion):
     name = "popup"
