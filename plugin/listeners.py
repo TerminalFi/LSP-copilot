@@ -16,6 +16,14 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def _is_modified(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "_is_modified", value)
 
+    @property
+    def _is_saving(self) -> bool:
+        return get_copilot_view_setting(self.view, "_is_saving", False)
+
+    @_is_saving.setter
+    def _is_saving(self, value: bool) -> None:
+        set_copilot_view_setting(self.view, "_is_saving", value)
+
     def on_modified_async(self) -> None:
         self._is_modified = True
         plugin, session = CopilotPlugin.plugin_session(self.view)
@@ -26,7 +34,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         vcm = ViewCompletionManager(self.view)
         vcm.handle_text_change()
 
-        if get_session_setting(session, "auto_ask_completions") and not vcm.is_waiting:
+        if not self._is_saving and get_session_setting(session, "auto_ask_completions") and not vcm.is_waiting:
             plugin.request_get_completions(self.view)
 
     def on_deactivated_async(self) -> None:
@@ -54,13 +62,17 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         return None
 
     def on_post_text_command(self, command_name: str, args: Optional[Dict[str, Any]]) -> None:
-        if command_name != "auto_complete":
-            return
+        if command_name == "lsp_save":
+            self._is_saving = True
 
-        plugin, session = CopilotPlugin.plugin_session(self.view)
+        if command_name == "auto_complete":
+            plugin, session = CopilotPlugin.plugin_session(self.view)
 
-        if plugin and session and get_session_setting(session, "hook_to_auto_complete_command"):
-            plugin.request_get_completions(self.view)
+            if plugin and session and get_session_setting(session, "hook_to_auto_complete_command"):
+                plugin.request_get_completions(self.view)
+
+    def on_post_save_async(self) -> None:
+        self._is_saving = False
 
     def on_selection_modified_async(self) -> None:
         if not self._is_modified:
