@@ -68,5 +68,4 @@ ignore = [
   '**/libs',
 ]
 stubPath = 'typings'
-# pretending using py38 since pyright doesn't work well with py33...
-pythonVersion = '3.8'
+pythonVersion = '3.11'
