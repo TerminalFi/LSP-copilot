@@ -1,3 +1,5 @@
+import re
+
 import sublime
 import sublime_plugin
 from LSP.plugin.core.typing import Any, Dict, Optional, Tuple
@@ -57,8 +59,25 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
         if key == "copilot.has_signed_in":
             return test(CopilotPlugin.get_account_status().has_signed_in)
+
         if key == "copilot.is_authorized":
             return test(CopilotPlugin.get_account_status().is_authorized)
+
+        if key == "copilot.is_on_completion":
+            vcm = ViewCompletionManager(self.view)
+
+            if not vcm.is_visible:
+                return test(False)
+
+            if len(self.view.sel()) < 1:
+                return test(False)
+
+            point = self.view.sel()[0].begin()
+            line = self.view.line(point)
+            beginning_of_line = self.view.substr(sublime.Region(line.begin(), point))
+
+            return test(beginning_of_line.strip() != "" or not re.match(r"\s+", vcm.current_completion["displayText"]))
+
         return None
 
     def on_post_text_command(self, command_name: str, args: Optional[Dict[str, Any]]) -> None:
