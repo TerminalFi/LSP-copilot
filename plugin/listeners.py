@@ -77,7 +77,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             beginning_of_line = self.view.substr(sublime.Region(line.begin(), point))
 
             return test(
-                beginning_of_line.strip() != "" or not re.match(r"\s+", str(vcm.current_completion["displayText"]))
+                beginning_of_line.strip() or re.match(r"(?!\s)", str(vcm.current_completion["displayText"]))
             )
 
         return None
