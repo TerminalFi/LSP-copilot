@@ -66,10 +66,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if key == "copilot.is_on_completion":
             vcm = ViewCompletionManager(self.view)
 
-            if not vcm.is_visible:
-                return test(False)
-
-            if len(self.view.sel()) < 1:
+            if not vcm.is_visible or len(self.view.sel()) < 1 or not vcm.current_completion:
                 return test(False)
 
             point = self.view.sel()[0].begin()
