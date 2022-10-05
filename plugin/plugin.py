@@ -144,8 +144,19 @@ class CopilotPlugin(NpmClientHandler):
 
     @classmethod
     def minimum_node_version(cls) -> Tuple[int, int, int]:
-        # this should be aligned with VSCode's Nodejs version
+        """
+        @todo Deprecated.
+        @see https://github.com/sublimelsp/lsp_utils/pull/93
+        """
         return (16, 0, 0)
+
+    @classmethod
+    def required_node_version(cls) -> str:
+        """
+        Testing playground at https://semver.npmjs.com
+        And `0.0.0` means "no restrictions".
+        """
+        return ">=16 <18"
 
     @classmethod
     def get_account_status(cls) -> AccountStatus:
