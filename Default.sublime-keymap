@@ -6,7 +6,7 @@
         "command": "copilot_accept_completion",
         "context": [
             {
-                "key": "setting.copilot.completion.is_visible"
+                "key": "copilot.is_on_completion"
             }
         ]
     },
