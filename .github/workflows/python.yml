@@ -11,6 +11,8 @@ on:
       - '.github/workflows/python.yml'
       - '**.py'
       - '**.pyi'
+      - 'Makefile'
+      - 'Makefile.*'
   pull_request:
     branches:
       - '**'
@@ -18,6 +20,8 @@ on:
       - '.github/workflows/python.yml'
       - '**.py'
       - '**.pyi'
+      - 'Makefile'
+      - 'Makefile.*'
 
 jobs:
   job_lint:
