@@ -1,8 +1,8 @@
 # This is an implicit value, here for clarity
 --index https://pypi.python.org/simple/
 
+autoflake
 black
 flake8
 isort
 mypy
-pycln

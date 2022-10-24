@@ -30,9 +30,11 @@ skip_glob = [
   "venv/**",
 ]
 
-[tool.pycln]
-all = true
-exclude = '(\.git|\.?venv|\.mypy_cache|br-.*|branch-.*|libs|stubs|typings)/'
+[tool.autoflake]
+quiet = true
+recursive = true
+remove-all-unused-imports = true
+exclude = '\.git,\.?venv,\.mypy_cache,br-.*,branch-.*,libs,stubs,tests/files,typings'
 
 [tool.black]
 line-length = 120

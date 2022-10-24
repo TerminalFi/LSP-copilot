@@ -15,6 +15,6 @@ check:
 
 .PHONY: fix
 fix:
-	pycln --config pyproject.toml .
+	autoflake --in-place .
 	black .
 	isort .
