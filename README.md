@@ -53,6 +53,22 @@ Copilot's suggestion.
 },
 ```
 
+### I see `UNABLE_TO_GET_ISSUER_CERT_LOCALLY` error
+
+If you work under `Zscaler`, you have to add the `ZscalerRootCertificate-2048-SHA256.crt` file
+(or something like) into the `NODE_EXTRA_CA_CERTS` environment variable.
+
+In LSP-copilot's plugin settings, add the following `env` key:
+
+```js
+{
+  "env": {
+      "NODE_EXTRA_CA_CERTS": "/path/to/ZscalerRootCertificate-2048-SHA256.crt",
+  },
+  // other custom settings...
+}
+```
+
 [Copilot]: https://github.com/features/copilot
 [Copilot.vim]: https://github.com/github/copilot.vim/tree/release/copilot/dist
 [LSP]: https://packagecontrol.io/packages/LSP
