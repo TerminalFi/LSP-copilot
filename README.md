@@ -67,6 +67,7 @@ In LSP-copilot's plugin settings, add the following `env` key:
    },
    // other custom settings...
  }
+ ```
 
 [Copilot]: https://github.com/features/copilot
 [Copilot.vim]: https://github.com/github/copilot.vim/tree/release/copilot/dist
