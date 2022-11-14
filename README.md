@@ -53,6 +53,21 @@ Copilot's suggestion.
 },
 ```
 
+### I see `UNABLE_TO_GET_ISSUER_CERT_LOCALLY` error
+
+If working behind a VPN and/or Proxy, you may be required to add your CA file into the NODE environment.
+See below for LSP-copilots support for this.
+
+In LSP-copilot's plugin settings, add the following `env` key:
+
+ ```js
+ {
+   "env": {
+       "NODE_EXTRA_CA_CERTS": "/path/to/certificate.crt",
+   },
+   // other custom settings...
+ }
+
 [Copilot]: https://github.com/features/copilot
 [Copilot.vim]: https://github.com/github/copilot.vim/tree/release/copilot/dist
 [LSP]: https://packagecontrol.io/packages/LSP
