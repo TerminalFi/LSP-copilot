@@ -143,14 +143,6 @@ class CopilotPlugin(NpmClientHandler):
             return "unknown"
 
     @classmethod
-    def minimum_node_version(cls) -> Tuple[int, int, int]:
-        """
-        @todo Deprecated.
-        @see https://github.com/sublimelsp/lsp_utils/pull/93
-        """
-        return (16, 0, 0)
-
-    @classmethod
     def required_node_version(cls) -> str:
         """
         Testing playground at https://semver.npmjs.com
