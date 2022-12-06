@@ -31,11 +31,6 @@ On the first time use, follow the steps below:
 
 ## FAQs
 
-### My Sublime Text freezes after installing this plugin
-
-It's likely that you are using Node v18, which is [unsupported](https://github.com/github/copilot.vim/blob/554460008f18cbffecb9f1e5de58fec8410dc16f/autoload/copilot/agent.vim#L378-L387) by the copilot server.
-For workarounds, see [#51](https://github.com/TheSecEng/LSP-copilot/issues/51#issuecomment-1216545673).
-
 ### Pressing `Tab` commits autocompletion rather than Copilot's suggestion
 
 There is no way for a plugin to know which one is wanted. But you can define your own dedicate keybinding to commit
