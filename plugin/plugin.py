@@ -148,7 +148,7 @@ class CopilotPlugin(NpmClientHandler):
         Testing playground at https://semver.npmjs.com
         And `0.0.0` means "no restrictions".
         """
-        return "16 || 17"
+        return ">=16"
 
     @classmethod
     def get_account_status(cls) -> AccountStatus:
