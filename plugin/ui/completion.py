@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import List, Optional, Sequence, Type, Union
+from LSP.plugin.core.typing import Dict, List, Optional, Sequence, Type, Union
 
 from ..types import CopilotPayloadCompletion
 from ..utils import (
