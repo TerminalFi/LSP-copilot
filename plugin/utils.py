@@ -191,6 +191,10 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
             "relativePath": get_project_relative_path(file_path),
             "languageId": get_view_language_id(view),
             "position": {"line": row, "character": col},
+            
+            # Buffer Version. Generally this is handled by LSP, but we need to handle it here 
+            # Will need to test getting the version from LSP
+            "version": 0
         }
     }
 
