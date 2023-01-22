@@ -1,12 +1,10 @@
 import os
 import textwrap
 import threading
-import traceback
 from functools import wraps
 from itertools import takewhile
 from operator import itemgetter
 
-import mdpopups
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
@@ -288,37 +286,3 @@ def _generate_completion_region(
             completion["range"]["end"]["character"],
         ),
     )
-
-
-def mdpopups_update_transient_html_sheet(
-    window: sublime.Window,
-    sheet: sublime.HtmlSheet,
-    contents: str,
-    md: bool = True,
-    css: Optional[str] = None,
-    wrapper_class: Optional[str] = None,
-    template_vars: Optional[Any] = None,
-    template_env_options: Optional[Dict[str, Any]] = None,
-    **kwargs
-) -> None:
-    """Update a transient HTML sheet."""
-    # for a transient sheet, `.window()` returns `None` so we can't just use `mdpopups.update_html_sheet`
-    view = window.create_output_panel("mdpopups-dummy", unlisted=True)
-
-    try:
-        html = mdpopups._create_html(
-            view,
-            contents,
-            md,
-            css,
-            css_type=mdpopups.SHEET,
-            wrapper_class=wrapper_class,
-            template_vars=template_vars,
-            template_env_options=template_env_options,
-            **kwargs
-        )  # type: str
-    except Exception:
-        mdpopups._log(traceback.format_exc())
-        html = mdpopups.IDK
-
-    sheet.set_contents(html)
