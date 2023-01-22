@@ -12,7 +12,6 @@ from ..utils import (
     fix_completion_syntax_highlight,
     get_copilot_view_setting,
     get_view_language_id,
-    mdpopups_update_transient_html_sheet,
     reformat,
     remove_prefix,
     set_copilot_view_setting,
@@ -279,8 +278,7 @@ class _PanelCompletion:
         if not isinstance(sheet, sublime.HtmlSheet):
             return
 
-        mdpopups_update_transient_html_sheet(
-            window=window,
+        mdpopups.update_html_sheet(
             sheet=sheet,
             contents=self.completion_content,
             md=True,
