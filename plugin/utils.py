@@ -1,7 +1,6 @@
 import os
 import textwrap
 import threading
-import traceback
 from functools import wraps
 from itertools import takewhile
 from operator import itemgetter
