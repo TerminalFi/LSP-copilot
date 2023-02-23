@@ -47,6 +47,42 @@
     //     "keys": [
     //         "UNBOUND"
     //     ],
+    //     "command": "copilot_get_panel_completions",
+    //     "context": [
+    //         {
+    //             "key": "setting.copilot.completion.is_visible"
+    //         }
+    //     ]
+    // },
+    // {
+    //     "keys": [
+    //         "UNBOUND"
+    //     ],
+    //     "command": "copilot_close_panel_completion",
+    //     "context": [
+    //         {
+    //             "key": "setting.copilot.completion.is_visible_panel_completions"
+    //         }
+    //     ]
+    // },
+    // {
+    //     "keys": [
+    //         "UNBOUND"
+    //     ],
+    //     "command": "copilot_accept_panel_completion",
+    //     "args": {
+    //         "completion_index": 0
+    //     },
+    //     "context": [
+    //         {
+    //             "key": "setting.copilot.completion.is_visible_panel_completions"
+    //         }
+    //     ]
+    // },
+    // {
+    //     "keys": [
+    //         "UNBOUND"
+    //     ],
     //     "command": "copilot_ask_completions",
     //     "context": [
     //         {
