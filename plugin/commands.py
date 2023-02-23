@@ -4,7 +4,7 @@ from functools import partial, wraps
 import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
-from LSP.plugin.core.typing import Any, Callable, Union, cast
+from LSP.plugin.core.typing import Any, Callable, Optional, Union, cast
 
 from .constants import (
     PACKAGE_NAME,
@@ -153,8 +153,11 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
 
 
 class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
-    def run(self, view_id: int) -> None:
-        view = find_view_by_id(view_id)
+    def run(self, view_id: Optional[int] = None) -> None:
+        if view_id is None:
+            view = self.window.active_view()
+        else:
+            view = find_view_by_id(view_id)
         if not view:
             return
         completion_manager = ViewPanelCompletionManager(view)
@@ -214,6 +217,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
         completion_manager = ViewPanelCompletionManager(self.view)
         completion_manager.is_waiting = True
+        completion_manager.is_visible = True
         completion_manager.completions = []
 
         params["panelId"] = completion_manager.panel_id

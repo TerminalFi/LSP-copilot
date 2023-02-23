@@ -25,6 +25,15 @@ class ViewPanelCompletionManager:
     # ------------- #
 
     @property
+    def is_visible(self) -> bool:
+        """Whether the panel completions is visible."""
+        return get_copilot_view_setting(self.view, "is_visible_panel_completions", False)
+
+    @is_visible.setter
+    def is_visible(self, value: bool) -> None:
+        set_copilot_view_setting(self.view, "is_visible_panel_completions", value)
+
+    @property
     def is_waiting(self) -> bool:
         """Whether the panel completions synthesis has been done."""
         return get_copilot_view_setting(self.view, "is_waiting_panel_completions", False)
@@ -92,6 +101,7 @@ class ViewPanelCompletionManager:
 
     def reset(self) -> None:
         self.is_waiting = False
+        self.is_visible = False
         self.original_layout = None
 
     def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
@@ -296,6 +306,7 @@ class _PanelCompletion:
             return
 
         sheet.close()
+        self.completion_manager.is_visible = False
         if self.completion_manager.original_layout:
             window.set_layout(self.completion_manager.original_layout)
             self.completion_manager.original_layout = None
