@@ -21,6 +21,7 @@ and entire functions in real-time right from your editor.
 
 On the first time use, follow the steps below:
 
+1. Open any file.
 1. Execute `Copilot: Sign In` from the command palette.
 1. Follow the prompts to authenticate LSP-copilot.
     1. The `User Code` will be auto copied to your clipboard.
