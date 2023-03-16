@@ -3,10 +3,12 @@ import json
 import os
 import weakref
 from functools import wraps
+from urllib.parse import urlparse
 
 import sublime
 from LSP.plugin import Request, Session
-from LSP.plugin.core.typing import Any, Callable, Optional, Tuple, Union, cast
+from LSP.plugin.core.collections import DottedDict
+from LSP.plugin.core.typing import Any, Callable, Dict, Optional, Tuple, Union, cast
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
@@ -27,6 +29,7 @@ from .types import (
     CopilotPayloadPanelSolution,
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
+    NetworkProxy,
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
@@ -117,20 +120,33 @@ class CopilotPlugin(NpmClientHandler):
             pass
 
         api.send_request(REQ_CHECK_STATUS, {}, on_check_status)
-        api.send_request(
-            REQ_SET_EDITOR_INFO,
-            {
-                "editorInfo": {
-                    "name": "Sublime Text",
-                    "version": sublime.version(),
-                },
-                "editorPluginInfo": {
-                    "name": PACKAGE_NAME,
-                    "version": self.version(),
-                },
-            },
-            on_set_editor_info,
-        )
+        api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), on_set_editor_info)
+
+    def on_settings_changed(self, settings: DottedDict) -> None:
+        def parse_proxy(proxy: str) -> Optional[NetworkProxy]:
+            # in the form of "username:password@host:port" or "host:port"
+            if not proxy:
+                return None
+            parsed = urlparse("http://" + proxy)
+            return {
+                "host": parsed.hostname or "",
+                "port": parsed.port or 80,
+                "username": parsed.username or "",
+                "password": parsed.password or "",
+                "rejectUnauthorized": True,
+            }
+
+        session = self.weaksession()
+        if not session:
+            return
+
+        editor_info = self.editor_info()
+
+        networkProxy = parse_proxy(settings.get("proxy") or "")
+        if networkProxy:
+            editor_info["networkProxy"] = networkProxy
+
+        session.send_request(Request(REQ_SET_EDITOR_INFO, editor_info), lambda response: None)
 
     @staticmethod
     def version() -> str:
@@ -141,6 +157,19 @@ class CopilotPlugin(NpmClientHandler):
             ]
         except Exception:
             return "unknown"
+
+    @classmethod
+    def editor_info(cls) -> Dict[str, Any]:
+        return {
+            "editorInfo": {
+                "name": "Sublime Text",
+                "version": sublime.version(),
+            },
+            "editorPluginInfo": {
+                "name": PACKAGE_NAME,
+                "version": cls.version(),
+            },
+        }
 
     @classmethod
     def required_node_version(cls) -> str:

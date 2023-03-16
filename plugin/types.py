@@ -23,6 +23,18 @@ StLayout = TypedDict(
     total=True,
 )
 
+NetworkProxy = TypedDict(
+    "NetworkProxy",
+    {
+        "host": str,
+        "port": int,
+        "username": str,
+        "password": str,
+        "rejectUnauthorized": bool,
+    },
+    total=True,
+)
+
 # --------------- #
 # Copilot payload #
 # --------------- #
