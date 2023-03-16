@@ -71,3 +71,8 @@ ignore = [
 ]
 stubPath = 'typings'
 pythonVersion = '3.11'
+
+[tool.ruff]
+select = ["E", "F", "W"]
+line-length = 120
+target-version = 'py38'
