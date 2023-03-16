@@ -44,6 +44,11 @@
                       "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` completions.",
                       "type": "boolean"
                     },
+                    "proxy": {
+                      "default": "",
+                      "markdownDescription": "The HTTP proxy to use for Copilot requests. It's in the form of `username:password@host:port` or just `host:port`.",
+                      "type": "string"
+                    },
                     "completion_style": {
                       "default": "popup",
                       "markdownDescription": "Completion style. `popup` is the default, `phantom` is experimental(there are [well-known issues](https://github.com/TheSecEng/LSP-copilot/issues)).",

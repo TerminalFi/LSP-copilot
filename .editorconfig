@@ -27,7 +27,11 @@ indent_size = 4
 [sublime-package.json]
 indent_size = 2
 
-[*.{sublime-commands,sublime-keymap,sublime-menu,sublime-mousemap,sublime-settings}]
+[*.{sublime-commands,sublime-keymap,sublime-menu,sublime-mousemap}]
+indent_size = 4
+
+[*.sublime-settings]
+indent_style = tab
 indent_size = 4
 
 [*.sublime-syntax]
