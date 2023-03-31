@@ -279,6 +279,8 @@ class _PanelCompletion:
         else:
             self._open_in_group(window, active_group + 1)
 
+        window.focus_view(self.view)
+
     def update(self) -> None:
         window = self.view.window()
         if not window:
