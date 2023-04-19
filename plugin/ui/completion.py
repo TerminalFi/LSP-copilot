@@ -13,6 +13,7 @@ from ..utils import (
     fix_completion_syntax_highlight,
     get_copilot_view_setting,
     get_view_language_id,
+    is_activate_view,
     reformat,
     set_copilot_view_setting,
 )
@@ -141,6 +142,9 @@ class ViewCompletionManager:
         completion_index: Optional[int] = None,
         completion_style: Optional[str] = None,
     ) -> None:
+        if not is_activate_view(self.view):
+            return
+
         """Show Copilot's completion popup."""
         if completions is not None:
             self.completions = completions

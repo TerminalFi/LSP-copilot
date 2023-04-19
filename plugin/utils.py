@@ -88,6 +88,10 @@ def find_view_by_id(id: int) -> Optional[sublime.View]:
     return first(all_views(include_transient=True), lambda view: view.id() == id)
 
 
+def is_activate_view(obj: Any) -> bool:
+    return bool(obj and obj == sublime.active_window().active_view())
+
+
 def first(items: Iterable[T], test: Optional[Callable[[T], bool]] = None, default: Optional[T] = None) -> Optional[T]:
     """
     Gets the first item which satisfies the `test`. Otherwise, `default`.
