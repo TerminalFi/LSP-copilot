@@ -8,14 +8,14 @@ from LSP.plugin.core.typing import Any, Callable, Dict, Optional, Tuple, cast
 from .plugin import CopilotPlugin
 from .types import T_Callable
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import get_copilot_view_setting, get_session_setting, is_activate_view, set_copilot_view_setting
+from .utils import get_copilot_view_setting, get_session_setting, is_active_view, set_copilot_view_setting
 
 
 def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrapped(self: Any, *arg, **kwargs) -> Any:
-            if is_activate_view(self.view):
+            if is_active_view(self.view):
                 return func(self, *arg, **kwargs)
             return failed_return
 

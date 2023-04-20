@@ -88,7 +88,7 @@ def find_view_by_id(id: int) -> Optional[sublime.View]:
     return first(all_views(include_transient=True), lambda view: view.id() == id)
 
 
-def is_activate_view(obj: Any) -> bool:
+def is_active_view(obj: Any) -> bool:
     return bool(obj and obj == sublime.active_window().active_view())
 
 
