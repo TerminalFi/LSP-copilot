@@ -20,11 +20,13 @@ from .constants import (
     REQ_CHECK_STATUS,
     REQ_GET_COMPLETIONS,
     REQ_GET_COMPLETIONS_CYCLING,
+    REQ_GET_VERSION,
     REQ_SET_EDITOR_INFO,
 )
 from .types import (
     AccountStatus,
     CopilotPayloadCompletions,
+    CopilotPayloadGetVersion,
     CopilotPayloadLogMessage,
     CopilotPayloadPanelSolution,
     CopilotPayloadSignInConfirm,
@@ -119,8 +121,16 @@ class CopilotPlugin(NpmClientHandler):
         def on_set_editor_info(result: str, failed: bool) -> None:
             pass
 
+        def _set_version_info(response: CopilotPayloadGetVersion, failed: bool) -> None:
+            version = response.get("version")
+            if version:
+                session = self.weaksession()
+                if session:
+                    session.set_config_status_async(version)
+
         api.send_request(REQ_CHECK_STATUS, {}, on_check_status)
         api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), on_set_editor_info)
+        api.send_request(REQ_GET_VERSION, {}, _set_version_info)
 
     def on_settings_changed(self, settings: DottedDict) -> None:
         def parse_proxy(proxy: str) -> Optional[NetworkProxy]:
