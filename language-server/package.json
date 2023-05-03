@@ -1,6 +1,6 @@
 {
     "private": true,
     "dependencies": {
-        "copilot-node-server": "^1.8.3"
+        "copilot-node-server": "^1.8.4"
     }
 }
