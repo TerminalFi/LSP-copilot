@@ -8,7 +8,13 @@ from LSP.plugin.core.typing import Any, Callable, Dict, Optional, Tuple, cast
 from .plugin import CopilotPlugin
 from .types import T_Callable
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import get_copilot_view_setting, get_session_setting, is_active_view, set_copilot_view_setting
+from .utils import (
+    get_copilot_view_setting,
+    get_session_setting,
+    is_active_view,
+    is_gitignored,
+    set_copilot_view_setting,
+)
 
 
 def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -48,12 +54,31 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def _is_saving(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "_is_saving", value)
 
+    def on_activated_async(self) -> None:
+        plugin, session = CopilotPlugin.plugin_session(self.view)
+        if not plugin or not session:
+            return
+
+        if get_session_setting(session, "respect_gitignore", False):
+            return
+
+        if is_gitignored(self.view):
+            session.set_config_status_async(".gitignore")
+            set_copilot_view_setting(self.view, "_is_gitignored", True)
+            return
+        set_copilot_view_setting(self.view, "_is_gitignored", False)
+        session.set_config_status_async("")
+
     @_must_be_active_view()
     def on_modified_async(self) -> None:
         self._is_modified = True
         plugin, session = CopilotPlugin.plugin_session(self.view)
-
         if not plugin or not session:
+            return
+
+        if get_session_setting(session, "respect_gitignore", False) and get_copilot_view_setting(
+            self.view, "_is_gitignored", False
+        ):
             return
 
         vcm = ViewCompletionManager(self.view)
@@ -107,7 +132,12 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if command_name == "auto_complete":
             plugin, session = CopilotPlugin.plugin_session(self.view)
 
-            if plugin and session and get_session_setting(session, "hook_to_auto_complete_command"):
+            if (
+                plugin
+                and session
+                and not get_copilot_view_setting(self.view, "_is_gitignored", False)
+                and get_session_setting(session, "hook_to_auto_complete_command")
+            ):
                 plugin.request_get_completions(self.view)
 
     def on_post_save_async(self) -> None:

@@ -57,8 +57,13 @@
                         "popup",
                         "phantom"
                       ]
+                    },
+                    "respect_gitignore": {
+                      "default": false,
+                      "markdownDescription": "Respect `.gitignore` files when sending files to the server.",
+                      "type": "boolean"
                     }
-                  }
+                  },
                 }
               }
             }

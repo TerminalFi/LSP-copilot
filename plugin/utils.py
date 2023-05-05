@@ -1,3 +1,4 @@
+import fnmatch
 import os
 import textwrap
 import threading
@@ -290,3 +291,23 @@ def _generate_completion_region(
             completion["range"]["end"]["character"],
         ),
     )
+
+
+def is_gitignored(view: sublime.View):
+    file_name = view.file_name()
+    window = view.window()
+
+    if not file_name or not window:
+        return False
+
+    folders = window.folders()
+    target_folder = next((folder for folder in folders if file_name.startswith(folder)), None)
+
+    if target_folder:
+        gitignore_path = os.path.join(target_folder, ".gitignore")
+        if os.path.exists(gitignore_path):
+            with open(gitignore_path, "r") as f:
+                patterns = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            relative_file_path = os.path.relpath(file_name, target_folder)
+            return any(fnmatch.fnmatch(relative_file_path, pattern) for pattern in patterns)
+    return False

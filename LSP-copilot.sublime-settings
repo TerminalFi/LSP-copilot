@@ -16,7 +16,8 @@
 		"local_checks": false,
 		"telemetry": false,
 		"proxy": "",
-		"completion_style": "popup"
+		"completion_style": "popup",
+		"respect_gitignore": false
 	},
 	// ST4 configuration
 	"selector": "source | text | embedding"
