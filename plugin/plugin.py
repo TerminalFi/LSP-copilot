@@ -12,6 +12,7 @@ from LSP.plugin.core.typing import Any, Callable, Dict, Optional, Tuple, Union, 
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
+    NTFY_FEATURE_FLAGS_NOTIFICATION,
     NTFY_LOG_MESSAGE,
     NTFY_PANEL_SOLUTION,
     NTFY_PANEL_SOLUTION_DONE,
@@ -25,6 +26,7 @@ from .constants import (
 from .types import (
     AccountStatus,
     CopilotPayloadCompletions,
+    CopilotPayloadFeatureFlagsNotification,
     CopilotPayloadLogMessage,
     CopilotPayloadPanelSolution,
     CopilotPayloadSignInConfirm,
@@ -224,6 +226,10 @@ class CopilotPlugin(NpmClientHandler):
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()
         return bool(session and session.session_view_for_view_async(view))
+
+    @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
+    def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
+        pass
 
     @notification_handler(NTFY_LOG_MESSAGE)
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
