@@ -195,7 +195,7 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
             "position": {"line": row, "character": col},
             # Buffer Version. Generally this is handled by LSP, but we need to handle it here
             # Will need to test getting the version from LSP
-            "version": 0,
+            "version": view.change_count(),
         }
     }
 
