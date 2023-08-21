@@ -24,7 +24,8 @@ REQ_SIGN_OUT = "signOut"  # done
 # Copilot notifications #
 # --------------------- #
 
+NTFY_FEATURE_FLAGS_NOTIFICATION = "featureFlagsNotification"  # done
 NTFY_LOG_MESSAGE = "LogMessage"  # done
-NTFY_STATUS_NOTIFICATION = "statusNotification"  # done
 NTFY_PANEL_SOLUTION = "PanelSolution"  # done
 NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"  # done
+NTFY_STATUS_NOTIFICATION = "statusNotification"  # done

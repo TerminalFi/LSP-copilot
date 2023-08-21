@@ -80,6 +80,16 @@ CopilotPayloadCompletions = TypedDict(
     total=True,
 )
 
+CopilotPayloadFeatureFlagsNotification = TypedDict(
+    "CopilotPayloadFeatureFlagsNotification",
+    {
+        "ssc": bool,
+        "chat": bool,
+        "rt": bool,
+    },
+    total=True,
+)
+
 CopilotPayloadGetVersion = TypedDict(
     "CopilotPayloadGetVersion",
     {
