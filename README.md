@@ -31,7 +31,7 @@ On the first time use, follow the steps below:
 
 ## Settings
 
-Provide user settings in LSP-copilot.sublime-settings (Settings... > Package Settings > LSP > Servers > LSP-copilot)
+Settings are provide in the `LSP-copilot.sublime-settings` file, accessible using `Preferences: LSP-copilot Settings` in the command palette.
 
 | Setting                       | Type    | Default | Description                                                         |
 | ----------------------------- | ------- | ------- | ------------------------------------------------------------------- |
