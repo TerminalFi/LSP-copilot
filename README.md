@@ -29,6 +29,19 @@ On the first time use, follow the steps below:
     1. Return to Sublime Text and press `OK` on the dialog.
     1. If you see a "sign in OK" dialog, LSP-copilot should start working since then.
 
+## Settings
+
+Settings are provide in the `LSP-copilot.sublime-settings` file, accessible using `Preferences: LSP-copilot Settings` in the command palette.
+
+| Setting                       | Type    | Default | Description                                                         |
+| ----------------------------- | ------- | ------- | ------------------------------------------------------------------- |
+| auto_ask_completions          | boolean | true    | Auto ask the server for completions. Otherwise, you have to trigger it manually. |
+| debug                         | boolean | false   | Enables `debug` mode for LSP-copilot. Enabling all commands regardless of status requirements. |
+| hook_to_auto_complete_command | boolean | false   | Ask the server for completions when the `auto_complete` command is called. |
+| local_checks                  | boolean | false   | Enables local checks. This feature is not fully understood yet.      |
+| telemetry                     | boolean | false   | Enables Copilot telemetry requests for `Accept` and `Reject` completions. |
+| proxy                         | string  |        | The HTTP proxy to use for Copilot requests. It's in the form of `username:password@host:port` or just `host:port`. |
+| completion_style              | string  | popup   | Completion style. `popup` is the default, `phantom` is experimental ([there are well-known issues](https://github.com/TheSecEng/LSP-copilot/issues)). |
 
 ## FAQs
 
