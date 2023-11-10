@@ -39,7 +39,7 @@ exclude = '\.git,\.?venv,\.mypy_cache,br-.*,branch-.*,libs,stubs,tests/files,typ
 [tool.black]
 line-length = 120
 target-version = ['py33']
-
+preview = true
 # regex
 exclude = '''
 /(

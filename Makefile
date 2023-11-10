@@ -16,5 +16,5 @@ check:
 .PHONY: fix
 fix:
 	autoflake --in-place .
-	black .
+	black --preview .
 	isort .
