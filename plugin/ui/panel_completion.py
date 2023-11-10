@@ -143,84 +143,78 @@ class ViewPanelCompletionManager:
 class _PanelCompletion:
     CSS_CLASS_NAME = "copilot-completion-panel"
     CSS = """
-    html {{
-        --copilot-close-foreground: var(--foreground);
-        --copilot-close-background: var(--background);
-        --copilot-close-border: var(--foreground);
-        --copilot-accept-foreground: var(--foreground);
-        --copilot-accept-background: var(--background);
-        --copilot-accept-border: var(--greenish);
-    }}
+        html {{
+            --copilot-close-foreground: var(--foreground);
+            --copilot-close-background: var(--background);
+            --copilot-close-border: var(--foreground);
+            --copilot-accept-foreground: var(--foreground);
+            --copilot-accept-background: var(--background);
+            --copilot-accept-border: var(--greenish);
+        }}
 
-    .{class_name} {{
-        margin: 1rem 0.5rem 0 0.5rem;
-    }}
+        .{class_name} {{
+            margin: 1rem 0.5rem 0 0.5rem;
+        }}
 
-    .{class_name} .navbar {{
-        text-align: left;
-    }}
+        .{class_name} .navbar {{
+            text-align: left;
+        }}
 
-    .{class_name} .synthesis-info {{
-        display: inline-block;
-        text-size: 1.2em;
-    }}
+        .{class_name} .synthesis-info {{
+            display: inline-block;
+            text-size: 1.2em;
+        }}
 
-    .{class_name} .header {{
-        display: block;
-        margin-bottom: 1rem;
-    }}
+        .{class_name} .header {{
+            display: block;
+            margin-bottom: 1rem;
+        }}
 
-    .{class_name} a {{
-        border-radius: 3px;
-        border-style: solid;
-        border-width: 1px;
-        display: inline;
-        padding: 5px;
-        text-decoration: none;
-    }}
+        .{class_name} a {{
+            border-radius: 3px;
+            border-style: solid;
+            border-width: 1px;
+            display: inline;
+            padding: 5px;
+            text-decoration: none;
+        }}
 
-    .{class_name} a.close {{
-        background: var(--copilot-close-background);
-        border-color: var(--copilot-close-border);
-        color: var(--copilot-close-foreground);
-    }}
+        .{class_name} a.close {{
+            background: var(--copilot-close-background);
+            border-color: var(--copilot-close-border);
+            color: var(--copilot-close-foreground);
+        }}
 
-    .{class_name} a.close i {{
-        color: var(--copilot-close-border);
-    }}
+        .{class_name} a.close i {{
+            color: var(--copilot-close-border);
+        }}
 
-    .{class_name} a.accept {{
-        background: var(--copilot-accept-background);
-        border-color: var(--copilot-accept-border);
-        color: var(--copilot-accept-foreground);
-    }}
+        .{class_name} a.accept {{
+            background: var(--copilot-accept-background);
+            border-color: var(--copilot-accept-border);
+            color: var(--copilot-accept-foreground);
+        }}
 
-    .{class_name} a.accept i {{
-        color: var(--copilot-accept-border);
-    }}
-    """.format(
-        class_name=CSS_CLASS_NAME
-    )
-    COMPLETION_TEMPLATE = reformat(
-        """
+        .{class_name} a.accept i {{
+            color: var(--copilot-accept-border);
+        }}
+        """.format(class_name=CSS_CLASS_NAME)
+    COMPLETION_TEMPLATE = reformat("""
         <div class="navbar">
             <a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a>&nbsp;
             <h4 class="synthesis-info">{synthesis_info}</h4>
         </div>
         <hr>
         {sections}
-        """
-    )
+    """)
     # We use many backticks to denote a fenced code block because if we are writing in Markdown,
     # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
-    COMPLETION_SECTION_TEMPLATE = reformat(
-        """
+    COMPLETION_SECTION_TEMPLATE = reformat("""
         <div class="header">{header_items}</div>
         ``````{lang}
         {code}
         ``````
-        """
-    )
+    """)
 
     def __init__(self, view: sublime.View) -> None:
         self.view = view
@@ -358,11 +352,9 @@ class _PanelCompletion:
 
     def _open_in_side_by_side(self, window: sublime.Window) -> None:
         self.completion_manager.original_layout = window.layout()
-        window.set_layout(
-            {
-                "cols": [0.0, 0.5, 1.0],
-                "rows": [0.0, 1.0],
-                "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
-            }
-        )
+        window.set_layout({
+            "cols": [0.0, 0.5, 1.0],
+            "rows": [0.0, 1.0],
+            "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
+        })
         self._open_in_group(window, 1)

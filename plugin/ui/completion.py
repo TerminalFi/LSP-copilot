@@ -214,86 +214,82 @@ class _PopupCompletion(_BaseCompletion):
 
     CSS_CLASS_NAME = "copilot-completion-popup"
     CSS = """
-    html {{
-        --copilot-accept-foreground: var(--foreground);
-        --copilot-accept-background: var(--background);
-        --copilot-accept-border: var(--greenish);
-        --copilot-reject-foreground: var(--foreground);
-        --copilot-reject-background: var(--background);
-        --copilot-reject-border: var(--yellowish);
-    }}
+        html {{
+            --copilot-accept-foreground: var(--foreground);
+            --copilot-accept-background: var(--background);
+            --copilot-accept-border: var(--greenish);
+            --copilot-reject-foreground: var(--foreground);
+            --copilot-reject-background: var(--background);
+            --copilot-reject-border: var(--yellowish);
+        }}
 
-    .{class_name} {{
-        margin: 1rem 0.5rem 0 0.5rem;
-    }}
+        .{class_name} {{
+            margin: 1rem 0.5rem 0 0.5rem;
+        }}
 
-    .{class_name} .header {{
-        display: block;
-        margin-bottom: 1rem;
-    }}
+        .{class_name} .header {{
+            display: block;
+            margin-bottom: 1rem;
+        }}
 
-    .{class_name} a {{
-        border-radius: 3px;
-        border-style: solid;
-        border-width: 1px;
-        display: inline;
-        padding: 5px;
-        text-decoration: none;
-    }}
+        .{class_name} a {{
+            border-radius: 3px;
+            border-style: solid;
+            border-width: 1px;
+            display: inline;
+            padding: 5px;
+            text-decoration: none;
+        }}
 
-    .{class_name} a.accept {{
-        background: var(--copilot-accept-background);
-        border-color: var(--copilot-accept-border);
-        color: var(--copilot-accept-foreground);
-    }}
+        .{class_name} a.accept {{
+            background: var(--copilot-accept-background);
+            border-color: var(--copilot-accept-border);
+            color: var(--copilot-accept-foreground);
+        }}
 
-    .{class_name} a.accept i {{
-        color: var(--copilot-accept-border);
-    }}
+        .{class_name} a.accept i {{
+            color: var(--copilot-accept-border);
+        }}
 
-    .{class_name} a.reject {{
-        background: var(--copilot-reject-background);
-        border-color: var(--copilot-reject-border);
-        color: var(--copilot-reject-foreground);
-    }}
+        .{class_name} a.reject {{
+            background: var(--copilot-reject-background);
+            border-color: var(--copilot-reject-border);
+            color: var(--copilot-reject-foreground);
+        }}
 
-    .{class_name} a.reject i {{
-        color: var(--copilot-reject-border);
-    }}
+        .{class_name} a.reject i {{
+            color: var(--copilot-reject-border);
+        }}
 
-    .{class_name} a.prev {{
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
-        border-right-width: 0;
-        padding-left: 8px;
-        padding-right: 8px;
-    }}
+        .{class_name} a.prev {{
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right-width: 0;
+            padding-left: 8px;
+            padding-right: 8px;
+        }}
 
-    .{class_name} a.next {{
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-        border-left-width: 0;
-        padding-left: 8px;
-        padding-right: 8px;
-    }}
+        .{class_name} a.next {{
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            border-left-width: 0;
+            padding-left: 8px;
+            padding-right: 8px;
+        }}
 
-    .{class_name} a.panel {{
-        padding-left: 8px;
-        padding-right: 8px;
-    }}
-    """.format(
-        class_name=CSS_CLASS_NAME
-    )
+        .{class_name} a.panel {{
+            padding-left: 8px;
+            padding-right: 8px;
+        }}
+    """.format(class_name=CSS_CLASS_NAME)
     # We use many backticks to denote a fenced code block because if we are writing in Markdown,
     # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
-    COMPLETION_TEMPLATE = reformat(
-        """
+    COMPLETION_TEMPLATE = reformat("""
         <div class="header">{header_items}</div>
         ``````{lang}
         {code}
         ``````
-        """
-    )
+    """)
 
     @property
     def popup_content(self) -> str:
@@ -437,13 +433,11 @@ class _PhantomCompletion(_BaseCompletion):
 
         assert self._phantom_set
         self._phantom_set.update([])
-        self._phantom_set.update(
-            [
-                self._build_phantom(first_line, self.completion["point"] + 1, self.completion["point"]),
-                # an empty phantom is required to prevent the cursor from jumping, even if there is only one line
-                self._build_phantom(rest_lines, self.completion["point"], inline=False),
-            ]
-        )
+        self._phantom_set.update([
+            self._build_phantom(first_line, self.completion["point"] + 1, self.completion["point"]),
+            # an empty phantom is required to prevent the cursor from jumping, even if there is only one line
+            self._build_phantom(rest_lines, self.completion["point"], inline=False),
+        ])
 
     @classmethod
     def hide(cls, view: sublime.View) -> None:
