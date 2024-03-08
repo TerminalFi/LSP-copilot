@@ -17,11 +17,25 @@
                 "children": [
                   {
                     "caption": "LSP-copilot",
-                    "command": "edit_settings",
-                    "args": {
-                      "base_file": "${packages}/LSP-copilot/LSP-copilot.sublime-settings",
-                      "default": "// Settings in here override those in \"LSP-copilot/LSP-copilot.sublime-settings\"\n\n{\n\t$0\n}\n",
-                    },
+                    "children": [
+                      {
+                        "caption": "Settings",
+                        "command": "edit_settings",
+                        "args": {
+                          "base_file": "${packages}/LSP-copilot/LSP-copilot.sublime-settings",
+                          "default": "// Settings in here override those in \"LSP-copilot/LSP-copilot.sublime-settings\"\n\n{\n\t$0\n}\n",
+                        },
+                      },
+                      {
+                        "caption": "Key Bindings",
+                        "command": "edit_settings",
+                        "args": {
+                          "base_file": "${packages}/LSP-copilot/Default.sublime-keymap",
+                          "user_file": "${packages}/User/Default (${platform}).sublime-keymap",
+                          "default": "[\n\t$0\n]\n",
+                        }
+                      },
+                    ],
                   },
                 ],
               },
