@@ -15,7 +15,6 @@
 		"hook_to_auto_complete_command": false,
 		"local_checks": false,
 		"telemetry": false,
-		"proxy": "",
 		"completion_style": "popup"
 	},
 	// ST4 configuration
