@@ -36,6 +36,7 @@ Settings are provide in the `LSP-copilot.sublime-settings` file, accessible usin
 | Setting                       | Type    | Default | Description                                                         |
 | ----------------------------- | ------- | ------- | ------------------------------------------------------------------- |
 | auto_ask_completions          | boolean | true    | Auto ask the server for completions. Otherwise, you have to trigger it manually. |
+| commit_completion_on_tab      | boolean | true    | Use the `Tab` key for committing Copilot's completion. This may conflict with Sublime Text's `auto_complete_commit_on_tab` setting. |
 | debug                         | boolean | false   | Enables `debug` mode for LSP-copilot. Enabling all commands regardless of status requirements. |
 | hook_to_auto_complete_command | boolean | false   | Ask the server for completions when the `auto_complete` command is called. |
 | local_checks                  | boolean | false   | Enables local checks. This feature is not fully understood yet.      |
@@ -45,10 +46,14 @@ Settings are provide in the `LSP-copilot.sublime-settings` file, accessible usin
 
 ## FAQs
 
-### Pressing `Tab` commits autocompletion rather than Copilot's suggestion
+### I don't want to use `Tab` for committing Copilot's completion
 
-There is no way for a plugin to know which one is wanted. But you can define your own dedicate keybinding to commit
-Copilot's suggestion.
+It's likely that Copilot's completion appears along with Sublime Text's autocompletion
+and both of them use `Tab` for committing the completion. This may cause a nondeterministic result.
+
+Thus, you may want to let only one of them (or none) use the `Tab` key.
+If you don't want LSP-copilot to use the `Tab` key for committing the completion.
+You can set LSP-copilot's `commit_completion_on_tab` setting to `false` and add a custom keybinding like below.
 
 ```js
 {
@@ -56,7 +61,7 @@ Copilot's suggestion.
     "command": "copilot_accept_completion",
     "context": [
         {
-            "key": "setting.copilot.completion.is_visible"
+            "key": "copilot.is_on_completion"
         }
     ]
 },

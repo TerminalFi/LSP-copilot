@@ -6,6 +6,9 @@
         "command": "copilot_accept_completion",
         "context": [
             {
+                "key": "copilot.commit_completion_on_tab"
+            },
+            {
                 "key": "copilot.is_on_completion"
             }
         ]

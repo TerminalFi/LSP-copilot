@@ -11,6 +11,7 @@
 	],
 	"settings": {
 		"auto_ask_completions": true,
+		"commit_completion_on_tab": true,
 		"debug": false,
 		"hook_to_auto_complete_command": false,
 		"local_checks": false,
