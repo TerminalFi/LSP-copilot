@@ -1,7 +1,7 @@
 [
     {
         "keys": [
-            "tab"
+            "ctrl+tab"
         ],
         "command": "copilot_accept_completion",
         "context": [
