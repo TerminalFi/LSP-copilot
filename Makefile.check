@@ -11,7 +11,7 @@ pre-check:
 check:
 	mypy -p plugin
 	flake8 .
-	black --check --preview --diff .
+	black --check --diff .
 	isort --check --diff .
 
 .PHONY: post-check

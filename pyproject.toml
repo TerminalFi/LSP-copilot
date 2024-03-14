@@ -40,6 +40,10 @@ exclude = '\.git,\.?venv,\.mypy_cache,br-.*,branch-.*,libs,stubs,tests/files,typ
 line-length = 120
 target-version = ['py33']
 preview = true
+enable_unstable_feature = [
+    "multiline_string_handling",
+    "hug_parens_with_braces_and_square_brackets",
+]
 # regex
 exclude = '''
 /(
