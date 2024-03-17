@@ -24,6 +24,11 @@
                       "description": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
                       "type": "boolean"
                     },
+                    "commit_completion_on_tab": {
+                      "default": true,
+                      "markdownDescription": "Use the `Tab` key for committing Copilot's completion. This may conflict with Sublime Text's `auto_complete_commit_on_tab` setting.",
+                      "type": "boolean"
+                    },
                     "debug": {
                       "default": false,
                       "markdownDescription": "Enables `debug` mode fo the LSP-copilot. Enabling all commands regardless of status requirements.",

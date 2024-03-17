@@ -98,6 +98,14 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
             return test(beginning_of_line.strip() != "" or not re.match(r"\s", vcm.current_completion["displayText"]))
 
+        plugin, session = CopilotPlugin.plugin_session(self.view)
+
+        if not plugin or not session:
+            return None
+
+        if key == "copilot.commit_completion_on_tab":
+            return test(get_session_setting(session, "commit_completion_on_tab"))
+
         return None
 
     def on_post_text_command(self, command_name: str, args: Optional[Dict[str, Any]]) -> None:
