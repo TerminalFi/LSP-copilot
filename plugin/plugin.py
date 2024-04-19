@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import functools
 import json
 import os
 import weakref
+from collections.abc import Callable
 from functools import wraps
+from typing import Any, cast
 from urllib.parse import urlparse
 
 import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core.collections import DottedDict
-from LSP.plugin.core.typing import Any, Callable, Dict, Optional, Tuple, Union, cast
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
@@ -92,16 +95,16 @@ class CopilotPlugin(NpmClientHandler):
         "agent.js",
     )
 
-    plugin_mapping = weakref.WeakValueDictionary()  # type: weakref.WeakValueDictionary[int, CopilotPlugin]
+    plugin_mapping: weakref.WeakValueDictionary[int, CopilotPlugin] = weakref.WeakValueDictionary()
 
-    # account status
-    _has_signed_in = False
-    _is_authorized = False
+    _account_status = AccountStatus(
+        has_signed_in=False,
+        is_authorized=False,
+    )
 
-    def __init__(self, session: "weakref.ref[Session]") -> None:
+    def __init__(self, session: weakref.ref[Session]) -> None:
         super().__init__(session)
-        sess = session()
-        if sess:
+        if sess := session():
             self.plugin_mapping[sess.window.id()] = self
 
         # Note that ST persists view settings after ST is closed. If the user closes ST
@@ -125,11 +128,11 @@ class CopilotPlugin(NpmClientHandler):
         api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), on_set_editor_info)
 
     def on_settings_changed(self, settings: DottedDict) -> None:
-        def parse_proxy(proxy: str) -> Optional[NetworkProxy]:
+        def parse_proxy(proxy: str) -> NetworkProxy | None:
             # in the form of "username:password@host:port" or "host:port"
             if not proxy:
                 return None
-            parsed = urlparse("http://" + proxy)
+            parsed = urlparse(f"http://{proxy}")
             return {
                 "host": parsed.hostname or "",
                 "port": parsed.port or 80,
@@ -138,14 +141,12 @@ class CopilotPlugin(NpmClientHandler):
                 "rejectUnauthorized": True,
             }
 
-        session = self.weaksession()
-        if not session:
+        if not (session := self.weaksession()):
             return
 
         editor_info = self.editor_info()
 
-        networkProxy = parse_proxy(settings.get("proxy") or "")
-        if networkProxy:
+        if networkProxy := parse_proxy(settings.get("proxy") or ""):
             editor_info["networkProxy"] = networkProxy
 
         session.send_request(Request(REQ_SET_EDITOR_INFO, editor_info), lambda response: None)
@@ -154,14 +155,12 @@ class CopilotPlugin(NpmClientHandler):
     def version() -> str:
         """Return this plugin's version. If it's not installed by Package Control, return `"unknown"`."""
         try:
-            return json.loads(sublime.load_resource("Packages/{}/package-metadata.json".format(PACKAGE_NAME)))[
-                "version"
-            ]
+            return json.loads(sublime.load_resource(f"Packages/{PACKAGE_NAME}/package-metadata.json"))["version"]
         except Exception:
             return "unknown"
 
     @classmethod
-    def editor_info(cls) -> Dict[str, Any]:
+    def editor_info(cls) -> dict[str, Any]:
         return {
             "editorInfo": {
                 "name": "Sublime Text",
@@ -183,36 +182,34 @@ class CopilotPlugin(NpmClientHandler):
 
     @classmethod
     def get_account_status(cls) -> AccountStatus:
-        """Return `(has_signed_in, is_authorized)`."""
-        return AccountStatus(cls._has_signed_in, cls._is_authorized)
+        """Return the account status object."""
+        return cls._account_status
 
     @classmethod
     def set_account_status(
         cls,
         *,
-        signed_in: Optional[bool] = None,
-        authorized: Optional[bool] = None,
-        quiet: bool = False
-        # format delimiter
+        signed_in: bool | None = None,
+        authorized: bool | None = None,
+        quiet: bool = False,
     ) -> None:
         if signed_in is not None:
-            cls._has_signed_in = signed_in
+            cls._account_status.has_signed_in = signed_in
         if authorized is not None:
-            cls._is_authorized = authorized
+            cls._account_status.is_authorized = authorized
 
         if not quiet:
-            if not cls._has_signed_in:
+            if not cls._account_status.has_signed_in:
                 icon, msg = "❌", "has NOT been signed in."
-            elif not cls._is_authorized:
+            elif not cls._account_status.is_authorized:
                 icon, msg = "⚠", "has signed in but not authorized."
             else:
                 icon, msg = "✈", "has been signed in and authorized."
             status_message(msg, icon_=icon, console_=True)
 
     @classmethod
-    def from_view(cls, view: sublime.View) -> Optional["CopilotPlugin"]:
-        window = view.window()
-        if not window:
+    def from_view(cls, view: sublime.View) -> CopilotPlugin | None:
+        if not (window := view.window()):
             return None
         self = cls.plugin_mapping.get(window.id())
         if not (self and self.is_valid_for_view(view)):
@@ -220,7 +217,7 @@ class CopilotPlugin(NpmClientHandler):
         return self
 
     @classmethod
-    def plugin_session(cls, view: sublime.View) -> Union[Tuple[None, None], Tuple["CopilotPlugin", Optional[Session]]]:
+    def plugin_session(cls, view: sublime.View) -> tuple[None, None] | tuple[CopilotPlugin, Session | None]:
         plugin = cls.from_view(view)
         return (plugin, plugin.weaksession()) if plugin else (None, None)
 
@@ -238,8 +235,7 @@ class CopilotPlugin(NpmClientHandler):
 
     @notification_handler(NTFY_PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
-        view = ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])
-        if not view:
+        if not (view := ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])):
             return
 
         preprocess_panel_completions(view, [payload])
@@ -250,8 +246,7 @@ class CopilotPlugin(NpmClientHandler):
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
-        view = ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])
-        if not view:
+        if not (view := ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])):
             return
 
         completion_manager = ViewPanelCompletionManager(view)
@@ -272,14 +267,15 @@ class CopilotPlugin(NpmClientHandler):
         completion_manager = ViewCompletionManager(view)
         completion_manager.hide()
 
-        has_signed_in, is_authorized = self.get_account_status()
-        session = self.weaksession()
-        sel = view.sel()
-        if not (has_signed_in and is_authorized and session and len(sel) == 1):
+        if not (
+            (session := self.weaksession())
+            and self._account_status.has_signed_in
+            and self._account_status.is_authorized
+            and len(sel := view.sel()) == 1
+        ):
             return
 
-        params = prepare_completion_request(view)
-        if not params:
+        if not (params := prepare_completion_request(view)):
             return
 
         if no_callback:
@@ -294,17 +290,15 @@ class CopilotPlugin(NpmClientHandler):
         self,
         view: sublime.View,
         payload: CopilotPayloadCompletions,
-        region: Tuple[int, int],
+        region: tuple[int, int],
     ) -> None:
         completion_manager = ViewCompletionManager(view)
         completion_manager.is_waiting = False
 
-        session = self.weaksession()
-        if not session:
+        if not (session := self.weaksession()):
             return
 
-        sel = view.sel()
-        if len(sel) != 1:
+        if len(sel := view.sel()) != 1:
             return
 
         # re-request completions because the cursor position changed during awaiting Copilot's response
@@ -312,8 +306,7 @@ class CopilotPlugin(NpmClientHandler):
             self.request_get_completions(view)
             return
 
-        completions = payload["completions"]
-        if not completions:
+        if not (completions := payload["completions"]):
             return
 
         preprocess_completions(view, completions)
