@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import os
 import textwrap
 import threading
+from collections.abc import Callable, Generator, Iterable
 from functools import wraps
 from itertools import takewhile
 from operator import itemgetter
+from typing import Any, TypeVar, Union, cast
 
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Set, TypeVar, Union, cast
 from LSP.plugin.core.url import filename_to_uri
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
@@ -19,10 +22,9 @@ T_Number = TypeVar("T_Number", bound=Union[int, float])
 
 
 def all_views(
-    window: Optional[sublime.Window] = None,
+    window: sublime.Window | None = None,
     *,
-    include_transient: bool = False
-    # format delimiter
+    include_transient: bool = False,
 ) -> Generator[sublime.View, None, None]:
     windows = [window] if window else sublime.windows()
     for window in windows:
@@ -30,10 +32,9 @@ def all_views(
 
 
 def all_sheets(
-    window: Optional[sublime.Window] = None,
+    window: sublime.Window | None = None,
     *,
-    include_transient: bool = False
-    # format delimiter
+    include_transient: bool = False,
 ) -> Generator[sublime.Sheet, None, None]:
     windows = [window] if window else sublime.windows()
     for window in windows:
@@ -42,7 +43,7 @@ def all_sheets(
         yield from window.sheets()
 
 
-def clamp(val: T_Number, min_val: Optional[T_Number] = None, max_val: Optional[T_Number] = None) -> T_Number:
+def clamp(val: T_Number, min_val: T_Number | None = None, max_val: T_Number | None = None) -> T_Number:
     """Returns the bounded value of `val` in the range of `[min_val, max_val]`."""
     if min_val is not None and val < min_val:  # type: ignore
         return min_val
@@ -66,7 +67,7 @@ def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
                 delattr(debounced, "_timer")
                 return func(*args, **kwargs)
 
-            timer = getattr(debounced, "_timer", None)  # type: Optional[threading.Timer]
+            timer: threading.Timer | None = getattr(debounced, "_timer", None)
             if timer is not None:
                 timer.cancel()
 
@@ -80,11 +81,11 @@ def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
     return decorator
 
 
-def find_sheet_by_id(id: int) -> Optional[sublime.Sheet]:
+def find_sheet_by_id(id: int) -> sublime.Sheet | None:
     return first(all_sheets(include_transient=True), lambda sheet: sheet.id() == id)
 
 
-def find_view_by_id(id: int) -> Optional[sublime.View]:
+def find_view_by_id(id: int) -> sublime.View | None:
     return first(all_views(include_transient=True), lambda view: view.id() == id)
 
 
@@ -92,7 +93,7 @@ def is_active_view(obj: Any) -> bool:
     return bool(obj and obj == sublime.active_window().active_view())
 
 
-def first(items: Iterable[T], test: Optional[Callable[[T], bool]] = None, default: Optional[T] = None) -> Optional[T]:
+def first(items: Iterable[T], test: Callable[[T], bool] | None = None, default: T | None = None) -> T | None:
     """
     Gets the first item which satisfies the `test`. Otherwise, `default`.
     If `test` is not given or `None`, the first truthy item will be returned.
@@ -102,20 +103,20 @@ def first(items: Iterable[T], test: Optional[Callable[[T], bool]] = None, defaul
 
 def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -> str:
     if view.match_selector(point, "source.php"):
-        return "<?php\n{}".format(code)
+        return f"<?php\n{code}"
     return code
 
 
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
-    return view.settings().get("{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key), default)
+    return view.settings().get(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}", default)
 
 
 def set_copilot_view_setting(view: sublime.View, key: str, value: Any) -> None:
-    view.settings().set("{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key), value)
+    view.settings().set(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}", value)
 
 
 def erase_copilot_view_setting(view: sublime.View, key: str) -> None:
-    view.settings().erase("{}.{}".format(COPILOT_VIEW_SETTINGS_PREFIX, key))
+    view.settings().erase(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}")
 
 
 def get_project_relative_path(path: str) -> str:
@@ -156,7 +157,7 @@ def message_dialog(msg_: str, *args, error_: bool = False, console_: bool = Fals
     :param      console_:  Show message in console as well?
     :param      kwargs:    The keywords arguments for `str.format`
     """
-    full_msg = "[{}] {}".format(PACKAGE_NAME, msg_.format(*args, **kwargs))
+    full_msg = f"[{PACKAGE_NAME}] {msg_.format(*args, **kwargs)}"
     messenger = sublime.error_message if error_ else sublime.message_dialog
     messenger(full_msg)
 
@@ -172,12 +173,11 @@ def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
     :param      args:      The arguments for `str.format`
     :param      kwargs:    The keywords arguments for `str.format`
     """
-    return sublime.ok_cancel_dialog("[{}] {}".format(PACKAGE_NAME, msg_.format(*args, **kwargs)))
+    return sublime.ok_cancel_dialog(f"[{PACKAGE_NAME}] {msg_.format(*args, **kwargs)}")
 
 
-def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
-    sel = view.sel()
-    if len(sel) != 1:
+def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
+    if len(sel := view.sel()) != 1:
         return None
 
     file_path = view.file_name() or ""
@@ -200,15 +200,15 @@ def prepare_completion_request(view: sublime.View) -> Optional[Dict[str, Any]]:
     }
 
 
-def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadCompletion]) -> None:
+def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadCompletion]) -> None:
     """Preprocess the `completions` from "getCompletions" request."""
     # in-place de-duplication
-    unique_indexes = set(
+    unique_indexes: set[int] = set(
         map(
             itemgetter(0),
             unique(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
         )
-    )  # type: Set[int]
+    )
     for index in range(len(completions) - 1, -1, -1):
         if index not in unique_indexes:
             del completions[index]
@@ -222,7 +222,7 @@ def preprocess_completions(view: sublime.View, completions: List[CopilotPayloadC
         _generate_completion_region(view, completion)
 
 
-def preprocess_panel_completions(view: sublime.View, completions: List[CopilotPayloadPanelSolution]) -> None:
+def preprocess_panel_completions(view: sublime.View, completions: list[CopilotPayloadPanelSolution]) -> None:
     """Preprocess the `completions` from "getCompletionsCycling" request."""
     for completion in completions:
         _generate_completion_region(view, completion)
@@ -244,7 +244,7 @@ def remove_suffix(s: str, suffix: str) -> str:
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
-def status_message(msg_: str, *args, icon_: Optional[str] = "✈", console_: bool = False, **kwargs) -> None:
+def status_message(msg_: str, *args, icon_: str | None = "✈", console_: bool = False, **kwargs) -> None:
     """
     Show a status message in the status bar, whose message is prefixed with `icon` and "Copilot".
 
@@ -254,21 +254,21 @@ def status_message(msg_: str, *args, icon_: Optional[str] = "✈", console_: boo
     :param      console_:  Show message in console as well?
     :param      kwargs:    The keywords arguments for `str.format`
     """
-    prefix = "{} ".format(icon_) if icon_ else ""
-    full_msg = "{}Copilot {}".format(prefix, msg_.format(*args, **kwargs))
+    prefix = f"{icon_} " if icon_ else ""
+    full_msg = f"{prefix}Copilot {msg_.format(*args, **kwargs)}"
     sublime.status_message(full_msg)
 
     if console_:
         print(full_msg)
 
 
-def unique(items: Iterable[T], *, key: Optional[Callable[[T], Any]] = None) -> Generator[T, None, None]:
+def unique(items: Iterable[T], *, key: Callable[[T], Any] | None = None) -> Generator[T, None, None]:
     """
     Generate unique items from `items` by using `key` function on item as unique identifier.
     If `key` is not provided, an item itself will be used as its unique identifier.
     """
     key = key or (lambda x: x)
-    seen = set()  # type: Set[int]
+    seen: set[int] = set()
     for item in items:
         k = hash(key(item))
         if k not in seen:
@@ -278,7 +278,7 @@ def unique(items: Iterable[T], *, key: Optional[Callable[[T], Any]] = None) -> G
 
 def _generate_completion_region(
     view: sublime.View,
-    completion: Union[CopilotPayloadCompletion, CopilotPayloadPanelSolution],
+    completion: CopilotPayloadCompletion | CopilotPayloadPanelSolution,
 ) -> None:
     completion["region"] = (
         view.text_point(

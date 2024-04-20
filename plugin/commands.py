@@ -1,10 +1,13 @@
-from abc import ABCMeta
+from __future__ import annotations
+
+from abc import ABC
+from collections.abc import Callable
 from functools import partial, wraps
+from typing import Any, cast
 
 import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
-from LSP.plugin.core.typing import Any, Callable, Optional, Union, cast
 
 from .constants import (
     PACKAGE_NAME,
@@ -68,7 +71,7 @@ def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callabl
     return decorator
 
 
-class BaseCopilotCommand(metaclass=ABCMeta):
+class BaseCopilotCommand(ABC):
     session_name = PACKAGE_NAME
     requirement = REQUIRE_SIGN_IN | REQUIRE_AUTHORIZED
 
@@ -76,15 +79,15 @@ class BaseCopilotCommand(metaclass=ABCMeta):
         if get_session_setting(session, "debug"):
             return True
 
-        has_signed_in, is_authorized = CopilotPlugin.get_account_status()
+        account_status = CopilotPlugin.get_account_status()
         return not (
-            ((self.requirement & REQUIRE_SIGN_IN) and not has_signed_in)
-            or ((self.requirement & REQUIRE_NOT_SIGN_IN) and has_signed_in)
-            or ((self.requirement & REQUIRE_AUTHORIZED) and not is_authorized)
+            ((self.requirement & REQUIRE_SIGN_IN) and not account_status.has_signed_in)
+            or ((self.requirement & REQUIRE_NOT_SIGN_IN) and account_status.has_signed_in)
+            or ((self.requirement & REQUIRE_AUTHORIZED) and not account_status.is_authorized)
         )
 
 
-class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, metaclass=ABCMeta):
+class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, ABC):
     def want_event(self) -> bool:
         return False
 
@@ -92,7 +95,7 @@ class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, metaclass=ABCMeta):
         self,
         session: Session,
         request: str,
-        payload: Union[CopilotPayloadNotifyAccepted, CopilotPayloadNotifyRejected],
+        payload: CopilotPayloadNotifyAccepted | CopilotPayloadNotifyRejected,
     ) -> None:
         if not get_session_setting(session, "telemetry"):
             return
@@ -104,10 +107,9 @@ class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, metaclass=ABCMeta):
         return self._can_meet_requirement(session)
 
 
-class CopilotWindowCommand(BaseCopilotCommand, LspWindowCommand, metaclass=ABCMeta):
+class CopilotWindowCommand(BaseCopilotCommand, LspWindowCommand, ABC):
     def is_enabled(self) -> bool:
-        session = self.session()
-        if not session:
+        if not (session := self.session()):
             return False
         return self._can_meet_requirement(session)
 
@@ -131,8 +133,7 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
 
 class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
     def run(self, view_id: int, completion_index: int) -> None:
-        view = find_view_by_id(view_id)
-        if not view:
+        if not (view := find_view_by_id(view_id)):
             return
         view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
 
@@ -140,8 +141,7 @@ class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
 class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit, completion_index: int) -> None:
         completion_manager = ViewPanelCompletionManager(self.view)
-        completion = completion_manager.get_completion(completion_index)
-        if not completion:
+        if not (completion := completion_manager.get_completion(completion_index)):
             return
 
         # it seems that `completionText` always assume your cursor is at the end of the line
@@ -153,7 +153,7 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
 
 
 class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
-    def run(self, view_id: Optional[int] = None) -> None:
+    def run(self, view_id: int | None = None) -> None:
         if view_id is None:
             view = self.window.active_view()
         else:
@@ -167,14 +167,12 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:
-        completion_manager = ViewCompletionManager(self.view)
-        if not completion_manager.is_visible:
+        if not (completion_manager := ViewCompletionManager(self.view)).is_visible:
             return
 
         completion_manager.hide()
 
-        completion = completion_manager.current_completion
-        if not completion:
+        if not (completion := completion_manager.current_completion):
             return
 
         # Remove the current line and then insert full text.
@@ -211,8 +209,7 @@ class CopilotRejectCompletionCommand(CopilotTextCommand):
 class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        params = prepare_completion_request(self.view)
-        if not params:
+        if not (params := prepare_completion_request(self.view)):
             return
 
         completion_manager = ViewPanelCompletionManager(self.view)
@@ -248,7 +245,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
         local_checks = get_session_setting(session, "local_checks")
         session.send_request(Request(REQ_CHECK_STATUS, {"localChecksOnly": local_checks}), self._on_result_check_status)
 
-    def _on_result_check_status(self, payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignOut]) -> None:
+    def _on_result_check_status(self, payload: CopilotPayloadSignInConfirm | CopilotPayloadSignOut) -> None:
         if payload["status"] == "OK":
             CopilotPlugin.set_account_status(signed_in=True, authorized=True)
             message_dialog('Signed in and authorized with user "{}".', payload["user"])
@@ -276,7 +273,7 @@ class CopilotSignInCommand(CopilotTextCommand):
     def _on_result_sign_in_initiate(
         self,
         session: Session,
-        payload: Union[CopilotPayloadSignInConfirm, CopilotPayloadSignInInitiate],
+        payload: CopilotPayloadSignInConfirm | CopilotPayloadSignInInitiate,
     ) -> None:
         if payload["status"] == "AlreadySignedIn":
             return

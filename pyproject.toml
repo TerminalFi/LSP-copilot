@@ -3,6 +3,7 @@
 check_untyped_defs = true
 strict_optional = true
 mypy_path = 'typings/lsp_utils/st3:typings/ST-API-stubs/typings:typings/sublime-markdown-popups/st3:typings:stubs'
+python_version = '3.8'
 
 [[tool.mypy.overrides]]
 module = [
@@ -10,54 +11,10 @@ module = [
     "lsp_utils.*",
     "mdpopups.*",
     "sublime_lib.*",
+    "typings.*",
 ]
 ignore_errors = true
 ignore_missing_imports = true
-
-[tool.isort]
-profile = 'black'
-line_length = 120
-py_version=38
-skip_glob = [
-  ".venv/**",
-  "br-*/**",
-  "branch-*/**",
-  "libs/**",
-  "plugin/libs/**",
-  "stubs/**",
-  "typings/**",
-  "vendor/**",
-  "venv/**",
-]
-
-[tool.autoflake]
-quiet = true
-recursive = true
-remove-all-unused-imports = true
-exclude = '\.git,\.?venv,\.mypy_cache,br-.*,branch-.*,libs,stubs,tests/files,typings'
-
-[tool.black]
-line-length = 120
-target-version = ['py33']
-preview = true
-enable_unstable_feature = [
-    "multiline_string_handling",
-    "hug_parens_with_braces_and_square_brackets",
-]
-# regex
-exclude = '''
-/(
-  \.git
-  | \.?venv
-  | \.mypy_cache
-  | br-*
-  | branch-*
-  | libs
-  | stubs
-  | tests/files
-  | typings
-)/
-'''
 
 [tool.pyright]
 include = ['./']
@@ -74,9 +31,27 @@ ignore = [
   '**/libs',
 ]
 stubPath = 'typings'
-pythonVersion = '3.11'
+pythonVersion = '3.8'
 
 [tool.ruff]
-select = ["E", "F", "W"]
+preview = true
 line-length = 120
 target-version = 'py38'
+exclude = [
+  "*/libs/*",
+  ".git",
+  ".mypy_cache",
+  ".venv",
+  ".venv-*",
+  "branch-*",
+  "stubs",
+  "tests/files",
+  "typings",
+  "vendor",
+  "venv",
+  "venv-*",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E203"]

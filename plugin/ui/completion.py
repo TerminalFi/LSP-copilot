@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import html
 import textwrap
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
+from typing import Sequence
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import Dict, List, Optional, Sequence, Type, Union
 
 from ..types import CopilotPayloadCompletion
 from ..utils import (
@@ -18,7 +20,7 @@ from ..utils import (
     set_copilot_view_setting,
 )
 
-_view_to_phantom_set = {}  # type: Dict[int, sublime.PhantomSet]
+_view_to_phantom_set: dict[int, sublime.PhantomSet] = {}
 
 
 class ViewCompletionManager:
@@ -45,12 +47,12 @@ class ViewCompletionManager:
         set_copilot_view_setting(self.view, "is_waiting_completion", value)
 
     @property
-    def completions(self) -> List[CopilotPayloadCompletion]:
+    def completions(self) -> list[CopilotPayloadCompletion]:
         """All `completions` in the view. Note that this is a copy."""
         return get_copilot_view_setting(self.view, "completions", [])
 
     @completions.setter
-    def completions(self, value: List[CopilotPayloadCompletion]) -> None:
+    def completions(self, value: list[CopilotPayloadCompletion]) -> None:
         set_copilot_view_setting(self.view, "completions", value)
 
     @property
@@ -87,16 +89,16 @@ class ViewCompletionManager:
         self.is_waiting = False
 
     @property
-    def current_completion(self) -> Optional[CopilotPayloadCompletion]:
+    def current_completion(self) -> CopilotPayloadCompletion | None:
         """The current chosen `completion`."""
         return self.completions[self.completion_index] if self.completions else None
 
     @property
-    def completion_style_type(self) -> Type["_BaseCompletion"]:
+    def completion_style_type(self) -> type[_BaseCompletion]:
         completion_cls = first(_BaseCompletion.__subclasses__(), lambda t: t.name == self.completion_style)
         if completion_cls:
             return completion_cls
-        raise RuntimeError("Unknown completion style type: {}".format(self.completion_style))
+        raise RuntimeError(f"Unknown completion style type: {self.completion_style}")
 
     @property
     def is_phantom(self) -> bool:
@@ -138,9 +140,9 @@ class ViewCompletionManager:
 
     def show(
         self,
-        completions: Optional[List[CopilotPayloadCompletion]] = None,
-        completion_index: Optional[int] = None,
-        completion_style: Optional[str] = None,
+        completions: list[CopilotPayloadCompletion] | None = None,
+        completion_index: int | None = None,
+        completion_style: str | None = None,
     ) -> None:
         if not is_active_view(self.view):
             return
@@ -178,7 +180,7 @@ class ViewCompletionManager:
         return clamp(index, 0, completions_cnt - 1)
 
 
-class _BaseCompletion(metaclass=ABCMeta):
+class _BaseCompletion(ABC):
     name = ""
 
     def __init__(
@@ -213,7 +215,7 @@ class _PopupCompletion(_BaseCompletion):
     name = "popup"
 
     CSS_CLASS_NAME = "copilot-completion-popup"
-    CSS = """
+    CSS = f"""
         html {{
             --copilot-accept-foreground: var(--foreground);
             --copilot-accept-background: var(--background);
@@ -223,16 +225,16 @@ class _PopupCompletion(_BaseCompletion):
             --copilot-reject-border: var(--yellowish);
         }}
 
-        .{class_name} {{
+        .{CSS_CLASS_NAME} {{
             margin: 1rem 0.5rem 0 0.5rem;
         }}
 
-        .{class_name} .header {{
+        .{CSS_CLASS_NAME} .header {{
             display: block;
             margin-bottom: 1rem;
         }}
 
-        .{class_name} a {{
+        .{CSS_CLASS_NAME} a {{
             border-radius: 3px;
             border-style: solid;
             border-width: 1px;
@@ -241,27 +243,27 @@ class _PopupCompletion(_BaseCompletion):
             text-decoration: none;
         }}
 
-        .{class_name} a.accept {{
+        .{CSS_CLASS_NAME} a.accept {{
             background: var(--copilot-accept-background);
             border-color: var(--copilot-accept-border);
             color: var(--copilot-accept-foreground);
         }}
 
-        .{class_name} a.accept i {{
+        .{CSS_CLASS_NAME} a.accept i {{
             color: var(--copilot-accept-border);
         }}
 
-        .{class_name} a.reject {{
+        .{CSS_CLASS_NAME} a.reject {{
             background: var(--copilot-reject-background);
             border-color: var(--copilot-reject-border);
             color: var(--copilot-reject-foreground);
         }}
 
-        .{class_name} a.reject i {{
+        .{CSS_CLASS_NAME} a.reject i {{
             color: var(--copilot-reject-border);
         }}
 
-        .{class_name} a.prev {{
+        .{CSS_CLASS_NAME} a.prev {{
             border-top-right-radius: 0;
             border-bottom-right-radius: 0;
             border-right-width: 0;
@@ -269,7 +271,7 @@ class _PopupCompletion(_BaseCompletion):
             padding-right: 8px;
         }}
 
-        .{class_name} a.next {{
+        .{CSS_CLASS_NAME} a.next {{
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
             border-left-width: 0;
@@ -277,11 +279,11 @@ class _PopupCompletion(_BaseCompletion):
             padding-right: 8px;
         }}
 
-        .{class_name} a.panel {{
+        .{CSS_CLASS_NAME} a.panel {{
             padding-left: 8px;
             padding-right: 8px;
         }}
-    """.format(class_name=CSS_CLASS_NAME)
+    """
     # We use many backticks to denote a fenced code block because if we are writing in Markdown,
     # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
     COMPLETION_TEMPLATE = reformat("""
@@ -300,7 +302,7 @@ class _PopupCompletion(_BaseCompletion):
         )
 
     @property
-    def popup_header_items(self) -> List[str]:
+    def popup_header_items(self) -> list[str]:
         header_items = [
             '<a class="accept" title="Accept Completion" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
             '<a class="reject" title="Reject Completion" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
@@ -311,7 +313,7 @@ class _PopupCompletion(_BaseCompletion):
                 + '<a class="next" title="Next Completion" href="subl:copilot_next_completion">▶</a>'
             )
             header_items.append(
-                "({completion_index_1} of {completions_cnt})".format(
+                "({completion_index_1} of {completions_cnt})".format(  # noqa: UP032
                     completion_index_1=self.index + 1,  # 1-based index
                     completions_cnt=self.count,
                 )
@@ -399,12 +401,11 @@ class _PhantomCompletion(_BaseCompletion):
 
     def _build_phantom(
         self,
-        lines: Union[str, Sequence[str]],
+        lines: str | Sequence[str],
         begin: int,
-        end: Optional[int] = None,
+        end: int | None = None,
         *,
-        inline: bool = True
-        # format separator
+        inline: bool = True,
     ) -> sublime.Phantom:
         body = (
             self.normalize_phantom_line(lines)
