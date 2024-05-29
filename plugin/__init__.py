@@ -13,6 +13,7 @@ from .commands import (
     CopilotPreviousCompletionCommand,
     CopilotRejectCompletionCommand,
     CopilotSignInCommand,
+    CopilotSignInWithGithubTokenCommand,
     CopilotSignOutCommand,
 )
 from .listeners import EventListener, ViewEventListener
@@ -35,6 +36,7 @@ __all__ = (
     "CopilotPreviousCompletionCommand",
     "CopilotRejectCompletionCommand",
     "CopilotSignInCommand",
+    "CopilotSignInWithGithubTokenCommand",
     "CopilotSignOutCommand",
     # ST: event listeners
     "EventListener",

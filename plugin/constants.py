@@ -22,6 +22,7 @@ REQ_RECORD_TELEMETRY_CONSENT = "recordTelemetryConsent"
 REQ_SET_EDITOR_INFO = "setEditorInfo"  # done
 REQ_SIGN_IN_CONFIRM = "signInConfirm"  # done
 REQ_SIGN_IN_INITIATE = "signInInitiate"  # done
+REQ_SIGN_IN_WITH_GITHUB_TOKEN = "signInWithGithubToken"  # done
 REQ_SIGN_OUT = "signOut"  # done
 
 # --------------------- #

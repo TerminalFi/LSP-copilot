@@ -89,6 +89,11 @@ class CopilotPayloadSignInInitiate(TypedDict, total=True):
     interval: int
 
 
+class CopilotPayloadSignInWithGithubToken(TypedDict, total=True):
+    user: str
+    githubToken: str
+
+
 class CopilotPayloadSignInConfirm(TypedDict, total=True):
     status: Literal["AlreadySignedIn", "MaybeOk", "NotAuthorized", "NotSignedIn", "OK"]
     user: str

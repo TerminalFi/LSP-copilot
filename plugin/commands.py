@@ -21,6 +21,7 @@ from .constants import (
     REQ_NOTIFY_REJECTED,
     REQ_SIGN_IN_CONFIRM,
     REQ_SIGN_IN_INITIATE,
+    REQ_SIGN_IN_WITH_GITHUB_TOKEN,
     REQ_SIGN_OUT,
 )
 from .plugin import CopilotPlugin
@@ -296,6 +297,55 @@ class CopilotSignInCommand(CopilotTextCommand):
         session.send_request(
             Request(REQ_SIGN_IN_CONFIRM, {"userCode": user_code}),
             self._on_result_sign_in_confirm,
+        )
+
+    def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
+        self.view.run_command("copilot_check_status")
+
+
+class CopilotSignInWithGithubTokenCommand(CopilotTextCommand):
+    requirement = REQUIRE_NOT_SIGN_IN
+
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        session.send_request(
+            Request(REQ_SIGN_IN_INITIATE, {}),
+            partial(self._on_result_sign_in_initiate, session),
+        )
+
+    def _on_result_sign_in_initiate(
+        self,
+        session: Session,
+        payload: CopilotPayloadSignInConfirm | CopilotPayloadSignInInitiate,
+    ) -> None:
+        if payload["status"] == "AlreadySignedIn":
+            return
+        CopilotPlugin.set_account_status(signed_in=False, authorized=False, quiet=True)
+
+        if not (window := self.view.window()):
+            return
+
+        window.show_input_panel(
+            "Github Username",
+            "",
+            on_done=lambda username: self._on_select_github_username(session, username),
+            on_change=None,
+            on_cancel=None,
+        )
+
+    def _on_select_github_username(self, session: Session, username: str) -> None:
+        if not (window := self.view.window()):
+            return
+
+        window.show_input_panel(
+            "Github Token",
+            "ghu_",
+            on_done=lambda token: session.send_request(
+                Request(REQ_SIGN_IN_WITH_GITHUB_TOKEN, {"githubToken": token, "user": username}),
+                self._on_result_sign_in_confirm,
+            ),
+            on_change=None,
+            on_cancel=None,
         )
 
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
