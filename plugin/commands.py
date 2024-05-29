@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import os
 from abc import ABC
 from collections.abc import Callable
 from functools import partial, wraps
+from pathlib import Path
 from typing import Any, cast
 
 import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
+from lsp_utils.helpers import rmtree_ex
 
 from .constants import (
     PACKAGE_NAME,
@@ -307,6 +310,16 @@ class CopilotSignOutCommand(CopilotTextCommand):
         session.send_request(Request(REQ_SIGN_OUT, {}), self._on_result_sign_out)
 
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
-        if payload["status"] == "NotSignedIn":
+        if sublime.platform() == "windows":
+            session_dir = Path(os.environ.get("LOCALAPPDATA", "")) / "github-copilot"
+        else:
+            session_dir = Path.home() / ".config/github-copilot"
+
+        if not session_dir.is_dir():
+            message_dialog(f"Failed to find the session directory: {session_dir}", _error=True)
+            return
+
+        rmtree_ex(str(session_dir), ignore_errors=True)
+        if not session_dir.is_dir():
             CopilotPlugin.set_account_status(signed_in=False, authorized=False)
             message_dialog("Sign out OK. Bye!")
