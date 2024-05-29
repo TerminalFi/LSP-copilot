@@ -13,6 +13,7 @@ import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.url import filename_to_uri
+from more_itertools import first_true
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
@@ -82,23 +83,15 @@ def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
 
 
 def find_sheet_by_id(id: int) -> sublime.Sheet | None:
-    return first(all_sheets(include_transient=True), lambda sheet: sheet.id() == id)
+    return first_true(all_sheets(include_transient=True), pred=lambda sheet: sheet.id() == id)
 
 
 def find_view_by_id(id: int) -> sublime.View | None:
-    return first(all_views(include_transient=True), lambda view: view.id() == id)
+    return first_true(all_views(include_transient=True), pred=lambda view: view.id() == id)
 
 
 def is_active_view(obj: Any) -> bool:
     return bool(obj and obj == sublime.active_window().active_view())
-
-
-def first(items: Iterable[T], test: Callable[[T], bool] | None = None, default: T | None = None) -> T | None:
-    """
-    Gets the first item which satisfies the `test`. Otherwise, `default`.
-    If `test` is not given or `None`, the first truthy item will be returned.
-    """
-    return next(filter(test, items), default)
 
 
 def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -> str:

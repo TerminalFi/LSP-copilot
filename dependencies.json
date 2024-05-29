@@ -2,6 +2,7 @@
     "*": {
         "*": [
             "lsp_utils",
+            "more-itertools",
             "sublime_lib"
         ]
     }

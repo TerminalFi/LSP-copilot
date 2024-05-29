@@ -26,6 +26,9 @@ jobs:
     name: ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
 
+    env:
+      UV_SYSTEM_PYTHON: 1
+
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -44,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U uv
-          make UV_INSTALL_FLAGS="--system" install
+          make install-dev
 
       - name: Do linting
         run: |

@@ -7,11 +7,11 @@ from typing import Sequence
 
 import mdpopups
 import sublime
+from more_itertools import first_true
 
 from ..types import CopilotPayloadCompletion
 from ..utils import (
     clamp,
-    first,
     fix_completion_syntax_highlight,
     get_copilot_view_setting,
     get_view_language_id,
@@ -95,7 +95,7 @@ class ViewCompletionManager:
 
     @property
     def completion_style_type(self) -> type[_BaseCompletion]:
-        completion_cls = first(_BaseCompletion.__subclasses__(), lambda t: t.name == self.completion_style)
+        completion_cls = first_true(_BaseCompletion.__subclasses__(), pred=lambda t: t.name == self.completion_style)
         if completion_cls:
             return completion_cls
         raise RuntimeError(f"Unknown completion style type: {self.completion_style}")
