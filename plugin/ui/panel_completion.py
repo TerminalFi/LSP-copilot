@@ -5,12 +5,12 @@ from collections.abc import Iterable
 
 import mdpopups
 import sublime
+from more_itertools import first_true
 
 from ..types import CopilotPayloadPanelSolution, StLayout
 from ..utils import (
     all_views,
     find_view_by_id,
-    first,
     fix_completion_syntax_highlight,
     get_copilot_view_setting,
     get_view_language_id,
@@ -124,7 +124,7 @@ class ViewPanelCompletionManager:
 
     @classmethod
     def from_sheet_id(cls, sheet_id: int) -> ViewPanelCompletionManager | None:
-        return first(map(cls, all_views()), lambda self: self.sheet_id == sheet_id)
+        return first_true(map(cls, all_views()), pred=lambda self: self.sheet_id == sheet_id)
 
     def open(self, *, completion_target_count: int | None = None) -> None:
         """Open the completion panel."""

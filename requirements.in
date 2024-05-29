@@ -1,2 +1,1 @@
-mypy
-ruff>=0.4
+more-itertools>=10,<11
