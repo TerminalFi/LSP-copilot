@@ -92,7 +92,7 @@ class CopilotPlugin(NpmClientHandler):
         "copilot-node-server",
         "copilot",
         "dist",
-        "agent.js",
+        "language-server.js",
     )
 
     plugin_mapping: weakref.WeakValueDictionary[int, CopilotPlugin] = weakref.WeakValueDictionary()
