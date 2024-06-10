@@ -5,7 +5,7 @@ from collections.abc import Iterable
 
 import mdpopups
 import sublime
-from more_itertools import first_true
+from more_itertools import first_true, unique_everseen
 
 from ..types import CopilotPayloadPanelSolution, StLayout
 from ..utils import (
@@ -17,7 +17,6 @@ from ..utils import (
     reformat,
     remove_prefix,
     set_copilot_view_setting,
-    unique,
 )
 
 
@@ -332,7 +331,7 @@ class _PanelCompletion:
         """Return sorted-by-`score` completions in the form of `[(completion_index, completion), ...]`."""
         return sorted(
             # note that we must keep completion's original index
-            unique(enumerate(completions), key=lambda pair: pair[1]["completionText"]),
+            unique_everseen(enumerate(completions), key=lambda pair: pair[1]["completionText"]),
             key=lambda pair: pair[1]["score"],
             reverse=True,
         )
