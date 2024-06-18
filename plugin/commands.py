@@ -15,6 +15,7 @@ from lsp_utils.helpers import rmtree_ex
 from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
+    REQ_CONVERSATION_PRECONDITIONS,
     REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_VERSION,
     REQ_NOTIFY_ACCEPTED,
@@ -165,6 +166,43 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
             return
         completion_manager = ViewPanelCompletionManager(view)
         completion_manager.close()
+
+
+class CopilotCreateChatCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        session.send_request(
+            Request(
+                REQ_CONVERSATION_PRECONDITIONS,
+                {},
+            ),
+            self._on_result_conversation_preconditions,
+        )
+
+    def _on_result_conversation_preconditions(self, payload) -> None:
+        print(payload)
+
+    def _on_result_conversation_create(self, payload) -> None:
+        pass
+        # session.send_request(
+        #     Request(
+        #         REQ_CONVERSATION_PRECONDITIONS,
+        #         {
+        #             # "turns": [1],
+        #             # "options": Ji.Type.Optional(Mn),
+        #             # "capabilities": Ji.Type.Object({
+        #             #     "allSkills": Ji.Type.Optional(Ji.Type.Boolean()),
+        #             #     "skills": Ji.Type.Array(Ji.Type.String()),
+        #             # }),
+        #             # "doc": Ji.Type.Optional(Z0),
+        #             # "computeSuggestions": Ji.Type.Optional(Ji.Type.Boolean()),
+        #             # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
+        #             # "source": Ji.Type.Optional(sd),
+        #             # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
+        #         },
+        #     ),
+        #     self._on_result_get_panel_completions,
+        # )
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):

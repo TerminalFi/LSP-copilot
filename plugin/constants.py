@@ -25,6 +25,14 @@ REQ_SIGN_IN_INITIATE = "signInInitiate"  # done
 REQ_SIGN_OUT = "signOut"  # done
 
 # --------------------- #
+# Copilot Chat requests #
+# --------------------- #
+
+REQ_CONVERSATION_PRECONDITIONS = "conversation/preconditions"
+REQ_CONVERSATION_PERSISTANCE = "conversation/persistance"
+REQ_CONVERSATION_CREATE = "conversation/create"
+
+# --------------------- #
 # Copilot notifications #
 # --------------------- #
 

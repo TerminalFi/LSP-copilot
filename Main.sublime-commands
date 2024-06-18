@@ -1,5 +1,9 @@
 [
     {
+        "caption": "Copilot: Chat",
+        "command": "copilot_create_chat"
+    },
+    {
         "caption": "Copilot: Check Status",
         "command": "copilot_check_status"
     },
