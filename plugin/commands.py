@@ -269,7 +269,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 class CopilotCheckFileStatusCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        file_path = file_path = self.view.file_name() or ""
+        file_path = self.view.file_name() or ""
         uri = file_path and filename_to_uri(file_path)
         session.send_request(Request(REQ_FILE_CHECK_STATUS, {"uri": uri}), self._on_result_check_file_status)
 
