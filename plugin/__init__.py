@@ -47,9 +47,11 @@ __all__ = (
 
 
 def plugin_loaded() -> None:
+    """Executed when this plugin is loaded."""
     CopilotPlugin.setup()
 
 
 def plugin_unloaded() -> None:
-    CopilotPlugin.cleanup()
+    """Executed when this plugin is unloaded."""
     CopilotPlugin.plugin_mapping.clear()
+    CopilotPlugin.cleanup()
