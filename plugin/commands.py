@@ -10,11 +10,13 @@ from typing import Any, cast
 import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
+from LSP.plugin.core.url import filename_to_uri
 from lsp_utils.helpers import rmtree_ex
 
 from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
+    REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_VERSION,
     REQ_NOTIFY_ACCEPTED,
@@ -25,6 +27,7 @@ from .constants import (
 )
 from .plugin import CopilotPlugin
 from .types import (
+    CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,
     CopilotPayloadNotifyAccepted,
     CopilotPayloadNotifyRejected,
@@ -261,6 +264,17 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
         else:
             CopilotPlugin.set_account_status(signed_in=False, authorized=False)
             message_dialog("You haven't signed in yet.")
+
+
+class CopilotCheckFileStatusCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        file_path = file_path = self.view.file_name() or ""
+        uri = file_path and filename_to_uri(file_path)
+        session.send_request(Request(REQ_FILE_CHECK_STATUS, {"uri": uri}), self._on_result_check_file_status)
+
+    def _on_result_check_file_status(self, payload: CopilotPayloadFileStatus) -> None:
+        status_message("File is {} in session", payload["status"])
 
 
 class CopilotSignInCommand(CopilotTextCommand):
