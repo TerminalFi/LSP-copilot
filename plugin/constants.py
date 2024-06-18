@@ -11,6 +11,7 @@ COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 # ---------------- #
 
 REQ_CHECK_STATUS = "checkStatus"  # done
+REQ_FILE_CHECK_STATUS = "checkFileStatus"  # done
 REQ_GET_COMPLETIONS = "getCompletions"  # done
 REQ_GET_COMPLETIONS_CYCLING = "getCompletionsCycling"  # done
 REQ_GET_PANEL_COMPLETIONS = "getPanelCompletions"  # done
