@@ -261,7 +261,9 @@ class _PanelCompletion:
                     {"view_id": view_id, "completion_index": index},
                 )
             ),
-            "<i>Mean Probability: {}</i>".format(completion["score"]),
+            # Removing this for now. The response still contains `score` however it
+            # is always zero-value
+            # "<i>Mean Probability: {}</i>".format(completion["score"]),
         ]
 
     def open(self) -> None:
