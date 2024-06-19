@@ -1,10 +1,16 @@
-from collections import namedtuple
+from __future__ import annotations
 
-from LSP.plugin.core.typing import Any, Callable, List, Literal, Tuple, TypedDict, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, Literal, Tuple, TypedDict, TypeVar
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
-AccountStatus = namedtuple("AccountStatus", ["has_signed_in", "is_authorized"])
+
+@dataclass
+class AccountStatus:
+    has_signed_in: bool
+    is_authorized: bool
+
 
 # ---------------------------- #
 # realted to Sublime Text APIs #
@@ -13,176 +19,120 @@ AccountStatus = namedtuple("AccountStatus", ["has_signed_in", "is_authorized"])
 StPoint = int
 StRegion = Tuple[StPoint, StPoint]
 
-StLayout = TypedDict(
-    "StLayout",
-    {
-        "cols": List[float],
-        "rows": List[float],
-        "cells": List[List[int]],
-    },
-    total=True,
-)
 
-NetworkProxy = TypedDict(
-    "NetworkProxy",
-    {
-        "host": str,
-        "port": int,
-        "username": str,
-        "password": str,
-        "rejectUnauthorized": bool,
-    },
-    total=True,
-)
+class StLayout(TypedDict, total=True):
+    cols: list[float]
+    rows: list[float]
+    cells: list[list[int]]
+
+
+class NetworkProxy(TypedDict, total=True):
+    host: str
+    port: int
+    username: str
+    password: str
+    rejectUnauthorized: bool
+
 
 # --------------- #
 # Copilot payload #
 # --------------- #
 
-CopilotPayloadCompletionPosition = TypedDict(
-    "CopilotPayloadCompletionPosition",
-    {
-        "character": int,
-        "line": int,
-    },
-    total=True,
-)
 
-CopilotPayloadCompletionRange = TypedDict(
-    "CopilotPayloadCompletionRange",
-    {
-        "start": CopilotPayloadCompletionPosition,
-        "end": CopilotPayloadCompletionPosition,
-    },
-    total=True,
-)
-
-CopilotPayloadCompletion = TypedDict(
-    "CopilotPayloadCompletion",
-    {
-        "text": str,
-        "position": CopilotPayloadCompletionPosition,
-        "uuid": str,
-        "range": CopilotPayloadCompletionRange,
-        "displayText": str,
-        # injected for convenience
-        "point": StPoint,
-        "region": StRegion,
-    },
-    total=True,
-)
-
-CopilotPayloadCompletions = TypedDict(
-    "CopilotPayloadCompletions",
-    {
-        "completions": List[CopilotPayloadCompletion],
-    },
-    total=True,
-)
-
-CopilotPayloadFeatureFlagsNotification = TypedDict(
-    "CopilotPayloadFeatureFlagsNotification",
-    {
-        "ssc": bool,
-        "chat": bool,
-        "rt": bool,
-    },
-    total=True,
-)
-
-CopilotPayloadGetVersion = TypedDict(
-    "CopilotPayloadGetVersion",
-    {
-        "version": str,
-    },
-    total=True,
-)
-
-CopilotPayloadNotifyAccepted = TypedDict(
-    "CopilotPayloadNotifyAccepted",
-    {
-        "uuid": str,
-    },
-    total=True,
-)
+class CopilotPayloadFileStatus(TypedDict, total=True):
+    status: Literal["not included", "included"]
 
 
-CopilotPayloadNotifyRejected = TypedDict(
-    "CopilotPayloadNotifyRejected",
-    {
-        "uuids": List[str],
-    },
-    total=True,
-)
+class CopilotPayloadCompletionPosition(TypedDict, total=True):
+    character: int
+    line: int
 
-CopilotPayloadSignInInitiate = TypedDict(
-    "CopilotPayloadSignInInitiate",
-    {
-        "verificationUri": str,
-        "status": str,
-        "userCode": str,
-        "expiresIn": int,
-        "interval": int,
-    },
-    total=True,
-)
 
-CopilotPayloadSignInConfirm = TypedDict(
-    "CopilotPayloadSignInConfirm",
-    {
-        "status": Literal["AlreadySignedIn", "MaybeOk", "NotAuthorized", "NotSignedIn", "OK"],
-        "user": str,
-    },
-    total=True,
-)
+class CopilotPayloadCompletionRange(TypedDict, total=True):
+    start: CopilotPayloadCompletionPosition
+    end: CopilotPayloadCompletionPosition
 
-CopilotPayloadSignOut = TypedDict(
-    "CopilotPayloadSignOut",
-    {
-        "status": Literal["NotSignedIn"],
-    },
-    total=True,
-)
 
-CopilotPayloadLogMessage = TypedDict(
-    "CopilotPayloadLogMessage",
-    {
-        "metadataStr": str,
-        "extra": str,
-        "level": int,
-        "message": str,
-    },
-    total=True,
-)
+class CopilotPayloadCompletion(TypedDict, total=True):
+    text: str
+    position: CopilotPayloadCompletionPosition
+    uuid: str
+    range: CopilotPayloadCompletionRange
+    displayText: str
+    point: StPoint
+    region: StRegion
 
-CopilotPayloadStatusNotification = TypedDict(
-    "CopilotPayloadStatusNotification",
-    {
-        "message": str,
-        "status": Literal["InProgress", "Normal"],
-    },
-    total=True,
-)
 
-CopilotPayloadPanelSolution = TypedDict(
-    "CopilotPayloadPanelSolution",
-    {
-        "displayText": str,
-        "solutionId": str,
-        "score": int,
-        "panelId": str,
-        "completionText": str,
-        "range": CopilotPayloadCompletionRange,
-        # injected for convenience
-        "region": StRegion,
-    },
-    total=True,
-)
+class CopilotPayloadCompletions(TypedDict, total=True):
+    completions: list[CopilotPayloadCompletion]
 
-CopilotPayloadPanelCompletionSolutionCount = TypedDict(
-    "CopilotPayloadPanelCompletionSolutionCount",
-    {
-        "solutionCountTarget": int,
-    },
-    total=True,
-)
+
+class CopilotPayloadFeatureFlagsNotification(TypedDict, total=True):
+    ssc: bool
+    chat: bool
+    rt: bool
+
+
+class CopilotPayloadGetVersion(TypedDict, total=True):
+    version: str
+    """E.g., `"1.202.0"`."""
+    buildType: str
+    """E.g., `"prod"`."""
+    runtimeVersion: str
+    """E.g., `"node/20.14.0"`."""
+
+
+class CopilotPayloadNotifyAccepted(TypedDict, total=True):
+    uuid: str
+
+
+class CopilotPayloadNotifyRejected(TypedDict, total=True):
+    uuids: list[str]
+
+
+class CopilotPayloadSignInInitiate(TypedDict, total=True):
+    verificationUri: str
+    status: str
+    userCode: str
+    expiresIn: int
+    interval: int
+
+
+class CopilotPayloadSignInWithGithubToken(TypedDict, total=True):
+    user: str
+    githubToken: str
+
+
+class CopilotPayloadSignInConfirm(TypedDict, total=True):
+    status: Literal["AlreadySignedIn", "MaybeOk", "NotAuthorized", "NotSignedIn", "OK"]
+    user: str
+
+
+class CopilotPayloadSignOut(TypedDict, total=True):
+    status: Literal["NotSignedIn"]
+
+
+class CopilotPayloadLogMessage(TypedDict, total=True):
+    metadataStr: str
+    extra: str
+    level: int
+    message: str
+
+
+class CopilotPayloadStatusNotification(TypedDict, total=True):
+    message: str
+    status: Literal["InProgress", "Normal"]
+
+
+class CopilotPayloadPanelSolution(TypedDict, total=True):
+    displayText: str
+    solutionId: str
+    score: int
+    panelId: str
+    completionText: str
+    range: CopilotPayloadCompletionRange
+    region: StRegion
+
+
+class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
+    solutionCountTarget: int

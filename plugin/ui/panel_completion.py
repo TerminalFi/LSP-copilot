@@ -1,21 +1,22 @@
+from __future__ import annotations
+
 import textwrap
+from collections.abc import Iterable
 
 import mdpopups
 import sublime
-from LSP.plugin.core.typing import Iterable, List, Optional, Tuple
+from more_itertools import first_true, unique_everseen
 
 from ..types import CopilotPayloadPanelSolution, StLayout
 from ..utils import (
     all_views,
     find_view_by_id,
-    first,
     fix_completion_syntax_highlight,
     get_copilot_view_setting,
     get_view_language_id,
     reformat,
     remove_prefix,
     set_copilot_view_setting,
-    unique,
 )
 
 
@@ -61,12 +62,12 @@ class ViewPanelCompletionManager:
         set_copilot_view_setting(self.view, "panel_sheet_id", value)
 
     @property
-    def original_layout(self) -> Optional[StLayout]:
+    def original_layout(self) -> StLayout | None:
         """The original window layout prior to panel presentation."""
         return get_copilot_view_setting(self.view, "original_layout", None)
 
     @original_layout.setter
-    def original_layout(self, value: Optional[StLayout]) -> None:
+    def original_layout(self, value: StLayout | None) -> None:
         set_copilot_view_setting(self.view, "original_layout", value)
 
     @property
@@ -79,18 +80,18 @@ class ViewPanelCompletionManager:
         set_copilot_view_setting(self.view, "panel_completion_target_count", value)
 
     @property
-    def completions(self) -> List[CopilotPayloadPanelSolution]:
+    def completions(self) -> list[CopilotPayloadPanelSolution]:
         """All `completions` in the view. Note that this is a copy."""
         return get_copilot_view_setting(self.view, "panel_completions", [])
 
     @completions.setter
-    def completions(self, value: List[CopilotPayloadPanelSolution]) -> None:
+    def completions(self, value: list[CopilotPayloadPanelSolution]) -> None:
         set_copilot_view_setting(self.view, "panel_completions", value)
 
     @property
     def panel_id(self) -> str:
         """The panel ID sent to Copilot `getPanelCompletions` request."""
-        return "copilot://{}".format(self.view.id())
+        return f"copilot://{self.view.id()}"
 
     # -------------- #
     # normal methods #
@@ -104,7 +105,7 @@ class ViewPanelCompletionManager:
         self.is_visible = False
         self.original_layout = None
 
-    def get_completion(self, index: int) -> Optional[CopilotPayloadPanelSolution]:
+    def get_completion(self, index: int) -> CopilotPayloadPanelSolution | None:
         try:
             return self.completions[index]
         except IndexError:
@@ -116,15 +117,15 @@ class ViewPanelCompletionManager:
         self.completions = completions
 
     @staticmethod
-    def find_view_by_panel_id(panel_id: str) -> Optional[sublime.View]:
+    def find_view_by_panel_id(panel_id: str) -> sublime.View | None:
         view_id = int(remove_prefix(panel_id, "copilot://"))
         return find_view_by_id(view_id)
 
     @classmethod
-    def from_sheet_id(cls, sheet_id: int) -> Optional["ViewPanelCompletionManager"]:
-        return first(map(cls, all_views()), lambda self: self.sheet_id == sheet_id)
+    def from_sheet_id(cls, sheet_id: int) -> ViewPanelCompletionManager | None:
+        return first_true(map(cls, all_views()), pred=lambda self: self.sheet_id == sheet_id)
 
-    def open(self, *, completion_target_count: Optional[int] = None) -> None:
+    def open(self, *, completion_target_count: int | None = None) -> None:
         """Open the completion panel."""
         if completion_target_count is not None:
             self.completion_target_count = completion_target_count
@@ -142,7 +143,7 @@ class ViewPanelCompletionManager:
 
 class _PanelCompletion:
     CSS_CLASS_NAME = "copilot-completion-panel"
-    CSS = """
+    CSS = f"""
         html {{
             --copilot-close-foreground: var(--foreground);
             --copilot-close-background: var(--background);
@@ -152,25 +153,25 @@ class _PanelCompletion:
             --copilot-accept-border: var(--greenish);
         }}
 
-        .{class_name} {{
+        .{CSS_CLASS_NAME} {{
             margin: 1rem 0.5rem 0 0.5rem;
         }}
 
-        .{class_name} .navbar {{
+        .{CSS_CLASS_NAME} .navbar {{
             text-align: left;
         }}
 
-        .{class_name} .synthesis-info {{
+        .{CSS_CLASS_NAME} .synthesis-info {{
             display: inline-block;
             text-size: 1.2em;
         }}
 
-        .{class_name} .header {{
+        .{CSS_CLASS_NAME} .header {{
             display: block;
             margin-bottom: 1rem;
         }}
 
-        .{class_name} a {{
+        .{CSS_CLASS_NAME} a {{
             border-radius: 3px;
             border-style: solid;
             border-width: 1px;
@@ -179,26 +180,26 @@ class _PanelCompletion:
             text-decoration: none;
         }}
 
-        .{class_name} a.close {{
+        .{CSS_CLASS_NAME} a.close {{
             background: var(--copilot-close-background);
             border-color: var(--copilot-close-border);
             color: var(--copilot-close-foreground);
         }}
 
-        .{class_name} a.close i {{
+        .{CSS_CLASS_NAME} a.close i {{
             color: var(--copilot-close-border);
         }}
 
-        .{class_name} a.accept {{
+        .{CSS_CLASS_NAME} a.accept {{
             background: var(--copilot-accept-background);
             border-color: var(--copilot-accept-border);
             color: var(--copilot-accept-foreground);
         }}
 
-        .{class_name} a.accept i {{
+        .{CSS_CLASS_NAME} a.accept i {{
             color: var(--copilot-accept-border);
         }}
-        """.format(class_name=CSS_CLASS_NAME)
+        """
     COMPLETION_TEMPLATE = reformat("""
         <div class="navbar">
             <a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a>&nbsp;
@@ -251,7 +252,7 @@ class _PanelCompletion:
         )
 
     @staticmethod
-    def completion_header_items(completion: CopilotPayloadPanelSolution, view_id: int, index: int) -> List[str]:
+    def completion_header_items(completion: CopilotPayloadPanelSolution, view_id: int, index: int) -> list[str]:
         return [
             """<a class="accept" title="Accept Completion" href='{}'><i>✓</i> Accept</a>""".format(
                 sublime.command_url(
@@ -259,7 +260,9 @@ class _PanelCompletion:
                     {"view_id": view_id, "completion_index": index},
                 )
             ),
-            "<i>Mean Probability: {}</i>".format(completion["score"]),
+            # Removing this for now. The response still contains `score` however it
+            # is always zero-value
+            # "<i>Mean Probability: {}</i>".format(completion["score"]),
         ]
 
     def open(self) -> None:
@@ -326,11 +329,11 @@ class _PanelCompletion:
     @staticmethod
     def _synthesize(
         completions: Iterable[CopilotPayloadPanelSolution],
-    ) -> List[Tuple[int, CopilotPayloadPanelSolution]]:
+    ) -> list[tuple[int, CopilotPayloadPanelSolution]]:
         """Return sorted-by-`score` completions in the form of `[(completion_index, completion), ...]`."""
         return sorted(
             # note that we must keep completion's original index
-            unique(enumerate(completions), key=lambda pair: pair[1]["completionText"]),
+            unique_everseen(enumerate(completions), key=lambda pair: pair[1]["completionText"]),
             key=lambda pair: pair[1]["score"],
             reverse=True,
         )
@@ -339,7 +342,7 @@ class _PanelCompletion:
         self.completion_manager.group_id = group_id
 
         window.focus_group(group_id)
-        sheet = mdpopups.new_html_sheet(
+        sheet: sublime.HtmlSheet = mdpopups.new_html_sheet(
             window=window,
             name="Panel Completions",
             contents=self.completion_content,
@@ -347,7 +350,7 @@ class _PanelCompletion:
             css=self.CSS,
             flags=sublime.TRANSIENT,
             wrapper_class=self.CSS_CLASS_NAME,
-        )  # type: sublime.HtmlSheet
+        )
         self.completion_manager.sheet_id = sheet.id()
 
     def _open_in_side_by_side(self, window: sublime.Window) -> None:

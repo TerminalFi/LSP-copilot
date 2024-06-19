@@ -11,11 +11,16 @@
 	],
 	"settings": {
 		"auto_ask_completions": true,
+		"commit_completion_on_tab": true,
+		"completion_style": "popup",
 		"debug": false,
 		"hook_to_auto_complete_command": false,
 		"local_checks": false,
+		"proxy": "",
 		"telemetry": false,
-		"completion_style": "popup"
+		// The (Jinja2) template of the status bar text which is inside the parentheses `(...)`.
+		// See https://jinja.palletsprojects.com/templates/
+		"status_text": "{% if server_version %}v{{ server_version }}{% endif %}",
 	},
 	// ST4 configuration
 	"selector": "source | text | embedding"

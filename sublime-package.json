@@ -24,6 +24,20 @@
                       "description": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
                       "type": "boolean"
                     },
+                    "commit_completion_on_tab": {
+                      "default": true,
+                      "markdownDescription": "Use the `Tab` key for committing Copilot's completion. This may conflict with Sublime Text's `auto_complete_commit_on_tab` setting.",
+                      "type": "boolean"
+                    },
+                    "completion_style": {
+                      "default": "popup",
+                      "markdownDescription": "Completion style. `popup` is the default, `phantom` is experimental(there are [well-known issues](https://github.com/TheSecEng/LSP-copilot/issues)).",
+                      "type": "string",
+                      "enum": [
+                        "popup",
+                        "phantom"
+                      ]
+                    },
                     "debug": {
                       "default": false,
                       "markdownDescription": "Enables `debug` mode fo the LSP-copilot. Enabling all commands regardless of status requirements.",
@@ -51,24 +65,20 @@
                       "description": "Enables local checks. This feature is not fully understood yet.",
                       "type": "boolean"
                     },
-                    "telemetry": {
-                      "default": false,
-                      "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` completions.",
-                      "type": "boolean"
-                    },
                     "proxy": {
                       "default": "",
                       "markdownDescription": "The HTTP proxy to use for Copilot requests. It's in the form of `username:password@host:port` or just `host:port`.",
                       "type": "string"
                     },
-                    "completion_style": {
-                      "default": "popup",
-                      "markdownDescription": "Completion style. `popup` is the default, `phantom` is experimental(there are [well-known issues](https://github.com/TheSecEng/LSP-copilot/issues)).",
-                      "type": "string",
-                      "enum": [
-                        "popup",
-                        "phantom"
-                      ]
+                    "telemetry": {
+                      "default": false,
+                      "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` completions.",
+                      "type": "boolean"
+                    },
+                    "status_text": {
+                      "default": "{% if server_version %}v{{ server_version }}{% endif %}",
+                      "markdownDescription": "The (Jinja2) template of the status bar text which is inside the parentheses `(...)`. See https://jinja.palletsprojects.com/templates/",
+                      "type": "string"
                     }
                   }
                 }

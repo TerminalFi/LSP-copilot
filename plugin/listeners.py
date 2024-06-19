@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import re
+from collections.abc import Callable
 from functools import wraps
+from typing import Any, cast
 
 import sublime
 import sublime_plugin
-from LSP.plugin.core.typing import Any, Callable, Dict, Optional, Tuple, cast
 
-from .plugin import CopilotPlugin
+from .client import CopilotPlugin
 from .types import T_Callable
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import get_copilot_view_setting, get_session_setting, is_active_view, set_copilot_view_setting
@@ -51,8 +54,8 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     @_must_be_active_view()
     def on_modified_async(self) -> None:
         self._is_modified = True
-        plugin, session = CopilotPlugin.plugin_session(self.view)
 
+        plugin, session = CopilotPlugin.plugin_session(self.view)
         if not plugin or not session:
             return
 
@@ -72,8 +75,8 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_close(self) -> None:
         ViewCompletionManager(self.view).handle_close()
 
-    def on_query_context(self, key: str, operator: int, operand: Any, match_all: bool) -> Optional[bool]:
-        def test(value: Any) -> Optional[bool]:
+    def on_query_context(self, key: str, operator: int, operand: Any, match_all: bool) -> bool | None:
+        def test(value: Any) -> bool | None:
             if operator == sublime.OP_EQUAL:
                 return value == operand
             if operator == sublime.OP_NOT_EQUAL:
@@ -87,9 +90,11 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             return test(CopilotPlugin.get_account_status().is_authorized)
 
         if key == "copilot.is_on_completion":
-            vcm = ViewCompletionManager(self.view)
-
-            if not vcm.is_visible or len(self.view.sel()) < 1 or not vcm.current_completion:
+            if not (
+                (vcm := ViewCompletionManager(self.view)).is_visible
+                and len(self.view.sel()) >= 1
+                and vcm.current_completion
+            ):
                 return test(False)
 
             point = self.view.sel()[0].begin()
@@ -98,15 +103,21 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
             return test(beginning_of_line.strip() != "" or not re.match(r"\s", vcm.current_completion["displayText"]))
 
+        plugin, session = CopilotPlugin.plugin_session(self.view)
+        if not plugin or not session:
+            return None
+
+        if key == "copilot.commit_completion_on_tab":
+            return test(get_session_setting(session, "commit_completion_on_tab"))
+
         return None
 
-    def on_post_text_command(self, command_name: str, args: Optional[Dict[str, Any]]) -> None:
+    def on_post_text_command(self, command_name: str, args: dict[str, Any] | None) -> None:
         if command_name == "lsp_save":
             self._is_saving = True
 
         if command_name == "auto_complete":
             plugin, session = CopilotPlugin.plugin_session(self.view)
-
             if plugin and session and get_session_setting(session, "hook_to_auto_complete_command"):
                 plugin.request_get_completions(self.view)
 
@@ -126,8 +137,8 @@ class EventListener(sublime_plugin.EventListener):
         self,
         window: sublime.Window,
         command_name: str,
-        args: Optional[Dict[str, Any]],
-    ) -> Optional[Tuple[str, Optional[Dict[str, Any]]]]:
+        args: dict[str, Any] | None,
+    ) -> tuple[str, dict[str, Any] | None] | None:
         sheet = window.active_sheet()
 
         # if the user tries to close panel completion via Ctrl+W

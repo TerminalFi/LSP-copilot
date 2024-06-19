@@ -47,10 +47,14 @@ Settings are provide in the `LSP-copilot.sublime-settings` file, accessible usin
 
 ## FAQs
 
-### Pressing `Tab` commits autocompletion rather than Copilot's suggestion
+### I don't want to use `Tab` for committing Copilot's completion
 
-There is no way for a plugin to know which one is wanted. But you can define your own dedicate keybinding to commit
-Copilot's suggestion.
+It's likely that Copilot's completion appears along with Sublime Text's autocompletion
+and both of them use `Tab` for committing the completion. This may cause a nondeterministic result.
+
+Thus, you may want to let only one of them (or none) use the `Tab` key.
+If you don't want LSP-copilot to use the `Tab` key for committing the completion.
+You can set LSP-copilot's `commit_completion_on_tab` setting to `false` and add a custom keybinding like below.
 
 ```js
 {
@@ -58,7 +62,7 @@ Copilot's suggestion.
     "command": "copilot_accept_completion",
     "context": [
         {
-            "key": "setting.copilot.completion.is_visible"
+            "key": "copilot.is_on_completion"
         }
     ]
 },
