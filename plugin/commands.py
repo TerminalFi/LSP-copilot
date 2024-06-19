@@ -8,10 +8,12 @@ from pathlib import Path
 from typing import Any, cast
 
 import sublime
+import sublime_plugin
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
 from LSP.plugin.core.url import filename_to_uri
 from lsp_utils.helpers import rmtree_ex
+from mdpopups import md2html
 
 from .client import CopilotPlugin
 from .constants import (
@@ -175,7 +177,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
         completion_manager.close()
 
 
-class CopilotCreateChatCommand(CopilotTextCommand):
+class CopilotConversationCreateCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         session.send_request(
@@ -236,6 +238,8 @@ class CopilotCreateChatCommand(CopilotTextCommand):
             lambda x: print(x),
         )
 
+        # Maybe we run - ConversationContinue command?
+
         # {
         #     workDoneToken: no.Type.Union([no.Type.String(), no.Type.Number()]),
         #     conversationId: no.Type.String(),
@@ -249,6 +253,119 @@ class CopilotCreateChatCommand(CopilotTextCommand):
         #     references: no.Type.Optional(no.Type.Array(k8)),
         #     workspaceFolder: no.Type.Optional(no.Type.String()),
         # }
+
+
+class CopilotConversationContinueCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, message: str):
+        session.send_request(
+            Request(
+                REQ_CONVERSATION_PRECONDITIONS,
+                {},
+            ),
+            lambda x: self._on_result_conversation_preconditions(session, x),
+        )
+
+    @_provide_plugin_session()
+    def input(self, plugin: CopilotPlugin, session: Session, args):
+        if "message" not in args:
+            return CopilotConversationDialogTextInputHandler(
+                self.view,
+                # Dummy text until we figure it out
+                [
+                    '<span class="system">System</span>: Hello, how can I help you?',
+                    '<span class="user">User</span>: Am I working in Sublime Text?',
+                    '<span class="system">System</span>: No, you are working in a IDE called vscode.',
+                    md2html(
+                        self.view,
+                        """
+You can try this code below
+
+<a href="copy">Copy</a>
+```py
+def log(x):
+    print(x)
+```
+""",
+                    ),
+                ],
+            )
+
+    def _on_result_conversation_turn(self, session, payload) -> None:
+        session.send_request(
+            Request(
+                REQ_CONVERSATION_TURN,
+                {
+                    "conversationId": payload["conversationId"],
+                    "message": "Am I working in Sublime Text?",
+                    "workDoneToken": "5",  # Not sure where this comes from
+                    # "doc": Ji.Type.Optional(Z0),
+                    # "computeSuggestions": Ji.Type.Optional(Ji.Type.Boolean()),
+                    # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
+                    # "source": Ji.Type.Optional(sd),
+                    # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
+                },
+            ),
+            lambda x: print(x),
+        )
+
+        # {
+        #     workDoneToken: no.Type.Union([no.Type.String(), no.Type.Number()]),
+        #     conversationId: no.Type.String(),
+        #     message: no.Type.String(),
+        #     followUp: no.Type.Optional(
+        #         no.Type.Object({ id: no.Type.String(), type: no.Type.String() }),
+        #     ),
+        #     options: no.Type.Optional(Mn),
+        #     doc: no.Type.Optional(Z0),
+        #     computeSuggestions: no.Type.Optional(no.Type.Boolean()),
+        #     references: no.Type.Optional(no.Type.Array(k8)),
+        #     workspaceFolder: no.Type.Optional(no.Type.String()),
+        # }
+
+
+class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler):
+    def __init__(self, view: sublime.View, conversation_history: list[str]) -> None:
+        self.view = view
+        self.conversation_history = conversation_history
+
+    def name(self) -> str:
+        return "User"
+
+    def placeholder(self) -> str:
+        return "Your message"
+
+    def initial_text(self) -> str:
+        return ""
+
+    def validate(self, text: str) -> bool:
+        return bool(text.strip())
+
+    def preview(self, text: str) -> Any:
+        history = f"""
+        <style>
+            a {{
+                text-decoration: none;
+                color: var(--accent);
+            }}
+            .system {{
+                color: var(--greenish);
+            }}
+
+            .user {{
+                color: var(--orangish);
+            }}
+        </style>
+        {"".join(f"<p>{line}</p><hr>" for line in self.conversation_history)}
+        """
+        if text:
+            content = sublime.Html(f"{history}<span class='user'>User</span>: {text}")
+        else:
+            content = sublime.Html(history)
+        return content
+
+    def confirm(self, text: str) -> None:
+        return
 
 
 class CopilotConversationAgentsCommand(CopilotTextCommand):

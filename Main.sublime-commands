@@ -1,7 +1,11 @@
 [
     {
         "caption": "Copilot: Chat",
-        "command": "copilot_create_chat"
+        "command": "copilot_conversation_create"
+    },
+    {
+        "caption": "Copilot: Continue",
+        "command": "copilot_conversation_continue"
     },
     {
         // Debug Command
