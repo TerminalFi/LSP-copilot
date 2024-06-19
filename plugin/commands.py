@@ -15,6 +15,7 @@ from lsp_utils.helpers import rmtree_ex
 from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
+    REQ_CONVERSATION_CREATE,
     REQ_CONVERSATION_PRECONDITIONS,
     REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_VERSION,
@@ -186,30 +187,31 @@ class CopilotCreateChatCommand(CopilotTextCommand):
                 REQ_CONVERSATION_PRECONDITIONS,
                 {},
             ),
-            self._on_result_conversation_create,
+            lambda x: self._on_result_conversation_create(session, x),
         )
 
-    def _on_result_conversation_create(self, payload) -> None:
-        pass
-        # session.send_request(
-        #     Request(
-        #         REQ_CONVERSATION_PRECONDITIONS,
-        #         {
-        #             # "turns": [1],
-        #             # "options": Ji.Type.Optional(Mn),
-        #             # "capabilities": Ji.Type.Object({
-        #             #     "allSkills": Ji.Type.Optional(Ji.Type.Boolean()),
-        #             #     "skills": Ji.Type.Array(Ji.Type.String()),
-        #             # }),
-        #             # "doc": Ji.Type.Optional(Z0),
-        #             # "computeSuggestions": Ji.Type.Optional(Ji.Type.Boolean()),
-        #             # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
-        #             # "source": Ji.Type.Optional(sd),
-        #             # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
-        #         },
-        #     ),
-        #     self._on_result_get_panel_completions,
-        # )
+    def _on_result_conversation_create(self, session, payload) -> None:
+        # pass
+        session.send_request(
+            Request(
+                REQ_CONVERSATION_CREATE,
+                {
+                    "turns": [{"request": ""}],
+                    # "options": Ji.Type.Optional(Mn),
+                    "capabilities": {
+                        "allSkills": True,
+                        "skills": [],
+                    },
+                    "workDoneToken": "5",
+                    # "doc": Ji.Type.Optional(Z0),
+                    # "computeSuggestions": Ji.Type.Optional(Ji.Type.Boolean()),
+                    # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
+                    # "source": Ji.Type.Optional(sd),
+                    # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
+                },
+            ),
+            lambda x: print(x),
+        )
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
