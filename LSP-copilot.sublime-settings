@@ -17,7 +17,10 @@
 		"local_checks": false,
 		"telemetry": false,
 		"proxy": "",
-		"completion_style": "popup"
+		"completion_style": "popup",
+		"copilot_ignore": [
+			"**/*.py"
+		]
 	},
 	// ST4 configuration
 	"selector": "source | text | embedding"

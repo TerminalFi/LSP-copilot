@@ -11,7 +11,13 @@ import sublime_plugin
 from .plugin import CopilotPlugin
 from .types import T_Callable
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import get_copilot_view_setting, get_session_setting, is_active_view, set_copilot_view_setting
+from .utils import (
+    get_copilot_view_setting,
+    get_session_setting,
+    is_active_view,
+    is_copilot_ignored,
+    set_copilot_view_setting,
+)
 
 
 def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -57,6 +63,10 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
         plugin, session = CopilotPlugin.plugin_session(self.view)
         if not plugin or not session:
+            return
+
+        copilot_ignore = get_session_setting(session, "copilot_ignore", [])
+        if is_copilot_ignored(self.view.file_name(), copilot_ignore, self.view.window().folders()):
             return
 
         vcm = ViewCompletionManager(self.view)

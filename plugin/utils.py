@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fnmatch
 import os
 import textwrap
 import threading
@@ -274,3 +275,56 @@ def _generate_completion_region(
             completion["range"]["end"]["character"],
         ),
     )
+
+
+def remove_filepath_prefix(filename, prefixes):
+    """
+    Remove the longest matching prefix from the filename.
+
+    Args:
+        filename (str): The name of the file.
+        prefixes (list): A list of prefixes to remove.
+
+    Returns:
+        str: The filename without the matching prefix.
+    """
+    for prefix in sorted(prefixes, key=len, reverse=True):
+        if filename.startswith(prefix):
+            return filename[len(prefix) :]
+    return filename
+
+
+def matches_any_pattern(filename, patterns):
+    """
+    Check if a filename matches any of the given patterns.
+
+    Args:
+        filename (str): The name of the file to check.
+        patterns (list): A list of patterns to match against.
+
+    Returns:
+        bool: True if the filename matches any pattern, False otherwise.
+    """
+    for pattern in patterns:
+        if fnmatch.fnmatch(filename, pattern):
+            return True
+    return False
+
+
+def is_copilot_ignored(file, patterns, prefixes):
+    """
+    Filter a list of files against a list of patterns after removing prefixes.
+
+    Args:
+        files (list): A list of filenames to check.
+        patterns (list): A list of patterns to match against.
+        prefixes (list): A list of prefixes to remove from filenames.
+
+    Returns:
+        list: A list of filenames that match the patterns after prefix removal.
+    """
+
+    cleaned_file = remove_filepath_prefix(file, prefixes)
+    if matches_any_pattern(cleaned_file, patterns):
+        return True
+    return False
