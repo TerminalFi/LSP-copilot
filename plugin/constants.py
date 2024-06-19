@@ -11,6 +11,7 @@ COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 # ---------------- #
 
 REQ_CHECK_STATUS = "checkStatus"  # done
+REQ_FILE_CHECK_STATUS = "checkFileStatus"  # done
 REQ_GET_COMPLETIONS = "getCompletions"  # done
 REQ_GET_COMPLETIONS_CYCLING = "getCompletionsCycling"  # done
 REQ_GET_PANEL_COMPLETIONS = "getPanelCompletions"  # done
@@ -22,6 +23,7 @@ REQ_RECORD_TELEMETRY_CONSENT = "recordTelemetryConsent"
 REQ_SET_EDITOR_INFO = "setEditorInfo"  # done
 REQ_SIGN_IN_CONFIRM = "signInConfirm"  # done
 REQ_SIGN_IN_INITIATE = "signInInitiate"  # done
+REQ_SIGN_IN_WITH_GITHUB_TOKEN = "signInWithGithubToken"  # done
 REQ_SIGN_OUT = "signOut"  # done
 
 # --------------------- #

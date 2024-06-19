@@ -39,6 +39,10 @@ class NetworkProxy(TypedDict, total=True):
 # --------------- #
 
 
+class CopilotPayloadFileStatus(TypedDict, total=True):
+    status: Literal["not included", "included"]
+
+
 class CopilotPayloadCompletionPosition(TypedDict, total=True):
     character: int
     line: int
@@ -71,6 +75,11 @@ class CopilotPayloadFeatureFlagsNotification(TypedDict, total=True):
 
 class CopilotPayloadGetVersion(TypedDict, total=True):
     version: str
+    """E.g., `"1.202.0"`."""
+    buildType: str
+    """E.g., `"prod"`."""
+    runtimeVersion: str
+    """E.g., `"node/20.14.0"`."""
 
 
 class CopilotPayloadNotifyAccepted(TypedDict, total=True):
@@ -87,6 +96,11 @@ class CopilotPayloadSignInInitiate(TypedDict, total=True):
     userCode: str
     expiresIn: int
     interval: int
+
+
+class CopilotPayloadSignInWithGithubToken(TypedDict, total=True):
+    user: str
+    githubToken: str
 
 
 class CopilotPayloadSignInConfirm(TypedDict, total=True):

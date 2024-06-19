@@ -10,23 +10,27 @@ from typing import Any, cast
 import sublime
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
+from LSP.plugin.core.url import filename_to_uri
 from lsp_utils.helpers import rmtree_ex
 
+from .client import CopilotPlugin
 from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
     REQ_CONVERSATION_CREATE,
     REQ_CONVERSATION_PRECONDITIONS,
+    REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_VERSION,
     REQ_NOTIFY_ACCEPTED,
     REQ_NOTIFY_REJECTED,
     REQ_SIGN_IN_CONFIRM,
     REQ_SIGN_IN_INITIATE,
+    REQ_SIGN_IN_WITH_GITHUB_TOKEN,
     REQ_SIGN_OUT,
 )
-from .plugin import CopilotPlugin
 from .types import (
+    CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,
     CopilotPayloadNotifyAccepted,
     CopilotPayloadNotifyRejected,
@@ -329,6 +333,17 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
             message_dialog("You haven't signed in yet.")
 
 
+class CopilotCheckFileStatusCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        file_path = self.view.file_name() or ""
+        uri = file_path and filename_to_uri(file_path)
+        session.send_request(Request(REQ_FILE_CHECK_STATUS, {"uri": uri}), self._on_result_check_file_status)
+
+    def _on_result_check_file_status(self, payload: CopilotPayloadFileStatus) -> None:
+        status_message("File is {} in session", payload["status"])
+
+
 class CopilotSignInCommand(CopilotTextCommand):
     requirement = REQUIRE_NOT_SIGN_IN
 
@@ -362,6 +377,55 @@ class CopilotSignInCommand(CopilotTextCommand):
         session.send_request(
             Request(REQ_SIGN_IN_CONFIRM, {"userCode": user_code}),
             self._on_result_sign_in_confirm,
+        )
+
+    def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:
+        self.view.run_command("copilot_check_status")
+
+
+class CopilotSignInWithGithubTokenCommand(CopilotTextCommand):
+    requirement = REQUIRE_NOT_SIGN_IN
+
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        session.send_request(
+            Request(REQ_SIGN_IN_INITIATE, {}),
+            partial(self._on_result_sign_in_initiate, session),
+        )
+
+    def _on_result_sign_in_initiate(
+        self,
+        session: Session,
+        payload: CopilotPayloadSignInConfirm | CopilotPayloadSignInInitiate,
+    ) -> None:
+        if payload["status"] == "AlreadySignedIn":
+            return
+        CopilotPlugin.set_account_status(signed_in=False, authorized=False, quiet=True)
+
+        if not (window := self.view.window()):
+            return
+
+        window.show_input_panel(
+            "Github Username",
+            "",
+            on_done=lambda username: self._on_select_github_username(session, username),
+            on_change=None,
+            on_cancel=None,
+        )
+
+    def _on_select_github_username(self, session: Session, username: str) -> None:
+        if not (window := self.view.window()):
+            return
+
+        window.show_input_panel(
+            "Github Token",
+            "ghu_",
+            on_done=lambda token: session.send_request(
+                Request(REQ_SIGN_IN_WITH_GITHUB_TOKEN, {"githubToken": token, "user": username}),
+                self._on_result_sign_in_confirm,
+            ),
+            on_change=None,
+            on_cancel=None,
         )
 
     def _on_result_sign_in_confirm(self, payload: CopilotPayloadSignInConfirm) -> None:

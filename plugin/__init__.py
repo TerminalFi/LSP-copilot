@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from .client import CopilotPlugin
 from .commands import (
     CopilotAcceptCompletionCommand,
     CopilotAcceptPanelCompletionCommand,
     CopilotAcceptPanelCompletionShimCommand,
     CopilotAskCompletionsCommand,
+    CopilotCheckFileStatusCommand,
     CopilotCheckStatusCommand,
     CopilotClosePanelCompletionCommand,
     CopilotConversationAgentsCommand,
@@ -15,10 +17,10 @@ from .commands import (
     CopilotPreviousCompletionCommand,
     CopilotRejectCompletionCommand,
     CopilotSignInCommand,
+    CopilotSignInWithGithubTokenCommand,
     CopilotSignOutCommand,
 )
 from .listeners import EventListener, ViewEventListener
-from .plugin import CopilotPlugin
 
 __all__ = (
     # ST: core
@@ -30,6 +32,7 @@ __all__ = (
     "CopilotAcceptPanelCompletionShimCommand",
     "CopilotAskCompletionsCommand",
     "CopilotCheckStatusCommand",
+    "CopilotCheckFileStatusCommand",
     "CopilotClosePanelCompletionCommand",
     "CopilotGetPanelCompletionsCommand",
     "CopilotGetVersionCommand",
@@ -37,6 +40,7 @@ __all__ = (
     "CopilotPreviousCompletionCommand",
     "CopilotRejectCompletionCommand",
     "CopilotSignInCommand",
+    "CopilotSignInWithGithubTokenCommand",
     "CopilotSignOutCommand",
     "CopilotCreateChatCommand",
     "CopilotConversationAgentsCommand",
@@ -47,9 +51,11 @@ __all__ = (
 
 
 def plugin_loaded() -> None:
+    """Executed when this plugin is loaded."""
     CopilotPlugin.setup()
 
 
 def plugin_unloaded() -> None:
+    """Executed when this plugin is unloaded."""
+    CopilotPlugin.window_attrs.clear()
     CopilotPlugin.cleanup()
-    CopilotPlugin.plugin_mapping.clear()

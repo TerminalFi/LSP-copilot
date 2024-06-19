@@ -8,7 +8,7 @@ from typing import Any, cast
 import sublime
 import sublime_plugin
 
-from .plugin import CopilotPlugin
+from .client import CopilotPlugin
 from .types import T_Callable
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import get_copilot_view_setting, get_session_setting, is_active_view, set_copilot_view_setting
