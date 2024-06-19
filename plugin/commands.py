@@ -176,11 +176,18 @@ class CopilotCreateChatCommand(CopilotTextCommand):
                 REQ_CONVERSATION_PRECONDITIONS,
                 {},
             ),
-            self._on_result_conversation_preconditions,
+            lambda x: self._on_result_conversation_preconditions(session, x),
         )
 
-    def _on_result_conversation_preconditions(self, payload) -> None:
+    def _on_result_conversation_preconditions(self, session, payload) -> None:
         print(payload)
+        session.send_request(
+            Request(
+                REQ_CONVERSATION_PRECONDITIONS,
+                {},
+            ),
+            self._on_result_conversation_create,
+        )
 
     def _on_result_conversation_create(self, payload) -> None:
         pass
