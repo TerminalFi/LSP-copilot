@@ -4,6 +4,10 @@
         "command": "copilot_check_status"
     },
     {
+        "caption": "Copilot: Check File Status",
+        "command": "copilot_check_file_status"
+    },
+    {
         "caption": "Copilot: Get Panel Completions",
         "command": "copilot_get_panel_completions"
     },
@@ -14,6 +18,10 @@
     {
         "caption": "Copilot: Sign In",
         "command": "copilot_sign_in"
+    },
+    {
+        "caption": "Copilot: Sign In with Github Token",
+        "command": "copilot_sign_in_with_github_token"
     },
     {
         "caption": "Copilot: Sign Out",

@@ -13,13 +13,13 @@ import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.url import filename_to_uri
-from more_itertools import first_true
+from more_itertools import first_true, unique_everseen
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
 
-T = TypeVar("T")
-T_Number = TypeVar("T_Number", bound=Union[int, float])
+_T = TypeVar("_T")
+_T_Number = TypeVar("_T_Number", bound=Union[int, float])
 
 
 def all_views(
@@ -40,11 +40,11 @@ def all_sheets(
     windows = [window] if window else sublime.windows()
     for window in windows:
         if include_transient:
-            yield from filter(None, map(window.transient_sheet_in_group, range(window.num_groups())))
+            yield from drop_falsy(map(window.transient_sheet_in_group, range(window.num_groups())))
         yield from window.sheets()
 
 
-def clamp(val: T_Number, min_val: T_Number | None = None, max_val: T_Number | None = None) -> T_Number:
+def clamp(val: _T_Number, min_val: _T_Number | None = None, max_val: _T_Number | None = None) -> _T_Number:
     """Returns the bounded value of `val` in the range of `[min_val, max_val]`."""
     if min_val is not None and val < min_val:  # type: ignore
         return min_val
@@ -80,6 +80,11 @@ def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
         return cast(T_Callable, debounced)
 
     return decorator
+
+
+def drop_falsy(iterable: Iterable[_T | None]) -> Generator[_T, None, None]:
+    """Drops falsy values from the iterable."""
+    yield from filter(None, iterable)
 
 
 def find_sheet_by_id(id: int) -> sublime.Sheet | None:
@@ -199,7 +204,7 @@ def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadC
     unique_indexes: set[int] = set(
         map(
             itemgetter(0),
-            unique(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
+            unique_everseen(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
         )
     )
     for index in range(len(completions) - 1, -1, -1):
@@ -253,20 +258,6 @@ def status_message(msg_: str, *args, icon_: str | None = "✈", console_: bool =
 
     if console_:
         print(full_msg)
-
-
-def unique(items: Iterable[T], *, key: Callable[[T], Any] | None = None) -> Generator[T, None, None]:
-    """
-    Generate unique items from `items` by using `key` function on item as unique identifier.
-    If `key` is not provided, an item itself will be used as its unique identifier.
-    """
-    key = key or (lambda x: x)
-    seen: set[int] = set()
-    for item in items:
-        k = hash(key(item))
-        if k not in seen:
-            yield item
-            seen.add(k)
 
 
 def _generate_completion_region(
