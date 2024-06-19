@@ -19,6 +19,7 @@ from .constants import (
     REQ_CHECK_STATUS,
     REQ_CONVERSATION_CREATE,
     REQ_CONVERSATION_PRECONDITIONS,
+    REQ_CONVERSATION_TURN,
     REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_VERSION,
@@ -186,7 +187,6 @@ class CopilotCreateChatCommand(CopilotTextCommand):
         )
 
     def _on_result_conversation_preconditions(self, session, payload) -> None:
-        print(payload)
         session.send_request(
             Request(
                 REQ_CONVERSATION_PRECONDITIONS,
@@ -196,7 +196,6 @@ class CopilotCreateChatCommand(CopilotTextCommand):
         )
 
     def _on_result_conversation_create(self, session, payload) -> None:
-        # pass
         session.send_request(
             Request(
                 REQ_CONVERSATION_CREATE,
@@ -215,8 +214,41 @@ class CopilotCreateChatCommand(CopilotTextCommand):
                     # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
                 },
             ),
+            lambda x: self._on_result_conversation_turn(session, x),
+        )
+
+    def _on_result_conversation_turn(self, session, payload) -> None:
+        # pass
+        session.send_request(
+            Request(
+                REQ_CONVERSATION_TURN,
+                {
+                    "conversationId": payload["conversationId"],
+                    "message": "Am I working in Sublime Text?",
+                    "workDoneToken": "5",  # Not sure where this comes from
+                    # "doc": Ji.Type.Optional(Z0),
+                    # "computeSuggestions": Ji.Type.Optional(Ji.Type.Boolean()),
+                    # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
+                    # "source": Ji.Type.Optional(sd),
+                    # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
+                },
+            ),
             lambda x: print(x),
         )
+
+        # {
+        #     workDoneToken: no.Type.Union([no.Type.String(), no.Type.Number()]),
+        #     conversationId: no.Type.String(),
+        #     message: no.Type.String(),
+        #     followUp: no.Type.Optional(
+        #         no.Type.Object({ id: no.Type.String(), type: no.Type.String() }),
+        #     ),
+        #     options: no.Type.Optional(Mn),
+        #     doc: no.Type.Optional(Z0),
+        #     computeSuggestions: no.Type.Optional(no.Type.Boolean()),
+        #     references: no.Type.Optional(no.Type.Array(k8)),
+        #     workspaceFolder: no.Type.Optional(no.Type.String()),
+        # }
 
 
 class CopilotConversationAgentsCommand(CopilotTextCommand):

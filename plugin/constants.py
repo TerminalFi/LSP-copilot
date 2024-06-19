@@ -33,6 +33,14 @@ REQ_SIGN_OUT = "signOut"  # done
 REQ_CONVERSATION_PRECONDITIONS = "conversation/preconditions"
 REQ_CONVERSATION_PERSISTANCE = "conversation/persistance"
 REQ_CONVERSATION_CREATE = "conversation/create"
+REQ_CONVERSATION_CREATE = "conversation/create"
+REQ_CONVERSATION_TURN = "conversation/turn"
+REQ_CONVERSATION_TURN_DELETE = "conversation/turnDelete"
+REQ_CONVERSATION_DESTROY = "conversation/destroy"
+REQ_CONVERSATION_RATING = "conversation/rating"
+REQ_CONVERSATION_COPY_CODE = "conversation/copyCode"
+REQ_CONVERSATION_INSERT_CODE = "conversation/insertCode"
+REQ_CONVERSATION_TEMPLATES = "conversation/templates"
 
 # --------------------- #
 # Copilot notifications #
