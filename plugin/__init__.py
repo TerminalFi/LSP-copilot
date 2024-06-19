@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .client import CopilotPlugin
 from .commands import (
     CopilotAcceptCompletionCommand,
     CopilotAcceptPanelCompletionCommand,
@@ -18,7 +19,6 @@ from .commands import (
     CopilotSignOutCommand,
 )
 from .listeners import EventListener, ViewEventListener
-from .plugin import CopilotPlugin
 
 __all__ = (
     # ST: core
@@ -53,5 +53,5 @@ def plugin_loaded() -> None:
 
 def plugin_unloaded() -> None:
     """Executed when this plugin is unloaded."""
-    CopilotPlugin.plugin_mapping.clear()
+    CopilotPlugin.window_attrs.clear()
     CopilotPlugin.cleanup()

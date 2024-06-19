@@ -75,6 +75,11 @@ class CopilotPayloadFeatureFlagsNotification(TypedDict, total=True):
 
 class CopilotPayloadGetVersion(TypedDict, total=True):
     version: str
+    """E.g., `"1.202.0"`."""
+    buildType: str
+    """E.g., `"prod"`."""
+    runtimeVersion: str
+    """E.g., `"node/20.14.0"`."""
 
 
 class CopilotPayloadNotifyAccepted(TypedDict, total=True):

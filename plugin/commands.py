@@ -13,6 +13,7 @@ from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
 from LSP.plugin.core.url import filename_to_uri
 from lsp_utils.helpers import rmtree_ex
 
+from .client import CopilotPlugin
 from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
@@ -26,7 +27,6 @@ from .constants import (
     REQ_SIGN_IN_WITH_GITHUB_TOKEN,
     REQ_SIGN_OUT,
 )
-from .plugin import CopilotPlugin
 from .types import (
     CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,

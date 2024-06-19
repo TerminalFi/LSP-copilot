@@ -1,7 +1,9 @@
 {
     "*": {
         "*": [
+            "Jinja2",
             "lsp_utils",
+            "markupsafe",
             "more-itertools",
             "sublime_lib",
             "wcmatch"

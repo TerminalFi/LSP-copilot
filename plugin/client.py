@@ -4,14 +4,16 @@ import functools
 import json
 import os
 import weakref
+from collections import defaultdict
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import wraps
+from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urlparse
 
 import sublime
-from LSP.plugin import Request, Session
-from LSP.plugin.core.collections import DottedDict
+from LSP.plugin import ClientConfig, DottedDict, Request, Session, WorkspaceFolder
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
@@ -24,12 +26,16 @@ from .constants import (
     REQ_CHECK_STATUS,
     REQ_GET_COMPLETIONS,
     REQ_GET_COMPLETIONS_CYCLING,
+    REQ_GET_VERSION,
     REQ_SET_EDITOR_INFO,
 )
+from .log import log_warning
+from .template import render_template
 from .types import (
     AccountStatus,
     CopilotPayloadCompletions,
     CopilotPayloadFeatureFlagsNotification,
+    CopilotPayloadGetVersion,
     CopilotPayloadLogMessage,
     CopilotPayloadPanelSolution,
     CopilotPayloadSignInConfirm,
@@ -48,6 +54,14 @@ from .utils import (
     status_message,
 )
 
+WindowId = int
+
+
+@dataclass
+class WindowAttr:
+    client_ref: weakref.ReferenceType[CopilotPlugin] | None = None
+    """The weak reference of the LSP client instance for the window."""
+
 
 def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     """
@@ -59,12 +73,12 @@ def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callab
         @wraps(func)
         def wrapped(self: Any, view: sublime.View, *arg, **kwargs) -> Any:
             view_settings = view.settings()
-            if not (
-                view.is_valid()
-                and not view.element()
-                and not view.is_read_only()
-                and not view_settings.get("command_mode")
-                and not view_settings.get("is_widget")
+            if (
+                not view.is_valid()
+                or view.element()
+                or view.is_read_only()
+                or view_settings.get("command_mode")
+                or view_settings.get("is_widget")
             ):
                 return failed_return
 
@@ -87,7 +101,15 @@ class CopilotPlugin(NpmClientHandler):
         "language-server.js",
     )
 
-    plugin_mapping: weakref.WeakValueDictionary[int, CopilotPlugin] = weakref.WeakValueDictionary()
+    server_package_json_path = os.path.join("node_modules", "copilot-node-server", "package.json")
+    """The path to the `package.json` file of the language server."""
+    server_version = ""
+    """The version of the [copilot.vim](https://github.com/github/copilot.vim) package."""
+    server_version_gh = ""
+    """The version of the Github Copilot language server."""
+
+    window_attrs: defaultdict[WindowId, WindowAttr] = defaultdict(WindowAttr)
+    """Per-window attributes. I.e., per-session attributes."""
 
     _account_status = AccountStatus(
         has_signed_in=False,
@@ -97,7 +119,7 @@ class CopilotPlugin(NpmClientHandler):
     def __init__(self, session: weakref.ref[Session]) -> None:
         super().__init__(session)
         if sess := session():
-            self.plugin_mapping[sess.window.id()] = self
+            self.window_attrs[sess.window.id()].client_ref = weakref.ref(self)
 
         # Note that ST persists view settings after ST is closed. If the user closes ST
         # during awaiting Copilot's response, the internal state management will be corrupted.
@@ -106,18 +128,35 @@ class CopilotPlugin(NpmClientHandler):
             ViewCompletionManager(view).reset()
             ViewPanelCompletionManager(view).reset()
 
+    @classmethod
+    def on_pre_start(
+        cls,
+        window: sublime.Window,
+        initiating_view: sublime.View,
+        workspace_folders: list[WorkspaceFolder],
+        configuration: ClientConfig,
+    ) -> str | None:
+        super().on_pre_start(window, initiating_view, workspace_folders, configuration)
+
+        cls.server_version = cls.parse_server_version()
+        return None
+
     def on_ready(self, api: ApiWrapperInterface) -> None:
-        def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
+        def _on_get_version(response: CopilotPayloadGetVersion, failed: bool) -> None:
+            self.server_version_gh = response.get("version", "")
+
+        def _on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
             self.set_account_status(
                 signed_in=result["status"] in {"NotAuthorized", "OK"},
                 authorized=result["status"] == "OK",
             )
 
-        def on_set_editor_info(result: str, failed: bool) -> None:
+        def _on_set_editor_info(result: str, failed: bool) -> None:
             pass
 
-        api.send_request(REQ_CHECK_STATUS, {}, on_check_status)
-        api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), on_set_editor_info)
+        api.send_request(REQ_GET_VERSION, {}, _on_get_version)
+        api.send_request(REQ_CHECK_STATUS, {}, _on_check_status)
+        api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), _on_set_editor_info)
 
     def on_settings_changed(self, settings: DottedDict) -> None:
         def parse_proxy(proxy: str) -> NetworkProxy | None:
@@ -133,6 +172,8 @@ class CopilotPlugin(NpmClientHandler):
                 "rejectUnauthorized": True,
             }
 
+        super().on_settings_changed(settings)
+
         if not (session := self.weaksession()):
             return
 
@@ -142,6 +183,7 @@ class CopilotPlugin(NpmClientHandler):
             editor_info["networkProxy"] = networkProxy
 
         session.send_request(Request(REQ_SET_EDITOR_INFO, editor_info), lambda response: None)
+        self.update_status_bar_text()
 
     @staticmethod
     def version() -> str:
@@ -201,12 +243,21 @@ class CopilotPlugin(NpmClientHandler):
 
     @classmethod
     def from_view(cls, view: sublime.View) -> CopilotPlugin | None:
-        if not (window := view.window()):
-            return None
-        self = cls.plugin_mapping.get(window.id())
-        if not (self and self.is_valid_for_view(view)):
-            return None
-        return self
+        if (
+            (window := view.window())
+            and (self_ref := cls.window_attrs[window.id()].client_ref)
+            and (self := self_ref())
+            and self.is_valid_for_view(view)
+        ):
+            return self
+        return None
+
+    @classmethod
+    def parse_server_version(cls) -> str:
+        if server_dir := cls._server_directory_path():
+            with open(Path(server_dir) / cls.server_package_json_path, "rb") as f:
+                return json.load(f).get("version", "")
+        return ""
 
     @classmethod
     def plugin_session(cls, view: sublime.View) -> tuple[None, None] | tuple[CopilotPlugin, Session | None]:
@@ -216,6 +267,23 @@ class CopilotPlugin(NpmClientHandler):
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()
         return bool(session and session.session_view_for_view_async(view))
+
+    def update_status_bar_text(self) -> None:
+        if not (session := self.weaksession()):
+            return
+
+        variables: dict[str, Any] = {
+            "server_version": self.server_version,
+            "server_version_gh": self.server_version_gh,
+        }
+
+        rendered_text = ""
+        if template_text := str(session.config.settings.get("status_text") or ""):
+            try:
+                rendered_text = render_template(template_text, variables)
+            except Exception as e:
+                log_warning(f'Invalid "status_text" template: {e}')
+        session.set_config_status_async(rendered_text)
 
     @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
