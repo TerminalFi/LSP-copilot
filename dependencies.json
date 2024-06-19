@@ -3,7 +3,8 @@
         "*": [
             "lsp_utils",
             "more-itertools",
-            "sublime_lib"
+            "sublime_lib",
+            "wcmatch"
         ]
     }
 }

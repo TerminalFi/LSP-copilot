@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import fnmatch
 import os
 import textwrap
 import threading
@@ -15,6 +14,7 @@ from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.url import filename_to_uri
 from more_itertools import first_true, unique_everseen
+from wcmatch import glob
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
@@ -277,54 +277,65 @@ def _generate_completion_region(
     )
 
 
-def remove_filepath_prefix(filename, prefixes):
-    """
-    Remove the longest matching prefix from the filename.
+class CopilotIgnore:
+    def __init__(self):
+        self.log = self.get_output_panel("Copilot Ignore")
+        self.patterns = {}
+        self.load_patterns()
 
-    Args:
-        filename (str): The name of the file.
-        prefixes (list): A list of prefixes to remove.
+    def get_output_panel(self, name):
+        window = sublime.active_window()
+        panel = window.create_output_panel(name)
+        window.run_command("show_panel", {"panel": f"output.{name}"})
+        return panel
 
-    Returns:
-        str: The filename without the matching prefix.
-    """
-    for prefix in sorted(prefixes, key=len, reverse=True):
-        if filename.startswith(prefix):
-            return filename[len(prefix) :]
-    return filename
+    def log_info(self, message):
+        self.log.run_command("append", {"characters": f"[COPILOT IGNORE] {message}\n"})
 
+    def load_patterns(self):
+        self.patterns = {}
 
-def matches_any_pattern(filename, patterns):
-    """
-    Check if a filename matches any of the given patterns.
+        # Load workspace patterns
+        for folder in sublime.active_window().folders():
+            self.add_patterns_from_file(os.path.join(folder, ".copilotignore"), folder)
 
-    Args:
-        filename (str): The name of the file to check.
-        patterns (list): A list of patterns to match against.
+        self.log_info(f"Collected patterns: {self.patterns}")
 
-    Returns:
-        bool: True if the filename matches any pattern, False otherwise.
-    """
-    for pattern in patterns:
-        if fnmatch.fnmatch(filename, pattern):
-            return True
-    return False
+    def read_ignore_patterns(self, filepath):
+        if os.path.exists(filepath):
+            self.log_info(f"Reading ignore patterns from: {filepath}")
+            with open(filepath) as file:
+                patterns = [line.strip() for line in file if line.strip()]
+            return patterns
+        return []
 
+    def add_patterns_from_file(self, filepath, folder):
+        patterns = self.read_ignore_patterns(filepath)
+        if patterns:
+            self.patterns[folder] = patterns
 
-def is_copilot_ignored(file, patterns, prefixes):
-    """
-    Filter a list of files against a list of patterns after removing prefixes.
+    def matches_any_pattern(self, file_path):
+        for folder, patterns in self.patterns.items():
+            if file_path.startswith(folder):
+                relative_path = os.path.relpath(file_path, folder)
+                for pattern in patterns:
+                    if glob.globmatch(relative_path, pattern):
+                        self.log_info(f"File {file_path} matches pattern {pattern} in folder {folder}")
+                        return True
 
-    Args:
-        files (list): A list of filenames to check.
-        patterns (list): A list of patterns to match against.
-        prefixes (list): A list of prefixes to remove from filenames.
+        self.log_info(f"File {file_path} does not match any patterns")
+        return False
 
-    Returns:
-        list: A list of filenames that match the patterns after prefix removal.
-    """
+    def trigger(self, view: sublime.View):
+        if not self.patterns:
+            self.log_info("No patterns configured in .copilotignore")
+            return False
 
-    cleaned_file = remove_filepath_prefix(file, prefixes)
-    if matches_any_pattern(cleaned_file, patterns):
+        file = view.file_name()
+
+        if not file:
+            return False
+
+        found_open_ignored_file = self.matches_any_pattern(file)
+        self.log_info(f"File is ignored by copilot: {found_open_ignored_file}")
         return True
-    return False

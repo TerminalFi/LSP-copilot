@@ -12,10 +12,10 @@ from .plugin import CopilotPlugin
 from .types import T_Callable
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
+    CopilotIgnore,
     get_copilot_view_setting,
     get_session_setting,
     is_active_view,
-    is_copilot_ignored,
     set_copilot_view_setting,
 )
 
@@ -34,6 +34,10 @@ def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable],
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
+    def __init__(self, view: sublime.View) -> None:
+        super().__init__(view)
+        self.copilot_ignore = CopilotIgnore()
+
     @classmethod
     def applies_to_primary_view_only(cls) -> bool:
         # To fix "https://github.com/TerminalFi/LSP-copilot/issues/102",
@@ -59,14 +63,12 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
     @_must_be_active_view()
     def on_modified_async(self) -> None:
+        if self.copilot_ignore.trigger(self.view):
+            return
         self._is_modified = True
 
         plugin, session = CopilotPlugin.plugin_session(self.view)
         if not plugin or not session:
-            return
-
-        copilot_ignore = get_session_setting(session, "copilot_ignore", [])
-        if is_copilot_ignored(self.view.file_name(), copilot_ignore, self.view.window().folders()):
             return
 
         vcm = ViewCompletionManager(self.view)
@@ -133,6 +135,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
     def on_post_save_async(self) -> None:
         self._is_saving = False
+        file_name = self.view.file_name()
+        if file_name and file_name.endswith(".copilotignore"):
+            self.copilot_ignore.load_patterns()
 
     @_must_be_active_view()
     def on_selection_modified_async(self) -> None:
