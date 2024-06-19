@@ -34,8 +34,8 @@ from .template import render_template
 from .types import (
     AccountStatus,
     CopilotPayloadCompletions,
-    CopilotPayloadGetVersion,
     CopilotPayloadFeatureFlagsNotification,
+    CopilotPayloadGetVersion,
     CopilotPayloadLogMessage,
     CopilotPayloadPanelSolution,
     CopilotPayloadSignInConfirm,
@@ -104,7 +104,9 @@ class CopilotPlugin(NpmClientHandler):
     server_package_json_path = os.path.join("node_modules", "copilot-node-server", "package.json")
     """The path to the `package.json` file of the language server."""
     server_version = ""
-    """The version of the language server."""
+    """The version of the [copilot.vim](https://github.com/github/copilot.vim) package."""
+    server_version_gh = ""
+    """The version of the Github Copilot language server."""
 
     window_attrs: defaultdict[WindowId, WindowAttr] = defaultdict(WindowAttr)
     """Per-window attributes. I.e., per-session attributes."""
@@ -140,25 +142,21 @@ class CopilotPlugin(NpmClientHandler):
         return None
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
-        def on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
+        def _on_get_version(response: CopilotPayloadGetVersion, failed: bool) -> None:
+            self.server_version_gh = response.get("version", "")
+
+        def _on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
             self.set_account_status(
                 signed_in=result["status"] in {"NotAuthorized", "OK"},
                 authorized=result["status"] == "OK",
             )
 
-        def on_set_editor_info(result: str, failed: bool) -> None:
+        def _on_set_editor_info(result: str, failed: bool) -> None:
             pass
 
-        def _set_version_info(response: CopilotPayloadGetVersion, failed: bool) -> None:
-            version = response.get("version")
-            if version:
-                session = self.weaksession()
-                if session:
-                    session.set_config_status_async(version)
-
-        api.send_request(REQ_CHECK_STATUS, {}, on_check_status)
-        api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), on_set_editor_info)
-        api.send_request(REQ_GET_VERSION, {}, _set_version_info)
+        api.send_request(REQ_GET_VERSION, {}, _on_get_version)
+        api.send_request(REQ_CHECK_STATUS, {}, _on_check_status)
+        api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), _on_set_editor_info)
 
     def on_settings_changed(self, settings: DottedDict) -> None:
         def parse_proxy(proxy: str) -> NetworkProxy | None:
@@ -276,6 +274,7 @@ class CopilotPlugin(NpmClientHandler):
 
         variables: dict[str, Any] = {
             "server_version": self.server_version,
+            "server_version_gh": self.server_version_gh,
         }
 
         rendered_text = ""
