@@ -34,6 +34,7 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadSignInInitiate,
     CopilotPayloadSignOut,
+    CopilotRequestCoversationAgent,
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
@@ -212,6 +213,24 @@ class CopilotCreateChatCommand(CopilotTextCommand):
             ),
             lambda x: print(x),
         )
+
+
+class CopilotConversationAgentsCommand(CopilotTextCommand):
+    requirement = REQUIRE_NOTHING
+
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        session.send_request(Request("conversation/agents", {"options": {}}), self._on_result_check_status)
+
+    def _on_result_check_status(self, payload: list[CopilotRequestCoversationAgent]) -> None:
+        window = self.view.window()
+        if not window:
+            return
+        window.show_quick_panel([(item["id"], item["description"]) for item in payload], lambda x: None)
+
+    @_provide_plugin_session(failed_return=False)
+    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
+        return get_session_setting(session, "debug")
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):

@@ -122,3 +122,64 @@ class CopilotPayloadPanelSolution(TypedDict, total=True):
 
 class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
     solutionCountTarget: int
+
+
+# --------------------- #
+#  Copilot Chat Types   #
+# --------------------- #
+
+
+# class CopilotRequestCoversationPreconditions(TypedDict, total=True):
+#     pass
+
+
+# class CopilotRequestCoversationPersistance(TypedDict, total=True):
+#     pass
+
+
+# class CopilotRequestCoversationChatCreate(TypedDict, total=True):
+#     pass
+
+
+# class CopilotRequestCoversationChatTurn(TypedDict, total=True):
+#     workDoneToken: str | int
+#     conversationId: str
+#     message: str
+#     followUp: dict[str, str]
+#     options: dict[str, str]  # {}
+#     doc: dict[str, str]
+#     computeSuggestions: bool
+#     references: list[dict[str, str]]  # List of doc type
+#     workspaceFolder: str
+
+#     # doc = {
+#     #             uri: Qi.Type.String(),
+#     #             position: Qi.Type.Optional(
+#     #                 Qi.Type.Object({
+#     #                     line: Qi.Type.Number({ minimum: 0 }),
+#     #                     character: Qi.Type.Number({ minimum: 0 }),
+#     #                 }),
+#     #             ),
+#     #             visibleRange: Qi.Type.Optional(R8),
+#     #             selection: Qi.Type.Optional(R8),
+#     #             openedAt: Qi.Type.Optional(Qi.Type.String()),
+#     #             activeAt: Qi.Type.Optional(Qi.Type.String()),
+#     #         }
+#     # {
+#     #         workDoneToken: no.Type.Union([no.Type.String(), no.Type.Number()]),
+#     #         conversationId: no.Type.String(),
+#     #         message: no.Type.String(),
+#     #         followUp: no.Type.Optional(
+#     #             no.Type.Object({ id: no.Type.String(), type: no.Type.String() }),
+#     #         ),
+#     #         options: no.Type.Optional(Mn),
+#     #         doc: no.Type.Optional(Z0),
+#     #         computeSuggestions: no.Type.Optional(no.Type.Boolean()),
+#     #         references: no.Type.Optional(no.Type.Array(k8)),
+#     #         workspaceFolder: no.Type.Optional(no.Type.String()),
+#     #     }
+
+
+class CopilotRequestCoversationAgent(TypedDict, total=True):
+    id: str
+    description: str

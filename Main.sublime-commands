@@ -4,6 +4,11 @@
         "command": "copilot_create_chat"
     },
     {
+        // Debug Command
+        "caption": "Copilot: Chat Agents",
+        "command": "copilot_conversation_agents",
+    },
+    {
         "caption": "Copilot: Check Status",
         "command": "copilot_check_status"
     },
