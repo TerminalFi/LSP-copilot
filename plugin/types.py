@@ -143,6 +143,22 @@ class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
 # --------------------- #
 
 
+class CopilotPayloadConversationEntry(TypedDict, total=True):
+    kind: str
+    conversationId: str
+    turnId: str
+    reply: str
+    annotations: list[str]
+    hideText: bool
+
+
+class CopilotPayloadConversationTemplate(TypedDict, total=True):
+    id: str
+    description: str
+    shortDescription: str
+    scopes: list[str]
+
+
 # class CopilotRequestCoversationPreconditions(TypedDict, total=True):
 #     pass
 

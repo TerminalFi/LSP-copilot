@@ -33,7 +33,7 @@ REQ_SIGN_OUT = "signOut"  # done
 REQ_CONVERSATION_PRECONDITIONS = "conversation/preconditions"
 REQ_CONVERSATION_PERSISTANCE = "conversation/persistance"
 REQ_CONVERSATION_CREATE = "conversation/create"
-REQ_CONVERSATION_CREATE = "conversation/create"
+REQ_CONVERSATION_AGENTS = "conversation/agents"
 REQ_CONVERSATION_TURN = "conversation/turn"
 REQ_CONVERSATION_TURN_DELETE = "conversation/turnDelete"
 REQ_CONVERSATION_DESTROY = "conversation/destroy"
@@ -48,6 +48,7 @@ REQ_CONVERSATION_TEMPLATES = "conversation/templates"
 
 NTFY_FEATURE_FLAGS_NOTIFICATION = "featureFlagsNotification"  # done
 NTFY_LOG_MESSAGE = "LogMessage"  # done
+NTFY_PROGRESS = "$/progress"
 NTFY_PANEL_SOLUTION = "PanelSolution"  # done
 NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"  # done
 NTFY_STATUS_NOTIFICATION = "statusNotification"  # done

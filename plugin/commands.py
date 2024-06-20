@@ -13,14 +13,15 @@ from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
 from LSP.plugin.core.url import filename_to_uri
 from lsp_utils.helpers import rmtree_ex
-from mdpopups import md2html
 
 from .client import CopilotPlugin
 from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
+    REQ_CONVERSATION_AGENTS,
     REQ_CONVERSATION_CREATE,
     REQ_CONVERSATION_PRECONDITIONS,
+    REQ_CONVERSATION_TEMPLATES,
     REQ_CONVERSATION_TURN,
     REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
@@ -33,6 +34,7 @@ from .constants import (
     REQ_SIGN_OUT,
 )
 from .types import (
+    CopilotPayloadConversationTemplate,
     CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,
     CopilotPayloadNotifyAccepted,
@@ -44,7 +46,7 @@ from .types import (
     CopilotRequestCoversationAgent,
     T_Callable,
 )
-from .ui import ViewCompletionManager, ViewPanelCompletionManager
+from .ui import ViewCompletionManager, ViewConversationManager, ViewPanelCompletionManager
 from .utils import (
     find_view_by_id,
     get_session_setting,
@@ -180,6 +182,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 class CopilotConversationCreateCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        ViewConversationManager(self.view)
         session.send_request(
             Request(
                 REQ_CONVERSATION_PRECONDITIONS,
@@ -220,7 +223,7 @@ class CopilotConversationCreateCommand(CopilotTextCommand):
         )
 
     def _on_result_conversation_turn(self, session, payload) -> None:
-        # pass
+        ViewConversationManager(self.view).conversation_id = payload["conversationId"]
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN,
@@ -257,71 +260,37 @@ class CopilotConversationCreateCommand(CopilotTextCommand):
 
 class CopilotConversationContinueCommand(CopilotTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, message: str):
-        session.send_request(
-            Request(
-                REQ_CONVERSATION_PRECONDITIONS,
-                {},
-            ),
-            lambda x: self._on_result_conversation_preconditions(session, x),
-        )
-
-    @_provide_plugin_session()
-    def input(self, plugin: CopilotPlugin, session: Session, args):
-        if "message" not in args:
-            return CopilotConversationDialogTextInputHandler(
-                self.view,
-                # Dummy text until we figure it out
-                [
-                    '<span class="system">System</span>: Hello, how can I help you?',
-                    '<span class="user">User</span>: Am I working in Sublime Text?',
-                    '<span class="system">System</span>: No, you are working in a IDE called vscode.',
-                    md2html(
-                        self.view,
-                        """
-You can try this code below
-
-<a href="copy">Copy</a>
-```py
-def log(x):
-    print(x)
-```
-""",
-                    ),
-                ],
-            )
-
-    def _on_result_conversation_turn(self, session, payload) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str, *args, **kwargs):
+        conversation_manager = ViewConversationManager(self.view)
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN,
                 {
-                    "conversationId": payload["conversationId"],
-                    "message": "Am I working in Sublime Text?",
+                    "conversationId": conversation_manager.conversation_id,
+                    "message": message,
                     "workDoneToken": "5",  # Not sure where this comes from
                     # "doc": Ji.Type.Optional(Z0),
-                    # "computeSuggestions": Ji.Type.Optional(Ji.Type.Boolean()),
+                    "computeSuggestions": True,
                     # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
                     # "source": Ji.Type.Optional(sd),
                     # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
                 },
             ),
-            lambda x: print(x),
+            self._on_result_conversation_turn,
         )
 
-        # {
-        #     workDoneToken: no.Type.Union([no.Type.String(), no.Type.Number()]),
-        #     conversationId: no.Type.String(),
-        #     message: no.Type.String(),
-        #     followUp: no.Type.Optional(
-        #         no.Type.Object({ id: no.Type.String(), type: no.Type.String() }),
-        #     ),
-        #     options: no.Type.Optional(Mn),
-        #     doc: no.Type.Optional(Z0),
-        #     computeSuggestions: no.Type.Optional(no.Type.Boolean()),
-        #     references: no.Type.Optional(no.Type.Array(k8)),
-        #     workspaceFolder: no.Type.Optional(no.Type.String()),
-        # }
+    @_provide_plugin_session()
+    def input(self, plugin: CopilotPlugin, session: Session, args):
+        conversation_manager = ViewConversationManager(self.view)
+        if "messages" not in args:
+            print(args)
+            return CopilotConversationDialogTextInputHandler(
+                self.view,
+                [f"conversation: {conversation_manager.conversation_id}"] + conversation_manager.conversation_history,
+            )
+
+    def _on_result_conversation_turn(self, payload) -> None:
+        print(payload)
 
 
 class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler):
@@ -330,7 +299,7 @@ class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler)
         self.conversation_history = conversation_history
 
     def name(self) -> str:
-        return "User"
+        return "chat"
 
     def placeholder(self) -> str:
         return "Your message"
@@ -369,17 +338,35 @@ class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler)
 
 
 class CopilotConversationAgentsCommand(CopilotTextCommand):
-    requirement = REQUIRE_NOTHING
-
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        session.send_request(Request("conversation/agents", {"options": {}}), self._on_result_check_status)
+        session.send_request(Request(REQ_CONVERSATION_AGENTS, {"options": {}}), self._on_result_coversation_agents)
 
-    def _on_result_check_status(self, payload: list[CopilotRequestCoversationAgent]) -> None:
+    def _on_result_coversation_agents(self, payload: list[CopilotRequestCoversationAgent]) -> None:
         window = self.view.window()
         if not window:
             return
         window.show_quick_panel([(item["id"], item["description"]) for item in payload], lambda x: None)
+
+    @_provide_plugin_session(failed_return=False)
+    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
+        return get_session_setting(session, "debug")
+
+
+class CopilotConversationTemplatesCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        session.send_request(
+            Request(REQ_CONVERSATION_TEMPLATES, {"options": {}}), self._on_result_conversation_templates
+        )
+
+    def _on_result_conversation_templates(self, payload: list[CopilotPayloadConversationTemplate]) -> None:
+        window = self.view.window()
+        if not window:
+            return
+        window.show_quick_panel(
+            [(item["id"], item["description"], ", ".join(item["scopes"])) for item in payload], lambda x: None
+        )
 
     @_provide_plugin_session(failed_return=False)
     def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:

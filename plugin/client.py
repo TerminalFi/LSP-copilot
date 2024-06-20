@@ -21,6 +21,7 @@ from .constants import (
     NTFY_LOG_MESSAGE,
     NTFY_PANEL_SOLUTION,
     NTFY_PANEL_SOLUTION_DONE,
+    NTFY_PROGRESS,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
@@ -292,6 +293,10 @@ class CopilotPlugin(NpmClientHandler):
     @notification_handler(NTFY_LOG_MESSAGE)
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
         pass
+
+    @notification_handler(NTFY_PROGRESS)
+    def _handle_progress_notification(self, payload) -> None:
+        print(payload)
 
     @notification_handler(NTFY_PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:

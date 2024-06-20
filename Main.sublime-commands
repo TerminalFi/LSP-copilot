@@ -1,16 +1,21 @@
 [
     {
-        "caption": "Copilot: Chat",
+        "caption": "Copilot: New Conversation",
         "command": "copilot_conversation_create"
     },
     {
-        "caption": "Copilot: Continue",
+        "caption": "Copilot: Continue Last Conversation",
         "command": "copilot_conversation_continue"
     },
     {
         // Debug Command
-        "caption": "Copilot: Chat Agents",
+        "caption": "Copilot: Conversation Agents",
         "command": "copilot_conversation_agents",
+    },
+    {
+        // Debug Command
+        "caption": "Copilot: Conversation Templates",
+        "command": "copilot_conversation_templates",
     },
     {
         "caption": "Copilot: Check Status",
