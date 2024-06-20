@@ -1,6 +1,7 @@
 {
     "*": {
         "*": [
+            "bracex",
             "Jinja2",
             "lsp_utils",
             "markupsafe",
