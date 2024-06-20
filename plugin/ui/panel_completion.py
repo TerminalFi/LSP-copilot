@@ -7,6 +7,7 @@ import mdpopups
 import sublime
 from more_itertools import first_true, unique_everseen
 
+from ..template import load_resource_template
 from ..types import CopilotPayloadPanelSolution, StLayout
 from ..utils import (
     all_views,
@@ -143,63 +144,6 @@ class ViewPanelCompletionManager:
 
 class _PanelCompletion:
     CSS_CLASS_NAME = "copilot-completion-panel"
-    CSS = f"""
-        html {{
-            --copilot-close-foreground: var(--foreground);
-            --copilot-close-background: var(--background);
-            --copilot-close-border: var(--foreground);
-            --copilot-accept-foreground: var(--foreground);
-            --copilot-accept-background: var(--background);
-            --copilot-accept-border: var(--greenish);
-        }}
-
-        .{CSS_CLASS_NAME} {{
-            margin: 1rem 0.5rem 0 0.5rem;
-        }}
-
-        .{CSS_CLASS_NAME} .navbar {{
-            text-align: left;
-        }}
-
-        .{CSS_CLASS_NAME} .synthesis-info {{
-            display: inline-block;
-            text-size: 1.2em;
-        }}
-
-        .{CSS_CLASS_NAME} .header {{
-            display: block;
-            margin-bottom: 1rem;
-        }}
-
-        .{CSS_CLASS_NAME} a {{
-            border-radius: 3px;
-            border-style: solid;
-            border-width: 1px;
-            display: inline;
-            padding: 5px;
-            text-decoration: none;
-        }}
-
-        .{CSS_CLASS_NAME} a.close {{
-            background: var(--copilot-close-background);
-            border-color: var(--copilot-close-border);
-            color: var(--copilot-close-foreground);
-        }}
-
-        .{CSS_CLASS_NAME} a.close i {{
-            color: var(--copilot-close-border);
-        }}
-
-        .{CSS_CLASS_NAME} a.accept {{
-            background: var(--copilot-accept-background);
-            border-color: var(--copilot-accept-border);
-            color: var(--copilot-accept-foreground);
-        }}
-
-        .{CSS_CLASS_NAME} a.accept i {{
-            color: var(--copilot-accept-border);
-        }}
-        """
     COMPLETION_TEMPLATE = reformat("""
         <div class="navbar">
             <a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a>&nbsp;
@@ -225,45 +169,26 @@ class _PanelCompletion:
     def completion_content(self) -> str:
         completions = self._synthesize(self.completion_manager.completions)
 
-        if self.completion_manager.is_waiting:
-            synthesis_info = "⌛ Synthesizing {index} unique solutions out of {total_solutions}..."
-        else:
-            synthesis_info = "Synthesized {index} unique solutions out of {total_solutions}. (Done)"
-
-        return self.COMPLETION_TEMPLATE.format(
-            close_panel=sublime.command_url("copilot_close_panel_completion", {"view_id": self.view.id()}),
-            synthesis_info=synthesis_info.format(
-                index=len(completions),
-                total_solutions=self.completion_manager.completion_target_count,
-            ),
-            sections="\n\n<hr>\n".join(
-                self.COMPLETION_SECTION_TEMPLATE.format(
-                    header_items=" &nbsp;".join(self.completion_header_items(completion, self.view.id(), index)),
-                    score=completion["score"],
-                    lang=get_view_language_id(self.view, completion["region"][1]),
-                    code=fix_completion_syntax_highlight(
+        return load_resource_template("panel_completion.md.jinja").render(
+            close_url=sublime.command_url("copilot_close_panel_completion", {"view_id": self.view.id()}),
+            is_waiting=self.completion_manager.is_waiting,
+            sections=[
+                {
+                    "accept_url": sublime.command_url(
+                        "copilot_accept_panel_completion_shim",
+                        {"view_id": self.view.id(), "completion_index": index},
+                    ),
+                    "code": fix_completion_syntax_highlight(
                         self.view,
                         completion["region"][1],
                         self._prepare_popup_code_display_text(completion["displayText"]),
                     ),
-                )
+                    "lang": get_view_language_id(self.view, completion["region"][1]),
+                }
                 for index, completion in completions
-            ),
+            ],
+            total_solutions=self.completion_manager.completion_target_count,
         )
-
-    @staticmethod
-    def completion_header_items(completion: CopilotPayloadPanelSolution, view_id: int, index: int) -> list[str]:
-        return [
-            """<a class="accept" title="Accept Completion" href='{}'><i>✓</i> Accept</a>""".format(
-                sublime.command_url(
-                    "copilot_accept_panel_completion_shim",
-                    {"view_id": view_id, "completion_index": index},
-                )
-            ),
-            # Removing this for now. The response still contains `score` however it
-            # is always zero-value
-            # "<i>Mean Probability: {}</i>".format(completion["score"]),
-        ]
 
     def open(self) -> None:
         window = self.view.window()
@@ -287,13 +212,7 @@ class _PanelCompletion:
         if not isinstance(sheet, sublime.HtmlSheet):
             return
 
-        mdpopups.update_html_sheet(
-            sheet=sheet,
-            contents=self.completion_content,
-            md=True,
-            css=self.CSS,
-            wrapper_class=self.CSS_CLASS_NAME,
-        )
+        mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True)
 
     def close(self) -> None:
         window = self.view.window()
@@ -342,14 +261,12 @@ class _PanelCompletion:
         self.completion_manager.group_id = group_id
 
         window.focus_group(group_id)
-        sheet: sublime.HtmlSheet = mdpopups.new_html_sheet(
+        sheet = mdpopups.new_html_sheet(
             window=window,
             name="Panel Completions",
             contents=self.completion_content,
             md=True,
-            css=self.CSS,
             flags=sublime.TRANSIENT,
-            wrapper_class=self.CSS_CLASS_NAME,
         )
         self.completion_manager.sheet_id = sheet.id()
 
