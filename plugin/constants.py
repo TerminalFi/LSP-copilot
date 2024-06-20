@@ -31,17 +31,18 @@ REQ_SIGN_OUT = "signOut"  # done
 # Copilot Chat requests #
 # --------------------- #
 
-REQ_CONVERSATION_PRECONDITIONS = "conversation/preconditions"
-REQ_CONVERSATION_PERSISTANCE = "conversation/persistance"
-REQ_CONVERSATION_CREATE = "conversation/create"
 REQ_CONVERSATION_AGENTS = "conversation/agents"
+REQ_CONVERSATION_CONTEXT = "conversation/context"
+REQ_CONVERSATION_COPY_CODE = "conversation/copyCode"
+REQ_CONVERSATION_CREATE = "conversation/create"
+REQ_CONVERSATION_DESTROY = "conversation/destroy"
+REQ_CONVERSATION_INSERT_CODE = "conversation/insertCode"
+REQ_CONVERSATION_PERSISTANCE = "conversation/persistance"
+REQ_CONVERSATION_PRECONDITIONS = "conversation/preconditions"
+REQ_CONVERSATION_RATING = "conversation/rating"
+REQ_CONVERSATION_TEMPLATES = "conversation/templates"
 REQ_CONVERSATION_TURN = "conversation/turn"
 REQ_CONVERSATION_TURN_DELETE = "conversation/turnDelete"
-REQ_CONVERSATION_DESTROY = "conversation/destroy"
-REQ_CONVERSATION_RATING = "conversation/rating"
-REQ_CONVERSATION_COPY_CODE = "conversation/copyCode"
-REQ_CONVERSATION_INSERT_CODE = "conversation/insertCode"
-REQ_CONVERSATION_TEMPLATES = "conversation/templates"
 
 # --------------------- #
 # Copilot notifications #
@@ -49,8 +50,7 @@ REQ_CONVERSATION_TEMPLATES = "conversation/templates"
 
 NTFY_FEATURE_FLAGS_NOTIFICATION = "featureFlagsNotification"  # done
 NTFY_LOG_MESSAGE = "LogMessage"  # done
-NTFY_PROGRESS = "$/progress"
 NTFY_PANEL_SOLUTION = "PanelSolution"  # done
 NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"  # done
+NTFY_PROGRESS = "$/progress"
 NTFY_STATUS_NOTIFICATION = "statusNotification"  # done
-NTFY_CONVERSATION_CONTEXT = "conversation/context"

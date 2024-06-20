@@ -14,10 +14,9 @@ from urllib.parse import urlparse
 
 import sublime
 from LSP.plugin import ClientConfig, DottedDict, Request, Session, WorkspaceFolder
-from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
+from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler, request_handler
 
 from .constants import (
-    NTFY_CONVERSATION_CONTEXT,
     NTFY_FEATURE_FLAGS_NOTIFICATION,
     NTFY_LOG_MESSAGE,
     NTFY_PANEL_SOLUTION,
@@ -25,6 +24,7 @@ from .constants import (
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
+    REQ_CONVERSATION_CONTEXT,
     REQ_GET_COMPLETIONS,
     REQ_GET_COMPLETIONS_CYCLING,
     REQ_GET_VERSION,
@@ -294,10 +294,6 @@ class CopilotPlugin(NpmClientHandler):
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
         pass
 
-    @notification_handler(NTFY_CONVERSATION_CONTEXT)
-    def _handle_conversation_context_notification(self, payload, *args, **kwargs) -> None:
-        print(payload)
-
     @notification_handler(NTFY_PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
         if not (view := ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])):
@@ -321,6 +317,11 @@ class CopilotPlugin(NpmClientHandler):
     @notification_handler(NTFY_STATUS_NOTIFICATION)
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
         pass
+
+    @request_handler(REQ_CONVERSATION_CONTEXT)
+    def _handle_conversation_context_request(self, payload, respond: Callable[[Any], None]) -> None:
+        # {'conversationId': 'e3b0d5e3-0c3b-4292-a5ea-15d6003e7c45', 'turnId': '09ac7601-6c28-4617-b3e4-13f5ff8502b7', 'skillId': 'current-editor'}
+        print(f'{payload = }')
 
     @_guard_view()
     @debounce()
