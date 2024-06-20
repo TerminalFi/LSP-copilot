@@ -105,16 +105,28 @@ def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -
     return code
 
 
+def get_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+    return instance.settings().get(f"{prefix}.{key}", default)
+
+
+def set_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+    instance.settings().set(f"{prefix}.{key}", default)
+
+
+def erase_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str) -> Any:
+    instance.settings().erase(f"{prefix}.{key}")
+
+
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
-    return view.settings().get(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}", default)
+    return get_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key, default)
 
 
 def set_copilot_view_setting(view: sublime.View, key: str, value: Any) -> None:
-    view.settings().set(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}", value)
+    set_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key, value)
 
 
 def erase_copilot_view_setting(view: sublime.View, key: str) -> None:
-    view.settings().erase(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}")
+    erase_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key)
 
 
 def get_project_relative_path(path: str) -> str:

@@ -49,7 +49,7 @@ from .types import (
     CopilotRequestCoversationAgent,
     T_Callable,
 )
-from .ui import ViewCompletionManager, ViewConversationManager, ViewPanelCompletionManager
+from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import (
     find_view_by_id,
     get_session_setting,
@@ -75,7 +75,7 @@ def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callabl
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrapped(self: Any, *arg, **kwargs) -> Any:
-            if not isinstance(self, LspTextCommand):
+            if not isinstance(self, (LspTextCommand)):
                 raise RuntimeError('"_provide_session" decorator is only for LspTextCommand.')
 
             plugin, session = CopilotPlugin.plugin_session(self.view)
@@ -182,10 +182,10 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
         completion_manager.close()
 
 
-class CopilotConversationCreateCommand(CopilotTextCommand):
+class CopilotConversationCreateCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        ViewConversationManager(self.view)
+        WindowConversationManager(self.view.window())
         session.send_request(
             Request(
                 REQ_CONVERSATION_PRECONDITIONS,
@@ -195,15 +195,6 @@ class CopilotConversationCreateCommand(CopilotTextCommand):
         )
 
     def _on_result_conversation_preconditions(self, session, payload) -> None:
-        session.send_request(
-            Request(
-                REQ_CONVERSATION_PRECONDITIONS,
-                {},
-            ),
-            lambda x: self._on_result_conversation_create(session, x),
-        )
-
-    def _on_result_conversation_create(self, session, payload) -> None:
         session.send_request(
             Request(
                 REQ_CONVERSATION_CREATE,
@@ -222,11 +213,11 @@ class CopilotConversationCreateCommand(CopilotTextCommand):
                     # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
                 },
             ),
-            lambda x: self._on_result_conversation_turn(session, x),
+            lambda x: self._on_result_conversation_create(session, x),
         )
 
-    def _on_result_conversation_turn(self, session, payload) -> None:
-        ViewConversationManager(self.view).conversation_id = payload["conversationId"]
+    def _on_result_conversation_create(self, session, payload) -> None:
+        WindowConversationManager(self.view.window()).conversation_id = payload["conversationId"]
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN,
@@ -241,30 +232,17 @@ class CopilotConversationCreateCommand(CopilotTextCommand):
                     # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
                 },
             ),
-            lambda x: print(x),
+            self._on_result_conversation_turn,
         )
 
-        # Maybe we run - ConversationContinue command?
-
-        # {
-        #     workDoneToken: no.Type.Union([no.Type.String(), no.Type.Number()]),
-        #     conversationId: no.Type.String(),
-        #     message: no.Type.String(),
-        #     followUp: no.Type.Optional(
-        #         no.Type.Object({ id: no.Type.String(), type: no.Type.String() }),
-        #     ),
-        #     options: no.Type.Optional(Mn),
-        #     doc: no.Type.Optional(Z0),
-        #     computeSuggestions: no.Type.Optional(no.Type.Boolean()),
-        #     references: no.Type.Optional(no.Type.Array(k8)),
-        #     workspaceFolder: no.Type.Optional(no.Type.String()),
-        # }
+    def _on_result_conversation_turn(self, payload) -> None:
+        print(payload)
 
 
-class CopilotConversationContinueCommand(CopilotTextCommand):
+class CopilotConversationContinueCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str, *args, **kwargs):
-        conversation_manager = ViewConversationManager(self.view)
+        conversation_manager = WindowConversationManager(self.view.window())
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN,
@@ -284,9 +262,8 @@ class CopilotConversationContinueCommand(CopilotTextCommand):
 
     @_provide_plugin_session()
     def input(self, plugin: CopilotPlugin, session: Session, args):
-        conversation_manager = ViewConversationManager(self.view)
+        conversation_manager = WindowConversationManager(self.view.window())
         if "messages" not in args:
-            print(args)
             return CopilotConversationDialogTextInputHandler(
                 self.view,
                 [f"conversation: {conversation_manager.conversation_id}"] + conversation_manager.conversation_history,
@@ -340,7 +317,7 @@ class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler)
         return
 
 
-class CopilotConversationRatingCommand(CopilotTextCommand):
+class CopilotConversationRatingCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
         session.send_request(
@@ -366,7 +343,7 @@ class CopilotConversationRatingCommand(CopilotTextCommand):
         return get_session_setting(session, "debug")
 
 
-class CopilotConversationDestroyCommand(CopilotTextCommand):
+class CopilotConversationDestroyCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, conversation_id: str) -> None:
         session.send_request(
@@ -377,14 +354,14 @@ class CopilotConversationDestroyCommand(CopilotTextCommand):
                     "options": {},
                 },
             ),
-            self._on_result_coversation_destry,
+            self._on_result_coversation_destroy,
         )
 
-    def _on_result_coversation_destry(self, payload) -> None:
+    def _on_result_coversation_destroy(self, payload) -> None:
         print(payload)
 
 
-class CopilotConversationTurnDeleteCommand(CopilotTextCommand):
+class CopilotConversationTurnDeleteCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, conversation_id: str, turn_id: str) -> None:
         session.send_request(
@@ -408,7 +385,7 @@ class CopilotConversationTurnDeleteCommand(CopilotTextCommand):
         return get_session_setting(session, "debug")
 
 
-class CopilotConversationCopyCodeCommand(CopilotTextCommand):
+class CopilotConversationCopyCodeCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
         session.send_request(
@@ -434,7 +411,7 @@ class CopilotConversationCopyCodeCommand(CopilotTextCommand):
         return get_session_setting(session, "debug")
 
 
-class CopilotConversationInsertCodeCommand(CopilotTextCommand):
+class CopilotConversationInsertCodeCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
         session.send_request(
@@ -460,7 +437,7 @@ class CopilotConversationInsertCodeCommand(CopilotTextCommand):
         return get_session_setting(session, "debug")
 
 
-class CopilotConversationAgentsCommand(CopilotTextCommand):
+class CopilotConversationAgentsCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         session.send_request(Request(REQ_CONVERSATION_AGENTS, {"options": {}}), self._on_result_coversation_agents)
@@ -476,7 +453,7 @@ class CopilotConversationAgentsCommand(CopilotTextCommand):
         return get_session_setting(session, "debug")
 
 
-class CopilotConversationTemplatesCommand(CopilotTextCommand):
+class CopilotConversationTemplatesCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         session.send_request(

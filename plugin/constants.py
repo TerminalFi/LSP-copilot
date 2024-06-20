@@ -5,6 +5,7 @@ assert __package__
 PACKAGE_NAME = __package__.partition(".")[0]
 
 COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
+COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX = "copilot.conversation"
 
 # ---------------- #
 # Copilot requests #
@@ -52,3 +53,4 @@ NTFY_PROGRESS = "$/progress"
 NTFY_PANEL_SOLUTION = "PanelSolution"  # done
 NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"  # done
 NTFY_STATUS_NOTIFICATION = "statusNotification"  # done
+NTFY_CONVERSATION_CONTEXT = "conversation/context"

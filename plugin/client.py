@@ -17,11 +17,11 @@ from LSP.plugin import ClientConfig, DottedDict, Request, Session, WorkspaceFold
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
 from .constants import (
+    NTFY_CONVERSATION_CONTEXT,
     NTFY_FEATURE_FLAGS_NOTIFICATION,
     NTFY_LOG_MESSAGE,
     NTFY_PANEL_SOLUTION,
     NTFY_PANEL_SOLUTION_DONE,
-    NTFY_PROGRESS,
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
@@ -294,8 +294,8 @@ class CopilotPlugin(NpmClientHandler):
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
         pass
 
-    @notification_handler(NTFY_PROGRESS)
-    def _handle_progress_notification(self, payload) -> None:
+    @notification_handler(NTFY_CONVERSATION_CONTEXT)
+    def _handle_conversation_context_notification(self, payload, *args, **kwargs) -> None:
         print(payload)
 
     @notification_handler(NTFY_PANEL_SOLUTION)
