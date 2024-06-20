@@ -31,7 +31,7 @@ from .constants import (
     REQ_SET_EDITOR_INFO,
 )
 from .log import log_warning
-from .template import render_template
+from .template import load_string_template
 from .types import (
     AccountStatus,
     CopilotPayloadCompletions,
@@ -281,7 +281,7 @@ class CopilotPlugin(NpmClientHandler):
         rendered_text = ""
         if template_text := str(session.config.settings.get("status_text") or ""):
             try:
-                rendered_text = render_template(template_text, variables)
+                rendered_text = load_string_template(template_text).render(variables)
             except Exception as e:
                 log_warning(f'Invalid "status_text" template: {e}')
         session.set_config_status_async(rendered_text)
