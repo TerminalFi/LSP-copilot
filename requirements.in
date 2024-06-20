@@ -1,3 +1,4 @@
 Jinja2>=3,<4
 more-itertools>=10,<11
 typing-extensions>=4.12
+wcmatch>=8,<9
