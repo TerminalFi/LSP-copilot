@@ -1,28 +1,28 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
 from functools import wraps
-from typing import Any, cast
+from typing import Any, Callable, TypeVar, cast
 
 import sublime
 import sublime_plugin
 
 from .client import CopilotPlugin
-from .types import T_Callable
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import get_copilot_view_setting, get_session_setting, is_active_view, set_copilot_view_setting
 
+_T_Callable = TypeVar("_T_Callable", bound=Callable[..., Any])
 
-def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
-    def decorator(func: T_Callable) -> T_Callable:
+
+def _must_be_active_view(*, failed_return: Any = None) -> Callable[[_T_Callable], _T_Callable]:
+    def decorator(func: _T_Callable) -> _T_Callable:
         @wraps(func)
         def wrapped(self: Any, *arg, **kwargs) -> Any:
             if is_active_view(self.view):
                 return func(self, *arg, **kwargs)
             return failed_return
 
-        return cast(T_Callable, wrapped)
+        return cast(_T_Callable, wrapped)
 
     return decorator
 

@@ -3,11 +3,10 @@ from __future__ import annotations
 import os
 import textwrap
 import threading
-from collections.abc import Callable, Generator, Iterable
 from functools import wraps
 from itertools import takewhile
 from operator import itemgetter
-from typing import Any, TypeVar, Union, cast
+from typing import Any, Callable, Generator, Iterable, TypeVar, Union, cast
 
 import sublime
 from LSP.plugin.core.sessions import Session
@@ -16,9 +15,10 @@ from LSP.plugin.core.url import filename_to_uri
 from more_itertools import first_true, unique_everseen
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
-from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
+from .schema import CopilotPayloadCompletion, CopilotPayloadPanelSolution
 
 _T = TypeVar("_T")
+_T_Callable = TypeVar("_T_Callable", bound=Callable[..., Any])
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
 
 
@@ -53,7 +53,7 @@ def clamp(val: _T_Number, min_val: _T_Number | None = None, max_val: _T_Number |
     return val
 
 
-def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
+def debounce(time_s: float = 0.3) -> Callable[[_T_Callable], _T_Callable]:
     """
     Debounce a function so that it's called after `time_s` seconds.
     If it's called multiple times in the time frame, it will only run the last call.
@@ -61,7 +61,7 @@ def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
     Taken and modified from https://github.com/salesforce/decorator-operations
     """
 
-    def decorator(func: T_Callable) -> T_Callable:
+    def decorator(func: _T_Callable) -> _T_Callable:
         @wraps(func)
         def debounced(*args: Any, **kwargs: Any) -> None:
             def call_function() -> Any:
@@ -77,7 +77,7 @@ def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
             setattr(debounced, "_timer", timer)
 
         setattr(debounced, "_timer", None)
-        return cast(T_Callable, debounced)
+        return cast(_T_Callable, debounced)
 
     return decorator
 

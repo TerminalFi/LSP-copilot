@@ -9,7 +9,7 @@ import mdpopups
 import sublime
 from more_itertools import first_true
 
-from ..types import CopilotPayloadCompletion
+from ..schema import CopilotPayloadCompletion
 from ..utils import (
     clamp,
     fix_completion_syntax_highlight,
@@ -20,7 +20,9 @@ from ..utils import (
     set_copilot_view_setting,
 )
 
-_view_to_phantom_set: dict[int, sublime.PhantomSet] = {}
+ViewId = int
+
+_view_to_phantom_set: dict[ViewId, sublime.PhantomSet] = {}
 
 
 class ViewCompletionManager:
@@ -343,8 +345,8 @@ class _PopupCompletion(_BaseCompletion):
             wrapper_class=self.CSS_CLASS_NAME,
         )
 
-    @staticmethod
-    def hide(view: sublime.View) -> None:
+    @classmethod
+    def hide(cls, view: sublime.View) -> None:
         mdpopups.hide_popup(view)
 
 

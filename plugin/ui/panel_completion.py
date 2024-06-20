@@ -7,7 +7,7 @@ import mdpopups
 import sublime
 from more_itertools import first_true, unique_everseen
 
-from ..types import CopilotPayloadPanelSolution, StLayout
+from ..schema import CopilotPayloadPanelSolution, StLayout
 from ..utils import (
     all_views,
     find_view_by_id,

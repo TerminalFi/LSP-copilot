@@ -5,34 +5,19 @@ import json
 import os
 import weakref
 from collections import defaultdict
-from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Callable, TypeVar, cast
 from urllib.parse import urlparse
 
 import sublime
 from LSP.plugin import ClientConfig, DottedDict, Request, Session, WorkspaceFolder
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
 
-from .constants import (
-    NTFY_FEATURE_FLAGS_NOTIFICATION,
-    NTFY_LOG_MESSAGE,
-    NTFY_PANEL_SOLUTION,
-    NTFY_PANEL_SOLUTION_DONE,
-    NTFY_STATUS_NOTIFICATION,
-    PACKAGE_NAME,
-    REQ_CHECK_STATUS,
-    REQ_GET_COMPLETIONS,
-    REQ_GET_COMPLETIONS_CYCLING,
-    REQ_GET_VERSION,
-    REQ_SET_EDITOR_INFO,
-)
+from .constants import PACKAGE_NAME
 from .log import log_warning
-from .template import render_template
-from .types import (
-    AccountStatus,
+from .schema import (
     CopilotPayloadCompletions,
     CopilotPayloadFeatureFlagsNotification,
     CopilotPayloadGetVersion,
@@ -41,8 +26,9 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadStatusNotification,
     NetworkProxy,
-    T_Callable,
 )
+from .template import render_template
+from .types import AccountStatus, NotificationKind, RequestKind
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     all_views,
@@ -54,6 +40,8 @@ from .utils import (
     status_message,
 )
 
+_T_Callable = TypeVar("_T_Callable", bound=Callable[..., Any])
+
 WindowId = int
 
 
@@ -63,13 +51,13 @@ class WindowAttr:
     """The weak reference of the LSP client instance for the window."""
 
 
-def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+def _guard_view(*, failed_return: Any = None) -> Callable[[_T_Callable], _T_Callable]:
     """
     The first two arguments have to be `self` and `view` for a decorated method.
     If `view` doesn't meeting some requirements, it will be early failed and return `failed_return`.
     """
 
-    def decorator(func: T_Callable) -> T_Callable:
+    def decorator(func: _T_Callable) -> _T_Callable:
         @wraps(func)
         def wrapped(self: Any, view: sublime.View, *arg, **kwargs) -> Any:
             view_settings = view.settings()
@@ -84,7 +72,7 @@ def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callab
 
             return func(self, view, *arg, **kwargs)
 
-        return cast(T_Callable, wrapped)
+        return cast(_T_Callable, wrapped)
 
     return decorator
 
@@ -154,9 +142,9 @@ class CopilotPlugin(NpmClientHandler):
         def _on_set_editor_info(result: str, failed: bool) -> None:
             pass
 
-        api.send_request(REQ_GET_VERSION, {}, _on_get_version)
-        api.send_request(REQ_CHECK_STATUS, {}, _on_check_status)
-        api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), _on_set_editor_info)
+        api.send_request(RequestKind.GET_VERSION, {}, _on_get_version)
+        api.send_request(RequestKind.CHECK_STATUS, {}, _on_check_status)
+        api.send_request(RequestKind.SET_EDITOR_INFO, self.editor_info(), _on_set_editor_info)
 
     def on_settings_changed(self, settings: DottedDict) -> None:
         def parse_proxy(proxy: str) -> NetworkProxy | None:
@@ -182,7 +170,7 @@ class CopilotPlugin(NpmClientHandler):
         if networkProxy := parse_proxy(settings.get("proxy") or ""):
             editor_info["networkProxy"] = networkProxy
 
-        session.send_request(Request(REQ_SET_EDITOR_INFO, editor_info), lambda response: None)
+        session.send_request(Request(RequestKind.SET_EDITOR_INFO, editor_info), lambda response: None)
         self.update_status_bar_text()
 
     @staticmethod
@@ -285,15 +273,15 @@ class CopilotPlugin(NpmClientHandler):
                 log_warning(f'Invalid "status_text" template: {e}')
         session.set_config_status_async(rendered_text)
 
-    @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
+    @notification_handler(NotificationKind.FEATURE_FLAGS_NOTIFICATION)
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
         pass
 
-    @notification_handler(NTFY_LOG_MESSAGE)
+    @notification_handler(NotificationKind.LOG_MESSAGE)
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
         pass
 
-    @notification_handler(NTFY_PANEL_SOLUTION)
+    @notification_handler(NotificationKind.PANEL_SOLUTION)
     def _handle_panel_solution_notification(self, payload: CopilotPayloadPanelSolution) -> None:
         if not (view := ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])):
             return
@@ -304,7 +292,7 @@ class CopilotPlugin(NpmClientHandler):
         completion_manager.append_completion(payload)
         completion_manager.update()
 
-    @notification_handler(NTFY_PANEL_SOLUTION_DONE)
+    @notification_handler(NotificationKind.PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
         if not (view := ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])):
             return
@@ -313,15 +301,15 @@ class CopilotPlugin(NpmClientHandler):
         completion_manager.is_waiting = False
         completion_manager.update()
 
-    @notification_handler(NTFY_STATUS_NOTIFICATION)
+    @notification_handler(NotificationKind.STATUS_NOTIFICATION)
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
         pass
 
     @_guard_view()
     @debounce()
     def request_get_completions(self, view: sublime.View) -> None:
-        self._request_completions(view, REQ_GET_COMPLETIONS, no_callback=True)
-        self._request_completions(view, REQ_GET_COMPLETIONS_CYCLING)
+        self._request_completions(view, RequestKind.GET_COMPLETIONS, no_callback=True)
+        self._request_completions(view, RequestKind.GET_COMPLETIONS_CYCLING)
 
     def _request_completions(self, view: sublime.View, request: str, *, no_callback: bool = False) -> None:
         completion_manager = ViewCompletionManager(view)

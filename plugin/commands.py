@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import os
 from abc import ABC
-from collections.abc import Callable
 from functools import partial, wraps
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Callable, TypeVar, cast
 
 import sublime
 from LSP.plugin import Request, Session
@@ -14,20 +13,8 @@ from LSP.plugin.core.url import filename_to_uri
 from lsp_utils.helpers import rmtree_ex
 
 from .client import CopilotPlugin
-from .constants import (
-    PACKAGE_NAME,
-    REQ_CHECK_STATUS,
-    REQ_FILE_CHECK_STATUS,
-    REQ_GET_PANEL_COMPLETIONS,
-    REQ_GET_VERSION,
-    REQ_NOTIFY_ACCEPTED,
-    REQ_NOTIFY_REJECTED,
-    REQ_SIGN_IN_CONFIRM,
-    REQ_SIGN_IN_INITIATE,
-    REQ_SIGN_IN_WITH_GITHUB_TOKEN,
-    REQ_SIGN_OUT,
-)
-from .types import (
+from .constants import PACKAGE_NAME
+from .schema import (
     CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,
     CopilotPayloadNotifyAccepted,
@@ -36,8 +23,8 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadSignInInitiate,
     CopilotPayloadSignOut,
-    T_Callable,
 )
+from .types import RequestKind
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     find_view_by_id,
@@ -48,32 +35,33 @@ from .utils import (
     status_message,
 )
 
+_T_Callable = TypeVar("_T_Callable", bound=Callable[..., Any])
+
 REQUIRE_NOTHING = 0
 REQUIRE_SIGN_IN = 1 << 0
 REQUIRE_NOT_SIGN_IN = 1 << 1
 REQUIRE_AUTHORIZED = 1 << 2
 
 
-def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[_T_Callable], _T_Callable]:
     """
     The first argument is always `self` for a decorated method.
     We want to provide `plugin` and `session` right after it. If we failed to find a `session`,
     then it will be early failed and return `failed_return`.
     """
 
-    def decorator(func: T_Callable) -> T_Callable:
+    def decorator(func: _T_Callable) -> _T_Callable:
         @wraps(func)
         def wrapped(self: Any, *arg, **kwargs) -> Any:
             if not isinstance(self, LspTextCommand):
                 raise RuntimeError('"_provide_session" decorator is only for LspTextCommand.')
 
             plugin, session = CopilotPlugin.plugin_session(self.view)
-            if not (plugin and session):
-                return failed_return
+            if plugin and session:
+                return func(self, plugin, session, *arg, **kwargs)
+            return failed_return
 
-            return func(self, plugin, session, *arg, **kwargs)
-
-        return cast(T_Callable, wrapped)
+        return cast(_T_Callable, wrapped)
 
     return decorator
 
@@ -125,8 +113,8 @@ class CopilotGetVersionCommand(CopilotTextCommand):
     requirement = REQUIRE_NOTHING
 
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        session.send_request(Request(REQ_GET_VERSION, {}), self._on_result_get_version)
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:  # type: ignore
+        session.send_request(Request(RequestKind.GET_VERSION, {}), self._on_result_get_version)
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
         message_dialog("Server version: {}", payload["version"])
@@ -134,19 +122,19 @@ class CopilotGetVersionCommand(CopilotTextCommand):
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:  # type: ignore
         plugin.request_get_completions(self.view)
 
 
 class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
-    def run(self, view_id: int, completion_index: int) -> None:
+    def run(self, view_id: int, completion_index: int) -> None:  # type: ignore
         if not (view := find_view_by_id(view_id)):
             return
         view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
 
 
 class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
-    def run(self, edit: sublime.Edit, completion_index: int) -> None:
+    def run(self, edit: sublime.Edit, completion_index: int) -> None:  # type: ignore
         completion_manager = ViewPanelCompletionManager(self.view)
         if not (completion := completion_manager.get_completion(completion_index)):
             return
@@ -154,7 +142,11 @@ class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
         # it seems that `completionText` always assume your cursor is at the end of the line
         source_line_region = self.view.line(sublime.Region(*completion["region"]))
         self.view.insert(edit, source_line_region.end(), completion["completionText"])
-        self.view.show(self.view.sel(), show_surrounds=False, animate=self.view.settings().get("animation_enabled"))
+        self.view.show(
+            self.view.sel(),
+            show_surrounds=False,
+            animate=bool(self.view.settings().get("animation_enabled")),
+        )
 
         completion_manager.close()
 
@@ -173,7 +165,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:  # type: ignore
         if not (completion_manager := ViewCompletionManager(self.view)).is_visible:
             return
 
@@ -187,35 +179,39 @@ class CopilotAcceptCompletionCommand(CopilotTextCommand):
         source_line_region = self.view.line(completion["point"])
         self.view.erase(edit, source_line_region)
         self.view.insert(edit, source_line_region.begin(), completion["text"])
-        self.view.show(self.view.sel(), show_surrounds=False, animate=self.view.settings().get("animation_enabled"))
+        self.view.show(
+            self.view.sel(),
+            show_surrounds=False,
+            animate=bool(self.view.settings().get("animation_enabled")),
+        )
 
         # notify the current completion as accepted
-        self._record_telemetry(session, REQ_NOTIFY_ACCEPTED, {"uuid": completion["uuid"]})
+        self._record_telemetry(session, RequestKind.NOTIFY_ACCEPTED, {"uuid": completion["uuid"]})
 
         # notify all other completions as rejected
         other_uuids = [completion["uuid"] for completion in completion_manager.completions]
         other_uuids.remove(completion["uuid"])
         if other_uuids:
-            self._record_telemetry(session, REQ_NOTIFY_REJECTED, {"uuids": other_uuids})
+            self._record_telemetry(session, RequestKind.NOTIFY_REJECTED, {"uuids": other_uuids})
 
 
 class CopilotRejectCompletionCommand(CopilotTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:  # type: ignore
         completion_manager = ViewCompletionManager(self.view)
         completion_manager.hide()
 
         # notify all completions as rejected
         self._record_telemetry(
             session,
-            REQ_NOTIFY_REJECTED,
+            RequestKind.NOTIFY_REJECTED,
             {"uuids": [completion["uuid"] for completion in completion_manager.completions]},
         )
 
 
 class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:  # type: ignore
         if not (params := prepare_completion_request(self.view)):
             return
 
@@ -225,7 +221,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         completion_manager.completions = []
 
         params["panelId"] = completion_manager.panel_id
-        session.send_request(Request(REQ_GET_PANEL_COMPLETIONS, params), self._on_result_get_panel_completions)
+        session.send_request(Request(RequestKind.GET_PANEL_COMPLETIONS, params), self._on_result_get_panel_completions)
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload["solutionCountTarget"]
@@ -235,12 +231,12 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
 
 class CopilotPreviousCompletionCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
+    def run(self, edit: sublime.Edit) -> None:
         ViewCompletionManager(self.view).show_previous_completion()
 
 
 class CopilotNextCompletionCommand(CopilotTextCommand):
-    def run(self, _: sublime.Edit) -> None:
+    def run(self, edit: sublime.Edit) -> None:
         ViewCompletionManager(self.view).show_next_completion()
 
 
@@ -248,9 +244,11 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
     requirement = REQUIRE_NOTHING
 
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:  # type: ignore
         local_checks = get_session_setting(session, "local_checks")
-        session.send_request(Request(REQ_CHECK_STATUS, {"localChecksOnly": local_checks}), self._on_result_check_status)
+        session.send_request(
+            Request(RequestKind.CHECK_STATUS, {"localChecksOnly": local_checks}), self._on_result_check_status
+        )
 
     def _on_result_check_status(self, payload: CopilotPayloadSignInConfirm | CopilotPayloadSignOut) -> None:
         if payload["status"] == "OK":
@@ -269,10 +267,10 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
 class CopilotCheckFileStatusCommand(CopilotTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:  # type: ignore
         file_path = self.view.file_name() or ""
         uri = file_path and filename_to_uri(file_path)
-        session.send_request(Request(REQ_FILE_CHECK_STATUS, {"uri": uri}), self._on_result_check_file_status)
+        session.send_request(Request(RequestKind.FILE_CHECK_STATUS, {"uri": uri}), self._on_result_check_file_status)
 
     def _on_result_check_file_status(self, payload: CopilotPayloadFileStatus) -> None:
         status_message("File is {} in session", payload["status"])
@@ -282,9 +280,9 @@ class CopilotSignInCommand(CopilotTextCommand):
     requirement = REQUIRE_NOT_SIGN_IN
 
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:  # type: ignore
         session.send_request(
-            Request(REQ_SIGN_IN_INITIATE, {}),
+            Request(RequestKind.SIGN_IN_INITIATE, {}),
             partial(self._on_result_sign_in_initiate, session),
         )
 
@@ -309,7 +307,7 @@ class CopilotSignInCommand(CopilotTextCommand):
         ):
             return
         session.send_request(
-            Request(REQ_SIGN_IN_CONFIRM, {"userCode": user_code}),
+            Request(RequestKind.SIGN_IN_CONFIRM, {"userCode": user_code}),
             self._on_result_sign_in_confirm,
         )
 
@@ -321,9 +319,9 @@ class CopilotSignInWithGithubTokenCommand(CopilotTextCommand):
     requirement = REQUIRE_NOT_SIGN_IN
 
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:  # type: ignore
         session.send_request(
-            Request(REQ_SIGN_IN_INITIATE, {}),
+            Request(RequestKind.SIGN_IN_INITIATE, {}),
             partial(self._on_result_sign_in_initiate, session),
         )
 
@@ -355,7 +353,7 @@ class CopilotSignInWithGithubTokenCommand(CopilotTextCommand):
             "Github Token",
             "ghu_",
             on_done=lambda token: session.send_request(
-                Request(REQ_SIGN_IN_WITH_GITHUB_TOKEN, {"githubToken": token, "user": username}),
+                Request(RequestKind.SIGN_IN_WITH_GITHUB_TOKEN, {"githubToken": token, "user": username}),
                 self._on_result_sign_in_confirm,
             ),
             on_change=None,
@@ -370,8 +368,8 @@ class CopilotSignOutCommand(CopilotTextCommand):
     requirement = REQUIRE_SIGN_IN
 
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        session.send_request(Request(REQ_SIGN_OUT, {}), self._on_result_sign_out)
+    def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:  # type: ignore
+        session.send_request(Request(RequestKind.SIGN_OUT, {}), self._on_result_sign_out)
 
     def _on_result_sign_out(self, payload: CopilotPayloadSignOut) -> None:
         if sublime.platform() == "windows":
