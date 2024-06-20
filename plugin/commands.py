@@ -5,7 +5,7 @@ from abc import ABC
 from collections.abc import Callable
 from functools import partial, wraps
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import sublime
 import sublime_plugin
@@ -21,6 +21,7 @@ from .constants import (
     REQ_CONVERSATION_AGENTS,
     REQ_CONVERSATION_CREATE,
     REQ_CONVERSATION_PRECONDITIONS,
+    REQ_CONVERSATION_RATING,
     REQ_CONVERSATION_TEMPLATES,
     REQ_CONVERSATION_TURN,
     REQ_FILE_CHECK_STATUS,
@@ -337,6 +338,32 @@ class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler)
         return
 
 
+class CopilotConversationRatingCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
+        session.send_request(
+            Request(
+                REQ_CONVERSATION_RATING,
+                {
+                    "turnId": turn_id,
+                    "rating": rating,
+                    # doc: H2.Type.Optional(Z0),
+                    # options: H2.Type.Optional(Mn),
+                    # source: H2.Type.Optional(sd),
+                },
+            ),
+            self._on_result_coversation_rating,
+        )
+
+    def _on_result_coversation_rating(self, payload: Literal["OK"]) -> None:
+        # Returns OK
+        pass
+
+    @_provide_plugin_session(failed_return=False)
+    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
+        return get_session_setting(session, "debug")
+
+
 class CopilotConversationAgentsCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
@@ -346,7 +373,7 @@ class CopilotConversationAgentsCommand(CopilotTextCommand):
         window = self.view.window()
         if not window:
             return
-        window.show_quick_panel([(item["id"], item["description"]) for item in payload], lambda x: None)
+        window.show_quick_panel([(item["id"], item["description"]) for item in payload], lambda _: None)
 
     @_provide_plugin_session(failed_return=False)
     def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
@@ -365,7 +392,7 @@ class CopilotConversationTemplatesCommand(CopilotTextCommand):
         if not window:
             return
         window.show_quick_panel(
-            [(item["id"], item["description"], ", ".join(item["scopes"])) for item in payload], lambda x: None
+            [(item["id"], item["description"], ", ".join(item["scopes"])) for item in payload], lambda _: None
         )
 
     @_provide_plugin_session(failed_return=False)
