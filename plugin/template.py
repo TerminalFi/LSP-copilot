@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
 
 import jinja2
+import sublime
+
+from .constants import PACKAGE_NAME
 
 JINJA_TEMPLATE_ENV = jinja2.Environment(
     extensions=[
@@ -14,9 +16,11 @@ JINJA_TEMPLATE_ENV = jinja2.Environment(
 
 
 @lru_cache
-def create_template(template: str) -> jinja2.Template:
+def load_string_template(template: str) -> jinja2.Template:
     return JINJA_TEMPLATE_ENV.from_string(template)
 
 
-def render_template(template: str, variables: dict[str, Any]) -> str:
-    return create_template(template).render(variables)
+@lru_cache
+def load_resource_template(resource_name: str) -> jinja2.Template:
+    content = sublime.load_resource(f"Packages/{PACKAGE_NAME}/plugin/templates/{resource_name}")
+    return load_string_template(content)
