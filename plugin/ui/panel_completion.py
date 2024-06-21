@@ -143,24 +143,6 @@ class ViewPanelCompletionManager:
 
 
 class _PanelCompletion:
-    CSS_CLASS_NAME = "copilot-completion-panel"
-    COMPLETION_TEMPLATE = reformat("""
-        <div class="navbar">
-            <a class="close" title="Close Completion Panel" href='{close_panel}'><i>×</i> Close</a>&nbsp;
-            <h4 class="synthesis-info">{synthesis_info}</h4>
-        </div>
-        <hr>
-        {sections}
-    """)
-    # We use many backticks to denote a fenced code block because if we are writing in Markdown,
-    # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
-    COMPLETION_SECTION_TEMPLATE = reformat("""
-        <div class="header">{header_items}</div>
-        ``````{lang}
-        {code}
-        ``````
-    """)
-
     def __init__(self, view: sublime.View) -> None:
         self.view = view
         self.completion_manager = ViewPanelCompletionManager(view)

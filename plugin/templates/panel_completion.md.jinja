@@ -72,11 +72,11 @@
 {% for section in sections %}
   <hr>
   <div class="header">
-    <a class="accept" title="Accept Completion" href='{{ section["accept_url"] }}'><i>✓</i> Accept</a>
+    <a class="accept" title="Accept Completion" href='{{ section.accept_url }}'><i>✓</i> Accept</a>
   </div>
 
-  ``````{{ section["lang"] }}
-  {{ section["code"] }}
+  ``````{{ section.lang }}
+  {{ section.code }}
   ``````
 
 {% endfor %}
