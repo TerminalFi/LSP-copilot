@@ -213,3 +213,11 @@ class CopilotPayloadConversationTemplate(TypedDict, total=True):
 class CopilotRequestCoversationAgent(TypedDict, total=True):
     id: str
     description: str
+
+
+class CopilotPayloadConversationContext(TypedDict, total=True):
+    conversationId: str
+    """E.g., `"e3b0d5e3-0c3b-4292-a5ea-15d6003e7c45"`."""
+    turnId: str
+    """E.g., `"09ac7601-6c28-4617-b3e4-13f5ff8502b7"`."""
+    skillId: Literal["current-editor", "project-labels", "recent-files"]

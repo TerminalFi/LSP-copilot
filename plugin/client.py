@@ -35,6 +35,7 @@ from .template import load_string_template
 from .types import (
     AccountStatus,
     CopilotPayloadCompletions,
+    CopilotPayloadConversationContext,
     CopilotPayloadFeatureFlagsNotification,
     CopilotPayloadGetVersion,
     CopilotPayloadLogMessage,
@@ -319,9 +320,13 @@ class CopilotPlugin(NpmClientHandler):
         pass
 
     @request_handler(REQ_CONVERSATION_CONTEXT)
-    def _handle_conversation_context_request(self, payload, respond: Callable[[Any], None]) -> None:
-        # {'conversationId': 'e3b0d5e3-0c3b-4292-a5ea-15d6003e7c45', 'turnId': '09ac7601-6c28-4617-b3e4-13f5ff8502b7', 'skillId': 'current-editor'}
-        print(f'{payload = }')
+    def _handle_conversation_context_request(
+        self,
+        payload: CopilotPayloadConversationContext,
+        respond: Callable[[Any], None],
+    ) -> None:
+        print(f"_handle_conversation_context_request {payload = }")
+        respond(None)  # what?
 
     @_guard_view()
     @debounce()

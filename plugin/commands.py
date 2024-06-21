@@ -236,7 +236,7 @@ class CopilotConversationCreateCommand(LspTextCommand):
         )
 
     def _on_result_conversation_turn(self, payload) -> None:
-        print(payload)
+        print(f"_on_result_conversation_turn {payload = }")
 
 
 class CopilotConversationContinueCommand(LspTextCommand):
@@ -270,7 +270,7 @@ class CopilotConversationContinueCommand(LspTextCommand):
             )
 
     def _on_result_conversation_turn(self, payload) -> None:
-        print(payload)
+        print(f"_on_result_conversation_turn {payload = }")
 
 
 class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler):
@@ -358,7 +358,7 @@ class CopilotConversationDestroyCommand(LspTextCommand):
         )
 
     def _on_result_coversation_destroy(self, payload) -> None:
-        print(payload)
+        print(f"_on_result_coversation_destroy {payload = }")
 
 
 class CopilotConversationTurnDeleteCommand(LspTextCommand):
