@@ -292,7 +292,7 @@ def _generate_completion_region(
 class CopilotIgnore:
     def __init__(self, window: sublime.Window):
         self.window = window
-        self.patterns = {}
+        self.patterns: dict[str, list[str]] = {}
         self.load_patterns()
 
     def log_info(self, message):
