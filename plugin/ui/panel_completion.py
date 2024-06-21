@@ -15,7 +15,6 @@ from ..utils import (
     fix_completion_syntax_highlight,
     get_copilot_view_setting,
     get_view_language_id,
-    reformat,
     remove_prefix,
     set_copilot_view_setting,
 )
