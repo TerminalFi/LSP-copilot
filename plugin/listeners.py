@@ -176,3 +176,6 @@ class EventListener(sublime_plugin.EventListener):
 
     def on_new_window(self, window: sublime.Window):
         CopilotIgnore(window).load_patterns()
+
+    def on_pre_close_window(self, window: sublime.Window):
+        CopilotIgnore(window).unload_patterns()

@@ -298,6 +298,10 @@ class CopilotIgnore:
     def log_info(self, message):
         print(f"[COPILOT IGNORE] {message}\n")
 
+    def unload_patterns(self):
+        self.patterns = {}
+        erase_copilot_setting(self.window, "copilot.copilotignore", "patterns")
+
     def load_patterns(self):
         self.patterns = {}
 
