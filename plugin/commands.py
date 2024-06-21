@@ -41,6 +41,7 @@ from .types import (
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
+    CopilotIgnore,
     find_view_by_id,
     get_session_setting,
     message_dialog,
@@ -389,3 +390,15 @@ class CopilotSignOutCommand(CopilotTextCommand):
         if not session_dir.is_dir():
             CopilotPlugin.set_account_status(signed_in=False, authorized=False)
             message_dialog("Sign out OK. Bye!")
+
+
+# --------------------------#
+#       DEBUG COMMANDS      #
+# --------------------------#
+
+
+class CopilotReloadCopilotIgnoreCommand(CopilotWindowCommand):
+    def run(self) -> None:
+        CopilotIgnore(self.window).load_patterns()
+
+        status_message("Reloaded CopilotIgnore.")
