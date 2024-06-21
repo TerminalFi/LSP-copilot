@@ -1,49 +1,20 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
-from functools import wraps
-from typing import Any, cast
+from typing import Any
 
 import sublime
 import sublime_plugin
 
 from .client import CopilotPlugin
-from .types import T_Callable
+from .decorators import _must_be_active_view_not_ignored
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     CopilotIgnore,
     get_copilot_view_setting,
     get_session_setting,
-    is_active_view,
     set_copilot_view_setting,
 )
-
-
-def _must_not_be_ignored(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
-    def decorator(func: T_Callable) -> T_Callable:
-        @wraps(func)
-        def wrapped(self: Any, *arg, **kwargs) -> Any:
-            if not CopilotIgnore(self.view.window()).trigger(self.view):
-                func(self, *arg, **kwargs)
-            return failed_return
-
-        return cast(T_Callable, wrapped)
-
-    return decorator
-
-
-def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
-    def decorator(func: T_Callable) -> T_Callable:
-        @wraps(func)
-        def wrapped(self: Any, *arg, **kwargs) -> Any:
-            if is_active_view(self.view):
-                return func(self, *arg, **kwargs)
-            return failed_return
-
-        return cast(T_Callable, wrapped)
-
-    return decorator
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
@@ -73,8 +44,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def _is_saving(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "_is_saving", value)
 
-    @_must_be_active_view()
-    @_must_not_be_ignored()
+    @_must_be_active_view_not_ignored()
     def on_modified_async(self) -> None:
         self._is_modified = True
 
@@ -147,8 +117,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_post_save_async(self) -> None:
         self._is_saving = False
 
-    @_must_be_active_view()
-    @_must_not_be_ignored()
+    @_must_be_active_view_not_ignored()
     def on_selection_modified_async(self) -> None:
         if not self._is_modified:
             ViewCompletionManager(self.view).handle_selection_change()

@@ -27,6 +27,7 @@ from .constants import (
     REQ_SIGN_IN_WITH_GITHUB_TOKEN,
     REQ_SIGN_OUT,
 )
+from .decorators import _must_be_active_view_not_ignored
 from .types import (
     CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,
@@ -109,6 +110,7 @@ class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, ABC):
 
         session.send_request(Request(request, payload), lambda _: None)
 
+    @_must_be_active_view_not_ignored()
     @_provide_plugin_session(failed_return=False)
     def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:  # type: ignore
         return self._can_meet_requirement(session)
