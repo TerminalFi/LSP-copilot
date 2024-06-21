@@ -20,6 +20,19 @@ from .utils import (
 )
 
 
+def _must_not_be_ignored(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+    def decorator(func: T_Callable) -> T_Callable:
+        @wraps(func)
+        def wrapped(self: Any, *arg, **kwargs) -> Any:
+            if not CopilotIgnore(self.view.window()).trigger(self.view):
+                func(self, *arg, **kwargs)
+            return failed_return
+
+        return cast(T_Callable, wrapped)
+
+    return decorator
+
+
 def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
@@ -36,7 +49,6 @@ def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable],
 class ViewEventListener(sublime_plugin.ViewEventListener):
     def __init__(self, view: sublime.View) -> None:
         super().__init__(view)
-        self.copilot_ignore = CopilotIgnore()
 
     @classmethod
     def applies_to_primary_view_only(cls) -> bool:
@@ -62,9 +74,8 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         set_copilot_view_setting(self.view, "_is_saving", value)
 
     @_must_be_active_view()
+    @_must_not_be_ignored()
     def on_modified_async(self) -> None:
-        if self.copilot_ignore.trigger(self.view):
-            return
         self._is_modified = True
 
         plugin, session = CopilotPlugin.plugin_session(self.view)
@@ -135,11 +146,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
     def on_post_save_async(self) -> None:
         self._is_saving = False
-        file_name = self.view.file_name()
-        if file_name and file_name.endswith(".copilotignore"):
-            self.copilot_ignore.load_patterns()
 
     @_must_be_active_view()
+    @_must_not_be_ignored()
     def on_selection_modified_async(self) -> None:
         if not self._is_modified:
             ViewCompletionManager(self.view).handle_selection_change()
@@ -164,3 +173,6 @@ class EventListener(sublime_plugin.EventListener):
                 return "noop", None
 
         return None
+
+    def on_new_window(self, window: sublime.Window):
+        CopilotIgnore(window).load_patterns()

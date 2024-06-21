@@ -106,16 +106,28 @@ def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -
     return code
 
 
+def get_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+    return instance.settings().get(f"{prefix}.{key}", default)
+
+
+def set_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+    instance.settings().set(f"{prefix}.{key}", default)
+
+
+def erase_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str) -> Any:
+    instance.settings().erase(f"{prefix}.{key}")
+
+
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
-    return view.settings().get(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}", default)
+    return get_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key, default)
 
 
 def set_copilot_view_setting(view: sublime.View, key: str, value: Any) -> None:
-    view.settings().set(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}", value)
+    set_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key, value)
 
 
 def erase_copilot_view_setting(view: sublime.View, key: str) -> None:
-    view.settings().erase(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}")
+    erase_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key)
 
 
 def get_project_relative_path(path: str) -> str:
@@ -278,32 +290,27 @@ def _generate_completion_region(
 
 
 class CopilotIgnore:
-    def __init__(self):
-        self.log = self.get_output_panel("Copilot Ignore")
+    def __init__(self, window: sublime.Window):
+        self.window = window
         self.patterns = {}
         self.load_patterns()
 
-    def get_output_panel(self, name):
-        window = sublime.active_window()
-        panel = window.create_output_panel(name)
-        window.run_command("show_panel", {"panel": f"output.{name}"})
-        return panel
-
     def log_info(self, message):
-        self.log.run_command("append", {"characters": f"[COPILOT IGNORE] {message}\n"})
+        print(f"[COPILOT IGNORE] {message}\n")
 
     def load_patterns(self):
         self.patterns = {}
 
         # Load workspace patterns
-        for folder in sublime.active_window().folders():
+        for folder in self.window.folders():
             self.add_patterns_from_file(os.path.join(folder, ".copilotignore"), folder)
 
-        self.log_info(f"Collected patterns: {self.patterns}")
+        set_copilot_setting(self.window, "copilot.copilotignore", "patterns", self.patterns)
+        # self.log_info(f"Collected patterns: {self.patterns}")
 
     def read_ignore_patterns(self, filepath):
         if os.path.exists(filepath):
-            self.log_info(f"Reading ignore patterns from: {filepath}")
+            # self.log_info(f"Reading ignore patterns from: {filepath}")
             with open(filepath) as file:
                 patterns = [line.strip() for line in file if line.strip()]
             return patterns
@@ -315,20 +322,21 @@ class CopilotIgnore:
             self.patterns[folder] = patterns
 
     def matches_any_pattern(self, file_path):
-        for folder, patterns in self.patterns.items():
+        loaded_patterns = get_copilot_setting(self.window, "copilot.copilotignore", "patterns", self.patterns)
+        for folder, patterns in loaded_patterns.items():
             if file_path.startswith(folder):
                 relative_path = os.path.relpath(file_path, folder)
                 for pattern in patterns:
                     if glob.globmatch(relative_path, pattern):
-                        self.log_info(f"File {file_path} matches pattern {pattern} in folder {folder}")
+                        # self.log_info(f"File {relative_path} matches pattern {pattern} in folder {folder}")
                         return True
 
-        self.log_info(f"File {file_path} does not match any patterns")
+        # self.log_info(f"File {file_path} does not match any patterns")
         return False
 
     def trigger(self, view: sublime.View):
         if not self.patterns:
-            self.log_info("No patterns configured in .copilotignore")
+            # self.log_info("No patterns configured in .copilotignore")
             return False
 
         file = view.file_name()
@@ -337,5 +345,5 @@ class CopilotIgnore:
             return False
 
         found_open_ignored_file = self.matches_any_pattern(file)
-        self.log_info(f"File is ignored by copilot: {found_open_ignored_file}")
-        return True
+        # self.log_info(f"File is ignored by copilot: {found_open_ignored_file}")
+        return found_open_ignored_file
