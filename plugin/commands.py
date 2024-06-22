@@ -19,8 +19,10 @@ from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
     REQ_CONVERSATION_AGENTS,
+    REQ_CONVERSATION_COPY_CODE,
     REQ_CONVERSATION_CREATE,
     REQ_CONVERSATION_DESTROY,
+    REQ_CONVERSATION_INSERT_CODE,
     REQ_CONVERSATION_PRECONDITIONS,
     REQ_CONVERSATION_RATING,
     REQ_CONVERSATION_TEMPLATES,
@@ -390,7 +392,7 @@ class CopilotConversationCopyCodeCommand(LspTextCommand):
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
         session.send_request(
             Request(
-                REQ_CONVERSATION_RATING,
+                REQ_CONVERSATION_COPY_CODE,
                 {
                     "turnId": turn_id,
                     "rating": rating,
@@ -416,7 +418,7 @@ class CopilotConversationInsertCodeCommand(LspTextCommand):
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
         session.send_request(
             Request(
-                REQ_CONVERSATION_RATING,
+                REQ_CONVERSATION_INSERT_CODE,
                 {
                     "turnId": turn_id,
                     "rating": rating,
