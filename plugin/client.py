@@ -268,19 +268,22 @@ class CopilotPlugin(NpmClientHandler):
         session = self.weaksession()
         return bool(session and session.session_view_for_view_async(view))
 
-    def update_status_bar_text(self) -> None:
+    def update_status_bar_text(self, variables: dict[str, Any] | None = None) -> None:
         if not (session := self.weaksession()):
             return
 
-        variables: dict[str, Any] = {
+        resolved_variables: dict[str, Any] = {
             "server_version": self.server_version,
             "server_version_gh": self.server_version_gh,
         }
 
+        if variables:
+            resolved_variables.update(variables)
+
         rendered_text = ""
         if template_text := str(session.config.settings.get("status_text") or ""):
             try:
-                rendered_text = render_template(template_text, variables)
+                rendered_text = render_template(template_text, resolved_variables)
             except Exception as e:
                 log_warning(f'Invalid "status_text" template: {e}')
         session.set_config_status_async(rendered_text)
