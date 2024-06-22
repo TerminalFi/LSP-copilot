@@ -349,5 +349,10 @@ class CopilotIgnore:
             return False
 
         found_open_ignored_file = self.matches_any_pattern(file)
+        if found_open_ignored_file:
+            # self.log_info(f"File is ignored by copilot: {found_open_ignored_file}")
+            set_copilot_view_setting(view, "is_copilot_ignored", True)
+        else:
+            erase_copilot_view_setting(view, "is_copilot_ignored")
         # self.log_info(f"File is ignored by copilot: {found_open_ignored_file}")
         return found_open_ignored_file
