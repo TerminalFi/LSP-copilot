@@ -334,7 +334,6 @@ class _PhantomCompletion(_BaseCompletion):
         first_line, *rest_lines = self.completion["displayText"].splitlines()
 
         assert self._phantom_set
-        self._phantom_set.update([])
         self._phantom_set.update([
             self._build_phantom(first_line, self.completion["point"] + 1, self.completion["point"]),
             # an empty phantom is required to prevent the cursor from jumping, even if there is only one line
@@ -347,4 +346,7 @@ class _PhantomCompletion(_BaseCompletion):
 
     @classmethod
     def close(cls, view: sublime.View) -> None:
-        del _view_to_phantom_set[view.id()]
+        try:
+            del _view_to_phantom_set[view.id()]
+        except KeyError:
+            pass
