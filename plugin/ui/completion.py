@@ -346,7 +346,4 @@ class _PhantomCompletion(_BaseCompletion):
 
     @classmethod
     def close(cls, view: sublime.View) -> None:
-        try:
-            del _view_to_phantom_set[view.id()]
-        except KeyError:
-            pass
+        _view_to_phantom_set.pop(view.id(), None)
