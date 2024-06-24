@@ -13,7 +13,7 @@ import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
 from LSP.plugin.core.url import filename_to_uri
-from more_itertools import first_true, unique_everseen
+from more_itertools import duplicates_everseen, first_true
 from wcmatch import glob
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
@@ -214,15 +214,15 @@ def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
 def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadCompletion]) -> None:
     """Preprocess the `completions` from "getCompletions" request."""
     # in-place de-duplication
-    unique_indexes: set[int] = set(
+    duplicate_indexes = list(
         map(
-            itemgetter(0),
-            unique_everseen(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
+            itemgetter(0),  # the index from enumerate
+            duplicates_everseen(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
         )
     )
-    for index in range(len(completions) - 1, -1, -1):
-        if index not in unique_indexes:
-            del completions[index]
+    # delete from the end to avoid changing the index during iteration
+    for index in reversed(duplicate_indexes):
+        del completions[index]
 
     # inject extra information for convenience
     for completion in completions:
