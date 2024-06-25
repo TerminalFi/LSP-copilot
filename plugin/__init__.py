@@ -19,7 +19,7 @@ from .commands import (
     CopilotSignInWithGithubTokenCommand,
     CopilotSignOutCommand,
 )
-from .listeners import EventListener, ViewEventListener
+from .listeners import EventListener, ViewEventListener, copilot_ignore_observer
 
 __all__ = (
     # ST: core
@@ -51,9 +51,12 @@ __all__ = (
 def plugin_loaded() -> None:
     """Executed when this plugin is loaded."""
     CopilotPlugin.setup()
+    copilot_ignore_observer.setup()
 
 
 def plugin_unloaded() -> None:
     """Executed when this plugin is unloaded."""
     CopilotPlugin.window_attrs.clear()
     CopilotPlugin.cleanup()
+    if copilot_ignore_observer:
+        copilot_ignore_observer.cleanup()
