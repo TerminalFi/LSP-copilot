@@ -291,6 +291,12 @@ class CopilotPlugin(NpmClientHandler):
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
         pass
 
+    def on_server_notification_async(self, notification) -> None:
+        if notification.method == "$/progress":
+            if notification.params["token"] == "copilot_chat":
+                if reply := notification.params["value"].get("reply"):
+                    status_message(reply, console_=True)
+
     @notification_handler(NTFY_LOG_MESSAGE)
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
         pass
@@ -325,7 +331,6 @@ class CopilotPlugin(NpmClientHandler):
         payload: CopilotPayloadConversationContext,
         respond: Callable[[Any], None],
     ) -> None:
-        print(f"_handle_conversation_context_request {payload = }")
         respond(None)  # what?
 
     @_guard_view()

@@ -226,7 +226,7 @@ class CopilotConversationCreateCommand(LspTextCommand):
                 {
                     "conversationId": payload["conversationId"],
                     "message": "Am I working in Sublime Text?",
-                    "workDoneToken": "5",  # Not sure where this comes from
+                    "workDoneToken": "copilot_chat",  # Not sure where this comes from
                     "doc": prepare_completion_request(self.view)["doc"],
                     "computeSuggestions": True,
                     "references": [prepare_completion_request(self.view)["doc"]],
