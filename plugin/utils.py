@@ -22,6 +22,12 @@ _T = TypeVar("_T")
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
 
 
+def all_windows(
+    window: sublime.Window | None = None,
+) -> Generator[sublime.Window, None, None]:
+    yield from [window] if window else sublime.windows()
+
+
 def all_views(
     window: sublime.Window | None = None,
     *,
@@ -93,6 +99,10 @@ def find_sheet_by_id(id: int) -> sublime.Sheet | None:
 
 def find_view_by_id(id: int) -> sublime.View | None:
     return first_true(all_views(include_transient=True), pred=lambda view: view.id() == id)
+
+
+def find_window_by_id(id: int) -> sublime.Window | None:
+    return first_true(all_windows(), pred=lambda window: window.id() == id)
 
 
 def is_active_view(obj: Any) -> bool:

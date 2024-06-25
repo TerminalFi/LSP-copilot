@@ -46,6 +46,7 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
+from .ui.chat import WindowConversationManager
 from .utils import (
     all_views,
     debounce,
@@ -293,9 +294,13 @@ class CopilotPlugin(NpmClientHandler):
 
     def on_server_notification_async(self, notification) -> None:
         if notification.method == "$/progress":
-            if notification.params["token"] == "copilot_chat":
-                if reply := notification.params["value"].get("reply"):
-                    status_message(reply, console_=True)
+            if (token := notification.params["token"]) and token.startswith("copilot_chat://"):
+                if (params := notification.params["value"]) and params.get("reply", None):
+                    if not (window := WindowConversationManager.find_window_by_token_id(token)):
+                        return
+                    conversation_manager = WindowConversationManager(window)
+                    conversation_manager.append_conversation_entry(params)
+                    conversation_manager.update()
 
     @notification_handler(NTFY_LOG_MESSAGE)
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:

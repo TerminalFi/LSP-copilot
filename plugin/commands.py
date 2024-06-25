@@ -207,7 +207,7 @@ class CopilotConversationCreateCommand(LspTextCommand):
                         "allSkills": True,
                         "skills": [],
                     },
-                    "workDoneToken": "5",
+                    "workDoneToken": f"copilot_chat://{self.view.window().id()}",
                     # "doc": Ji.Type.Optional(Z0),
                     # "computeSuggestions": Ji.Type.Optional(Ji.Type.Boolean()),
                     # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
@@ -226,7 +226,7 @@ class CopilotConversationCreateCommand(LspTextCommand):
                 {
                     "conversationId": payload["conversationId"],
                     "message": "Am I working in Sublime Text?",
-                    "workDoneToken": "copilot_chat",  # Not sure where this comes from
+                    "workDoneToken": f"copilot_chat://{self.view.window().id()}",  # Not sure where this comes from
                     "doc": prepare_completion_request(self.view)["doc"],
                     "computeSuggestions": True,
                     "references": [prepare_completion_request(self.view)["doc"]],
@@ -238,45 +238,46 @@ class CopilotConversationCreateCommand(LspTextCommand):
         )
 
     def _on_result_conversation_turn(self, payload) -> None:
-        print(f"_on_result_conversation_turn {payload = }")
+        pass
 
 
 class CopilotConversationContinueCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str, *args, **kwargs):
-        conversation_manager = WindowConversationManager(self.view.window())
-        session.send_request(
-            Request(
-                REQ_CONVERSATION_TURN,
-                {
-                    "conversationId": conversation_manager.conversation_id,
-                    "message": message,
-                    "workDoneToken": "5",  # Not sure where this comes from
-                    # "doc": Ji.Type.Optional(Z0),
-                    "computeSuggestions": True,
-                    # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
-                    # "source": Ji.Type.Optional(sd),
-                    # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
-                },
-            ),
-            self._on_result_conversation_turn,
-        )
+        pass
 
     @_provide_plugin_session()
     def input(self, plugin: CopilotPlugin, session: Session, args):
         conversation_manager = WindowConversationManager(self.view.window())
         if "messages" not in args:
+            if chat := args.get("chat"):
+                session.send_request(
+                    Request(
+                        REQ_CONVERSATION_TURN,
+                        {
+                            "conversationId": conversation_manager.conversation_id,
+                            "message": chat,
+                            "workDoneToken": f"copilot_chat://{self.view.window().id()}",  # Not sure where this comes from
+                            # "doc": Ji.Type.Optional(Z0),
+                            "computeSuggestions": True,
+                            # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
+                            # "source": Ji.Type.Optional(sd),
+                            # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
+                        },
+                    ),
+                    self._on_result_conversation_turn,
+                )
             return CopilotConversationDialogTextInputHandler(
                 self.view,
-                [f"conversation: {conversation_manager.conversation_id}"] + conversation_manager.conversation_history,
+                conversation_manager.conversation,
             )
 
     def _on_result_conversation_turn(self, payload) -> None:
-        print(f"_on_result_conversation_turn {payload = }")
+        pass
 
 
 class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler):
-    def __init__(self, view: sublime.View, conversation_history: list[str]) -> None:
+    def __init__(self, view: sublime.View, conversation_history) -> None:
         self.view = view
         self.conversation_history = conversation_history
 
@@ -307,7 +308,7 @@ class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler)
                 color: var(--orangish);
             }}
         </style>
-        {"".join(f"<p>{line}</p><hr>" for line in self.conversation_history)}
+        {"".join(f"<p>{entry['reply']}</p><hr>" for entry in self.conversation_history)}
         """
         if text:
             content = sublime.Html(f"{history}<span class='user'>User</span>: {text}")
@@ -336,7 +337,7 @@ class CopilotConversationRatingCommand(LspTextCommand):
             self._on_result_coversation_rating,
         )
 
-    def _on_result_coversation_rating(self, payload: Literal["OK"]) -> None:
+    def _on_result_coversation_rating(self, payload: Literal[OK]) -> None:
         # Returns OK
         pass
 
@@ -404,7 +405,7 @@ class CopilotConversationCopyCodeCommand(LspTextCommand):
             self._on_result_coversation_rating,
         )
 
-    def _on_result_coversation_rating(self, payload: Literal["OK"]) -> None:
+    def _on_result_coversation_rating(self, payload: Literal[OK]) -> None:
         # Returns OK
         pass
 
@@ -430,7 +431,7 @@ class CopilotConversationInsertCodeCommand(LspTextCommand):
             self._on_result_coversation_rating,
         )
 
-    def _on_result_coversation_rating(self, payload: Literal["OK"]) -> None:
+    def _on_result_coversation_rating(self, payload: Literal[OK]) -> None:
         # Returns OK
         pass
 

@@ -5,7 +5,9 @@ import sublime
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
 from ..types import CopilotPayloadConversationEntry
 from ..utils import (
+    find_window_by_id,
     get_copilot_setting,
+    remove_prefix,
     set_copilot_setting,
 )
 
@@ -61,13 +63,22 @@ class WindowConversationManager:
 
     def __init__(self, window: sublime.Window) -> None:
         self.window = window
-        self.conversation_history = []
 
     def reset(self) -> None:
         self.is_waiting = False
         self.is_visible = False
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
-        conversation_history = self.conversation_history
+        conversation_history = self.conversation
         conversation_history.append(entry)
-        self.conversation_history = conversation_history
+        self.conversation = conversation_history
+
+    @staticmethod
+    def find_window_by_token_id(token_id: str) -> sublime.Window | None:
+        window_id = int(remove_prefix(token_id, "copilot_chat://"))
+        return find_window_by_id(window_id)
+
+    def update(self):
+        if not (view := self.window.active_view()):
+            return
+        view.run_command("copilot_conversation_continue")
