@@ -8,7 +8,6 @@ from ..utils import (
     find_view_by_id,
     find_window_by_id,
     get_copilot_setting,
-    reformat,
     remove_prefix,
     set_copilot_setting,
 )
@@ -152,7 +151,7 @@ class _ConversationEntry:
                 prefix = f"{current_kind}: "
             else:
                 prefix = ""
-            entry = reformat(entry["reply"])
+            entry = entry["reply"]
             if current_kind == "system" and entry.startswith("```"):
                 entry = f"\n{entry}\n"
             conversation_lines.append(f"{prefix}{entry}\n")
@@ -175,8 +174,7 @@ class _ConversationEntry:
             return
         view.set_read_only(False)
         view.run_command("move_to", {"to": "eof"})
-        view.run_command("insert", {"characters": self.conversation_content(all=False)})
-        print(self.conversation_content)
+        view.run_command("append", {"characters": self.conversation_content(all=False)})
         view.set_read_only(True)
 
     def close(self) -> None:
@@ -200,7 +198,6 @@ class _ConversationEntry:
         view.set_read_only(False)
         view.run_command("move_to", {"to": "eof"})
         view.run_command("insert", {"characters": self.conversation_content(all=True)})
-        print(self.conversation_content)
         view.set_read_only(True)
         self.conversation_manager.view_id = view.id()
 
