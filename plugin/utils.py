@@ -328,9 +328,7 @@ class CopilotIgnore:
         for folder, patterns in loaded_patterns.items():
             if file_path.startswith(folder):
                 relative_path = os.path.relpath(file_path, folder)
-                for pattern in patterns:
-                    if glob.globmatch(relative_path, pattern):
-                        return True
+                return glob.globmatch(relative_path, patterns, flags=glob.GLOBSTAR)
         return False
 
     def trigger(self, view: sublime.View):
