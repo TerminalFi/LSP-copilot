@@ -8,6 +8,7 @@ from ..utils import (
     find_view_by_id,
     find_window_by_id,
     get_copilot_setting,
+    reformat,
     remove_prefix,
     set_copilot_setting,
 )
@@ -137,8 +138,7 @@ class _ConversationEntry:
         self.window = window
         self.conversation_manager = WindowConversationManager(window)
 
-    @property
-    def conversation_content(self) -> str:
+    def conversation_content(self, all: bool) -> str:
         conversation_lines = []
         previous_kind = None
 
@@ -152,11 +152,14 @@ class _ConversationEntry:
                 prefix = f"{current_kind}: "
             else:
                 prefix = ""
-
-            conversation_lines.append(f"{prefix}{entry['reply']}")
+            entry = reformat(entry["reply"])
+            if current_kind == "system" and entry.startswith("```"):
+                entry = f"\n{entry}\n"
+            conversation_lines.append(f"{prefix}{entry}\n")
             previous_kind = current_kind
-
-        return "\n".join(conversation_lines)
+        if not all and len(conversation_lines) > 0:
+            return conversation_lines[-1]
+        return "".join(conversation_lines)
 
     def open(self) -> None:
         active_group = self.window.active_group()
@@ -171,9 +174,9 @@ class _ConversationEntry:
         if not (view := find_view_by_id(self.conversation_manager.view_id)):
             return
         view.set_read_only(False)
-        view.run_command("select_all")
-        view.run_command("left_delete")
-        view.run_command("insert", {"characters": self.conversation_content})
+        view.run_command("move_to", {"to": "eof"})
+        view.run_command("insert", {"characters": self.conversation_content(all=False)})
+        print(self.conversation_content)
         view.set_read_only(True)
 
     def close(self) -> None:
@@ -192,12 +195,12 @@ class _ConversationEntry:
 
         window.focus_group(group_id)
         view = window.new_file()
+        view.set_syntax_file("Packages/Markdown/Markdown.sublime-syntax")
         view.set_name("Copilot Chat")
-        view.set_scratch(False)
-        # erase view
-        view.run_command("select_all")
-        view.run_command("left_delete")
-        view.run_command("insert", {"characters": self.conversation_content})
+        view.set_read_only(False)
+        view.run_command("move_to", {"to": "eof"})
+        view.run_command("insert", {"characters": self.conversation_content(all=True)})
+        print(self.conversation_content)
         view.set_read_only(True)
         self.conversation_manager.view_id = view.id()
 
