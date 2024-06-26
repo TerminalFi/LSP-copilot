@@ -38,6 +38,7 @@ from .constants import (
     REQ_SIGN_IN_WITH_GITHUB_TOKEN,
     REQ_SIGN_OUT,
 )
+from .decorators import _must_be_active_view_not_ignored
 from .types import (
     CopilotPayloadConversationTemplate,
     CopilotPayloadFileStatus,
@@ -122,6 +123,13 @@ class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, ABC):
 
         session.send_request(Request(request, payload), lambda _: None)
 
+    @_must_be_active_view_not_ignored(failed_return=False)
+    @_provide_plugin_session(failed_return=False)
+    def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:  # type: ignore
+        return self._can_meet_requirement(session)
+
+
+class CopilotIgnoreExemptTextCommand(CopilotTextCommand):
     @_provide_plugin_session(failed_return=False)
     def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:  # type: ignore
         return self._can_meet_requirement(session)
@@ -134,7 +142,7 @@ class CopilotWindowCommand(BaseCopilotCommand, LspWindowCommand, ABC):
         return self._can_meet_requirement(session)
 
 
-class CopilotGetVersionCommand(CopilotTextCommand):
+class CopilotGetVersionCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_NOTHING
 
     @_provide_plugin_session()
@@ -155,6 +163,8 @@ class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
     def run(self, view_id: int, completion_index: int) -> None:
         if not (view := find_view_by_id(view_id)):
             return
+        # Focus the view so that the command runs
+        self.window.focus_view(view)
         view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
 
 
@@ -583,7 +593,7 @@ class CopilotCheckFileStatusCommand(CopilotTextCommand):
         status_message("File is {} in session", payload["status"])
 
 
-class CopilotSignInCommand(CopilotTextCommand):
+class CopilotSignInCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_NOT_SIGN_IN
 
     @_provide_plugin_session()
@@ -622,7 +632,7 @@ class CopilotSignInCommand(CopilotTextCommand):
         self.view.run_command("copilot_check_status")
 
 
-class CopilotSignInWithGithubTokenCommand(CopilotTextCommand):
+class CopilotSignInWithGithubTokenCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_NOT_SIGN_IN
 
     @_provide_plugin_session()
@@ -671,7 +681,7 @@ class CopilotSignInWithGithubTokenCommand(CopilotTextCommand):
         self.view.run_command("copilot_check_status")
 
 
-class CopilotSignOutCommand(CopilotTextCommand):
+class CopilotSignOutCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_SIGN_IN
 
     @_provide_plugin_session()
