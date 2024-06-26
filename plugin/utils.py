@@ -312,11 +312,11 @@ class CopilotIgnore:
         for view in all_views():
             erase_copilot_view_setting(view, "is_copilot_ignored")
 
-    def log_info(self, message):
+    def log_info(self, message: str):
         print(f"[COPILOT IGNORE] {message}\n")
 
     def unload_patterns(self):
-        self.patterns = {}
+        self.patterns.clear()
         erase_copilot_setting(self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns")
 
     def load_patterns(self):
@@ -328,26 +328,27 @@ class CopilotIgnore:
 
         set_copilot_setting(self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns", self.patterns)
 
-    def read_ignore_patterns(self, filepath):
+    def read_ignore_patterns(self, filepath: str):
         if os.path.exists(filepath):
             with open(filepath) as file:
                 patterns = [line.strip() for line in file if line.strip()]
             return patterns
         return []
 
-    def add_patterns_from_file(self, filepath, folder):
+    def add_patterns_from_file(self, filepath: str, folder: str):
         patterns = self.read_ignore_patterns(filepath)
         if patterns:
             self.patterns[folder] = patterns
 
-    def matches_any_pattern(self, file_path):
+    def matches_any_pattern(self, file_path: str) -> bool:
         loaded_patterns = get_copilot_setting(
             self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns", self.patterns
         )
         for folder, patterns in loaded_patterns.items():
             if file_path.startswith(folder):
                 relative_path = os.path.relpath(file_path, folder)
-                return glob.globmatch(relative_path, patterns, flags=glob.GLOBSTAR)
+                if glob.globmatch(relative_path, patterns, flags=glob.GLOBSTAR):
+                    return True
         return False
 
     def trigger(self, view: sublime.View):
@@ -355,13 +356,12 @@ class CopilotIgnore:
             return False
 
         file = view.file_name()
-
         if not file:
             return False
 
-        found_open_ignored_file = self.matches_any_pattern(file)
-        if found_open_ignored_file:
+        if self.matches_any_pattern(file):
             set_copilot_view_setting(view, "is_copilot_ignored", True)
+            return True
         else:
             erase_copilot_view_setting(view, "is_copilot_ignored")
-        return found_open_ignored_file
+            return False
