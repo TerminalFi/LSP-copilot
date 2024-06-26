@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from plugin.utils import CopilotIgnore
-
 from .client import CopilotPlugin
 from .commands import (
     CopilotAcceptCompletionCommand,
@@ -21,6 +19,7 @@ from .commands import (
     CopilotSignOutCommand,
 )
 from .listeners import EventListener, ViewEventListener, copilot_ignore_observer
+from .utils import CopilotIgnore
 
 __all__ = (
     # ST: core
