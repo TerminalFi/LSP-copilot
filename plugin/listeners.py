@@ -12,6 +12,7 @@ from .client import CopilotPlugin
 from .decorators import _must_be_active_view_not_ignored
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
+    CopilotIgnore,
     get_copilot_view_setting,
     get_session_setting,
     set_copilot_view_setting,
@@ -165,16 +166,20 @@ class CopilotIgnoreHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if not event.is_directory and event.src_path.endswith(self.filename):
-            print("ignore updated")
-            print(event.src_path)
-            # Update patterns for specific window and folder
-            pass
+            self.update_window_patterns(event.src_path)
 
     def on_created(self, event):
         if not event.is_directory and event.src_path.endswith(self.filename):
-            print("ignore updated")
+            self.update_window_patterns(event.src_path)
+
+    def update_window_patterns(self, path: str):
+        windows = sublime.windows()
+        for window in windows:
+            if not self._best_matched_folder(path, window.folders()):
+                continue
             # Update patterns for specific window and folder
-            pass
+            CopilotIgnore(window).load_patterns()
+            return
 
     def _best_matched_folder(self, path: str, folders: list[str]) -> str | None:
         matching_folder = None

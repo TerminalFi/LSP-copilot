@@ -153,7 +153,7 @@ class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):
         view.run_command("copilot_accept_panel_completion", {"completion_index": completion_index})
 
 
-class CopilotAcceptPanelCompletionCommand(CopilotTextCommand):
+class CopilotAcceptPanelCompletionCommand(CopilotIgnoreExemptTextCommand):
     def run(self, edit: sublime.Edit, completion_index: int) -> None:
         completion_manager = ViewPanelCompletionManager(self.view)
         if not (completion := completion_manager.get_completion(completion_index)):
