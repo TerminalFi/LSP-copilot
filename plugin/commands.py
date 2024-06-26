@@ -111,7 +111,7 @@ class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, ABC):
 
         session.send_request(Request(request, payload), lambda _: None)
 
-    @_must_be_active_view_not_ignored()
+    @_must_be_active_view_not_ignored(failed_return=False)
     @_provide_plugin_session(failed_return=False)
     def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:  # type: ignore
         return self._can_meet_requirement(session)
