@@ -20,10 +20,6 @@
         "command": "copilot_sign_in"
     },
     {
-        "caption": "Copilot: Reload Copilot Ignore Patterns",
-        "command": "copilot_reload_copilot_ignore"
-    },
-    {
         "caption": "Copilot: Sign In with Github Token",
         "command": "copilot_sign_in_with_github_token"
     },

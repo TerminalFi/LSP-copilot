@@ -41,7 +41,6 @@ from .types import (
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
-    CopilotIgnore,
     find_view_by_id,
     get_session_setting,
     message_dialog,
@@ -117,6 +116,12 @@ class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, ABC):
         return self._can_meet_requirement(session)
 
 
+class CopilotIgnoreExemptTextCommand(CopilotTextCommand):
+    @_provide_plugin_session(failed_return=False)
+    def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:  # type: ignore
+        return self._can_meet_requirement(session)
+
+
 class CopilotWindowCommand(BaseCopilotCommand, LspWindowCommand, ABC):
     def is_enabled(self) -> bool:
         if not (session := self.session()):
@@ -124,7 +129,7 @@ class CopilotWindowCommand(BaseCopilotCommand, LspWindowCommand, ABC):
         return self._can_meet_requirement(session)
 
 
-class CopilotGetVersionCommand(CopilotTextCommand):
+class CopilotGetVersionCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_NOTHING
 
     @_provide_plugin_session()
@@ -174,7 +179,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
         completion_manager.close()
 
 
-class CopilotAcceptCompletionCommand(CopilotTextCommand):
+class CopilotAcceptCompletionCommand(CopilotIgnoreExemptTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:
         if not (completion_manager := ViewCompletionManager(self.view)).is_visible:
@@ -202,7 +207,7 @@ class CopilotAcceptCompletionCommand(CopilotTextCommand):
             self._record_telemetry(session, REQ_NOTIFY_REJECTED, {"uuids": other_uuids})
 
 
-class CopilotRejectCompletionCommand(CopilotTextCommand):
+class CopilotRejectCompletionCommand(CopilotIgnoreExemptTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         completion_manager = ViewCompletionManager(self.view)
@@ -247,7 +252,7 @@ class CopilotNextCompletionCommand(CopilotTextCommand):
         ViewCompletionManager(self.view).show_next_completion()
 
 
-class CopilotCheckStatusCommand(CopilotTextCommand):
+class CopilotCheckStatusCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_NOTHING
 
     @_provide_plugin_session()
@@ -281,7 +286,7 @@ class CopilotCheckFileStatusCommand(CopilotTextCommand):
         status_message("File is {} in session", payload["status"])
 
 
-class CopilotSignInCommand(CopilotTextCommand):
+class CopilotSignInCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_NOT_SIGN_IN
 
     @_provide_plugin_session()
@@ -320,7 +325,7 @@ class CopilotSignInCommand(CopilotTextCommand):
         self.view.run_command("copilot_check_status")
 
 
-class CopilotSignInWithGithubTokenCommand(CopilotTextCommand):
+class CopilotSignInWithGithubTokenCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_NOT_SIGN_IN
 
     @_provide_plugin_session()
@@ -369,7 +374,7 @@ class CopilotSignInWithGithubTokenCommand(CopilotTextCommand):
         self.view.run_command("copilot_check_status")
 
 
-class CopilotSignOutCommand(CopilotTextCommand):
+class CopilotSignOutCommand(CopilotIgnoreExemptTextCommand):
     requirement = REQUIRE_SIGN_IN
 
     @_provide_plugin_session()
@@ -390,15 +395,3 @@ class CopilotSignOutCommand(CopilotTextCommand):
         if not session_dir.is_dir():
             CopilotPlugin.set_account_status(signed_in=False, authorized=False)
             message_dialog("Sign out OK. Bye!")
-
-
-# --------------------------#
-#       DEBUG COMMANDS      #
-# --------------------------#
-
-
-class CopilotReloadCopilotIgnoreCommand(CopilotWindowCommand):
-    def run(self) -> None:
-        CopilotIgnore(self.window).load_patterns()
-
-        status_message("Reloaded CopilotIgnore.")
