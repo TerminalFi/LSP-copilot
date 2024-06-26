@@ -301,7 +301,7 @@ class CopilotPlugin(NpmClientHandler):
                 if (params := notification.params["value"]) and params.get("reply", None):
                     if not (window := WindowConversationManager.find_window_by_token_id(token)):
                         return
-                    conversation_manager = WindowConversationManager(None, window)
+                    conversation_manager = WindowConversationManager(window)
                     conversation_manager.append_conversation_entry(params)
                     conversation_manager.update()
 

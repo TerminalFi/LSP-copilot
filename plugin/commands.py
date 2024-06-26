@@ -25,6 +25,7 @@ from .constants import (
     REQ_CONVERSATION_PRECONDITIONS,
     REQ_CONVERSATION_RATING,
     REQ_CONVERSATION_TEMPLATES,
+    REQ_CONVERSATION_TURN,
     REQ_CONVERSATION_TURN_DELETE,
     REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
@@ -225,11 +226,41 @@ class CopilotConversationCreateCommand(LspTextCommand):
         )
 
     def _on_result_conversation_create(self, session, payload) -> None:
-        manager = WindowConversationManager(session, self.view.window())
+        manager = WindowConversationManager(self.view.window())
         manager.last_active_view_id = self.view.id()
         manager.conversation_id = payload["conversationId"]
         manager.open()
-        manager.prompt()
+        manager.prompt(callback=lambda x: self._on_prompt(session, x))
+
+    def _on_prompt(self, session: Session, msg: str):
+        manager = WindowConversationManager(self.view.window())
+        manager.append_conversation_entry({
+            "kind": "user",
+            "conversationId": manager.conversation_id,
+            "reply": msg,
+            "turnId": "user",
+            "annotations": [],
+            "hideText": False,
+        })
+        manager.is_waiting = True
+        view_last_active_view = find_view_by_id(manager.last_active_view_id)
+
+        session.send_request(
+            Request(
+                REQ_CONVERSATION_TURN,
+                {
+                    "conversationId": manager.conversation_id,
+                    "message": msg,
+                    "workDoneToken": f"copilot_chat://{self.view.window().id()}",  # Not sure where this comes from
+                    "doc": prepare_completion_request(view_last_active_view)["doc"],
+                    "computeSuggestions": True,
+                    "references": [],
+                    "source": "panel",
+                },
+            ),
+            manager.prompt(callback=lambda x: self._on_prompt(session, x)),
+        )
+        manager.update()
 
 
 class CopilotConversationRatingCommand(LspTextCommand):

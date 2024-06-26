@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import sublime
-from lsp_utils._client_handler.abstract_plugin import Request, Session
 
-from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, REQ_CONVERSATION_TURN
+from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
 from ..types import CopilotPayloadConversationEntry, StLayout
 from ..utils import (
     find_view_by_id,
     find_window_by_id,
     get_copilot_setting,
-    prepare_completion_request,
     remove_prefix,
     set_copilot_setting,
 )
@@ -102,9 +100,8 @@ class WindowConversationManager:
     # normal methods #
     # -------------- #
 
-    def __init__(self, session: Session, window: sublime.Window) -> None:
+    def __init__(self, window: sublime.Window) -> None:
         self.window = window
-        self.session = session
 
     def reset(self) -> None:
         self.is_waiting = False
@@ -120,54 +117,25 @@ class WindowConversationManager:
         window_id = int(remove_prefix(token_id, "copilot_chat://"))
         return find_window_by_id(window_id)
 
-    def prompt(self):
-        self.window.show_input_panel("Copilot Chat", "", self._update_conversation_panel, None, None)
-
-    def _update_conversation_panel(self, message: str) -> None:
-        self.append_conversation_entry({
-            "kind": "user",
-            "conversationId": self.conversation_id,
-            "reply": message,
-            "turnId": "user",
-            "annotations": [],
-            "hideText": False,
-        })
-        self.is_waiting = True
-        view_last_active_view = find_view_by_id(self.last_active_view_id)
-        self.session.send_request(
-            Request(
-                REQ_CONVERSATION_TURN,
-                {
-                    "conversationId": self.conversation_id,
-                    "message": message,
-                    "workDoneToken": f"copilot_chat://{self.window.id()}",  # Not sure where this comes from
-                    "doc": prepare_completion_request(view_last_active_view)["doc"],
-                    "computeSuggestions": True,
-                    "references": [],
-                    "source": "panel",
-                },
-            ),
-            self.prompt(),
-        )
-        self.update()
+    def prompt(self, callback):
+        self.window.show_input_panel("Copilot Chat", "", callback, None, None)
 
     def open(self, *, completion_target_count: int | None = None) -> None:
-        _ConversationEntry(self.session, self.window).open()
+        _ConversationEntry(self.window).open()
 
     def update(self) -> None:
         """Update the completion panel."""
-        _ConversationEntry(self.session, self.window).update()
-        self.prompt()
+        _ConversationEntry(self.window).update()
 
     def close(self) -> None:
         """Close the completion panel."""
-        _ConversationEntry(self.session, self.window).close()
+        _ConversationEntry(self.window).close()
 
 
 class _ConversationEntry:
-    def __init__(self, session: Session, window: sublime.Window) -> None:
+    def __init__(self, window: sublime.Window) -> None:
         self.window = window
-        self.conversation_manager = WindowConversationManager(session, window)
+        self.conversation_manager = WindowConversationManager(window)
 
     @property
     def conversation_content(self) -> str:
