@@ -60,10 +60,8 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             plugin.request_get_completions(self.view)
 
     def on_activated_async(self) -> None:
-        if CopilotPlugin.from_view(self.view):
-            if not copilot_ignore_observer:
-                return
-            copilot_ignore_observer.add_folders(self.view.window().folders())
+        if (window := self.view.window()) and CopilotPlugin.from_view(self.view) and copilot_ignore_observer:
+            copilot_ignore_observer.add_folders(window.folders())
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()
