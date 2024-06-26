@@ -5,6 +5,7 @@ assert __package__
 PACKAGE_NAME = __package__.partition(".")[0]
 
 COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
+COPILOT_WINDOW_SETTINGS_PREFIX = "copilot"
 
 # ---------------- #
 # Copilot requests #

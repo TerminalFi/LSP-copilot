@@ -16,7 +16,7 @@ from LSP.plugin.core.url import filename_to_uri
 from more_itertools import duplicates_everseen, first_true
 from wcmatch import glob
 
-from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
+from .constants import COPILOT_VIEW_SETTINGS_PREFIX, COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
 
 _T = TypeVar("_T")
@@ -295,12 +295,19 @@ class CopilotIgnore:
         self.patterns: dict[str, list[str]] = {}
         self.load_patterns()
 
+    @classmethod
+    def cleanup(cls):
+        for window in sublime.windows():
+            erase_copilot_setting(window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns")
+        for view in all_views():
+            erase_copilot_view_setting(view, "is_copilot_ignored")
+
     def log_info(self, message):
         print(f"[COPILOT IGNORE] {message}\n")
 
     def unload_patterns(self):
         self.patterns = {}
-        erase_copilot_setting(self.window, "copilot.copilotignore", "patterns")
+        erase_copilot_setting(self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns")
 
     def load_patterns(self):
         self.patterns = {}
@@ -309,7 +316,7 @@ class CopilotIgnore:
         for folder in self.window.folders():
             self.add_patterns_from_file(os.path.join(folder, ".copilotignore"), folder)
 
-        set_copilot_setting(self.window, "copilot.copilotignore", "patterns", self.patterns)
+        set_copilot_setting(self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns", self.patterns)
 
     def read_ignore_patterns(self, filepath):
         if os.path.exists(filepath):
@@ -324,7 +331,9 @@ class CopilotIgnore:
             self.patterns[folder] = patterns
 
     def matches_any_pattern(self, file_path):
-        loaded_patterns = get_copilot_setting(self.window, "copilot.copilotignore", "patterns", self.patterns)
+        loaded_patterns = get_copilot_setting(
+            self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns", self.patterns
+        )
         for folder, patterns in loaded_patterns.items():
             if file_path.startswith(folder):
                 relative_path = os.path.relpath(file_path, folder)

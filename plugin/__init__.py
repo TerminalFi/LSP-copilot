@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from plugin.utils import CopilotIgnore
+
 from .client import CopilotPlugin
 from .commands import (
     CopilotAcceptCompletionCommand,
@@ -56,5 +58,6 @@ def plugin_unloaded() -> None:
     """Executed when this plugin is unloaded."""
     CopilotPlugin.window_attrs.clear()
     CopilotPlugin.cleanup()
+    CopilotIgnore.cleanup()
     if copilot_ignore_observer:
         copilot_ignore_observer.cleanup()
