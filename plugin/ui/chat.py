@@ -140,11 +140,22 @@ class _ConversationEntry:
     @property
     def conversation_content(self) -> str:
         conversation_lines = []
+        previous_kind = None
+
         for entry in self.conversation_manager.conversation:
-            if entry["kind"] == "user":
-                conversation_lines.append(f"user: {entry['reply']}")
+            current_kind = entry["kind"]
+            # Adjust kind for "report"
+            if current_kind == "report":
+                current_kind = "system"
+
+            if current_kind != previous_kind:
+                prefix = f"{current_kind}: "
             else:
-                conversation_lines.append(f"system: {entry['reply']}")
+                prefix = ""
+
+            conversation_lines.append(f"{prefix}{entry['reply']}")
+            previous_kind = current_kind
+
         return "\n".join(conversation_lines)
 
     def open(self) -> None:
