@@ -207,7 +207,7 @@ class _PanelCompletion:
         sheet.close()
         self.completion_manager.is_visible = False
         if self.completion_manager.original_layout:
-            window.set_layout(self.completion_manager.original_layout)
+            window.set_layout(self.completion_manager.original_layout)  # type: ignore
             self.completion_manager.original_layout = None
 
         window.focus_view(self.view)
@@ -252,7 +252,7 @@ class _PanelCompletion:
         self.completion_manager.sheet_id = sheet.id()
 
     def _open_in_side_by_side(self, window: sublime.Window) -> None:
-        self.completion_manager.original_layout = window.layout()
+        self.completion_manager.original_layout = window.layout()  # type: ignore
         window.set_layout({
             "cols": [0.0, 0.5, 1.0],
             "rows": [0.0, 1.0],

@@ -1,33 +1,28 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
-from functools import wraps
-from typing import Any, cast
+from typing import Any
 
 import sublime
 import sublime_plugin
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from .client import CopilotPlugin
-from .types import T_Callable
+from .decorators import _must_be_active_view_not_ignored
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import get_copilot_view_setting, get_session_setting, is_active_view, set_copilot_view_setting
-
-
-def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
-    def decorator(func: T_Callable) -> T_Callable:
-        @wraps(func)
-        def wrapped(self: Any, *arg, **kwargs) -> Any:
-            if is_active_view(self.view):
-                return func(self, *arg, **kwargs)
-            return failed_return
-
-        return cast(T_Callable, wrapped)
-
-    return decorator
+from .utils import (
+    CopilotIgnore,
+    get_copilot_view_setting,
+    get_session_setting,
+    set_copilot_view_setting,
+)
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
+    def __init__(self, view: sublime.View) -> None:
+        super().__init__(view)
+
     @classmethod
     def applies_to_primary_view_only(cls) -> bool:
         # To fix "https://github.com/TerminalFi/LSP-copilot/issues/102",
@@ -51,7 +46,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def _is_saving(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "_is_saving", value)
 
-    @_must_be_active_view()
+    @_must_be_active_view_not_ignored()
     def on_modified_async(self) -> None:
         self._is_modified = True
 
@@ -64,6 +59,20 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
         if not self._is_saving and get_session_setting(session, "auto_ask_completions") and not vcm.is_waiting:
             plugin.request_get_completions(self.view)
+
+    def on_activated_async(self) -> None:
+        if (
+            (window := self.view.window())
+            and (plugin := CopilotPlugin.from_view(self.view))
+            and copilot_ignore_observer
+        ):
+            copilot_ignore_observer.add_folders(window.folders())
+            CopilotIgnore(window).load_patterns()
+            CopilotIgnore(window).trigger(self.view)
+            if get_copilot_view_setting(self.view, "is_copilot_ignored", False):
+                plugin.update_status_bar_text({"is_copilot_ignored": "ignored"})
+            else:
+                plugin.update_status_bar_text()
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()
@@ -124,7 +133,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_post_save_async(self) -> None:
         self._is_saving = False
 
-    @_must_be_active_view()
+    @_must_be_active_view_not_ignored()
     def on_selection_modified_async(self) -> None:
         if not self._is_modified:
             ViewCompletionManager(self.view).handle_selection_change()
@@ -149,3 +158,80 @@ class EventListener(sublime_plugin.EventListener):
                 return "noop", None
 
         return None
+
+    def on_new_window(self, window: sublime.Window):
+        if not copilot_ignore_observer:
+            return
+        copilot_ignore_observer.add_folders(window.folders())
+
+    def on_pre_close_window(self, window: sublime.Window):
+        if not copilot_ignore_observer:
+            return
+        copilot_ignore_observer.remove_folders(window.folders())
+
+
+class CopilotIgnoreHandler(FileSystemEventHandler):
+    def __init__(self):
+        self.filename = ".copilotignore"
+
+    def on_modified(self, event):
+        if not event.is_directory and event.src_path.endswith(self.filename):
+            self.update_window_patterns(event.src_path)
+
+    def on_created(self, event):
+        if not event.is_directory and event.src_path.endswith(self.filename):
+            self.update_window_patterns(event.src_path)
+
+    def update_window_patterns(self, path: str):
+        windows = sublime.windows()
+        for window in windows:
+            if not self._best_matched_folder(path, window.folders()):
+                continue
+            # Update patterns for specific window and folder
+            CopilotIgnore(window).load_patterns()
+            return
+
+    def _best_matched_folder(self, path: str, folders: list[str]) -> str | None:
+        matching_folder = None
+        for folder in folders:
+            if path.startswith(folder) and (matching_folder is None or len(folder) > len(matching_folder)):
+                matching_folder = folder
+        return matching_folder
+
+
+class CopilotIgnoreObserver:
+    def __init__(self, folders: list[str] = []):
+        self.observer = Observer()
+        self._event_handler = CopilotIgnoreHandler()
+        self._folders: list[str] = folders
+        self._observers: dict[str, Any] = {}
+
+    def setup(self):
+        self.add_folders(self._folders)
+        self.observer.start()
+
+    def cleanup(self):
+        self.observer.stop()
+        self.observer.join()
+
+    def add_folders(self, folders: list[str]):
+        for folder in folders:
+            self.add_folder(folder)
+
+    def add_folder(self, folder):
+        if folder not in self._folders:
+            self._folders.append(folder)
+        observer = self.observer.schedule(self._event_handler, folder, recursive=False)
+        self._observers[folder] = observer
+
+    def remove_folders(self, folders: list[str]):
+        for folder in folders:
+            self.remove_folder(folder)
+
+    def remove_folder(self, folder):
+        if folder in self._folders:
+            self._folders.remove(folder)
+            self.observer.unschedule(self._observers[folder])
+
+
+copilot_ignore_observer = CopilotIgnoreObserver()
