@@ -310,11 +310,9 @@ class CopilotIgnore:
             self.add_patterns_from_file(os.path.join(folder, ".copilotignore"), folder)
 
         set_copilot_setting(self.window, "copilot.copilotignore", "patterns", self.patterns)
-        # self.log_info(f"Collected patterns: {self.patterns}")
 
     def read_ignore_patterns(self, filepath):
         if os.path.exists(filepath):
-            # self.log_info(f"Reading ignore patterns from: {filepath}")
             with open(filepath) as file:
                 patterns = [line.strip() for line in file if line.strip()]
             return patterns
@@ -332,15 +330,11 @@ class CopilotIgnore:
                 relative_path = os.path.relpath(file_path, folder)
                 for pattern in patterns:
                     if glob.globmatch(relative_path, pattern):
-                        # self.log_info(f"File {relative_path} matches pattern {pattern} in folder {folder}")
                         return True
-
-        # self.log_info(f"File {file_path} does not match any patterns")
         return False
 
     def trigger(self, view: sublime.View):
         if not self.patterns:
-            # self.log_info("No patterns configured in .copilotignore")
             return False
 
         file = view.file_name()
@@ -350,9 +344,7 @@ class CopilotIgnore:
 
         found_open_ignored_file = self.matches_any_pattern(file)
         if found_open_ignored_file:
-            # self.log_info(f"File is ignored by copilot: {found_open_ignored_file}")
             set_copilot_view_setting(view, "is_copilot_ignored", True)
         else:
             erase_copilot_view_setting(view, "is_copilot_ignored")
-        # self.log_info(f"File is ignored by copilot: {found_open_ignored_file}")
         return found_open_ignored_file

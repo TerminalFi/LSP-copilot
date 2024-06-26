@@ -61,8 +61,18 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             plugin.request_get_completions(self.view)
 
     def on_activated_async(self) -> None:
-        if (window := self.view.window()) and CopilotPlugin.from_view(self.view) and copilot_ignore_observer:
+        if (
+            (window := self.view.window())
+            and (plugin := CopilotPlugin.from_view(self.view))
+            and copilot_ignore_observer
+        ):
             copilot_ignore_observer.add_folders(window.folders())
+            CopilotIgnore(window).load_patterns()
+            CopilotIgnore(window).trigger(self.view)
+            if get_copilot_view_setting(self.view, "is_copilot_ignored", False):
+                plugin.update_status_bar_text({"is_copilot_ignored": "ignored"})
+            else:
+                plugin.update_status_bar_text()
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()

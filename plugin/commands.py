@@ -181,7 +181,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
         completion_manager.close()
 
 
-class CopilotAcceptCompletionCommand(CopilotIgnoreExemptTextCommand):
+class CopilotAcceptCompletionCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:
         if not (completion_manager := ViewCompletionManager(self.view)).is_visible:
@@ -209,7 +209,7 @@ class CopilotAcceptCompletionCommand(CopilotIgnoreExemptTextCommand):
             self._record_telemetry(session, REQ_NOTIFY_REJECTED, {"uuids": other_uuids})
 
 
-class CopilotRejectCompletionCommand(CopilotIgnoreExemptTextCommand):
+class CopilotRejectCompletionCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         completion_manager = ViewCompletionManager(self.view)
@@ -254,7 +254,7 @@ class CopilotNextCompletionCommand(CopilotTextCommand):
         ViewCompletionManager(self.view).show_next_completion()
 
 
-class CopilotCheckStatusCommand(CopilotIgnoreExemptTextCommand):
+class CopilotCheckStatusCommand(CopilotTextCommand):
     requirement = REQUIRE_NOTHING
 
     @_provide_plugin_session()
