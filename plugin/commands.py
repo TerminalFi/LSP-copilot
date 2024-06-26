@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 import sublime
-import sublime_plugin
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
 from LSP.plugin.core.url import filename_to_uri
@@ -197,7 +196,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 class CopilotConversationCreateCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        WindowConversationManager(self.view.window())
+        WindowConversationManager(self.view.window()).open()
         session.send_request(
             Request(
                 REQ_CONVERSATION_PRECONDITIONS,
@@ -235,7 +234,7 @@ class CopilotConversationCreateCommand(LspTextCommand):
                 REQ_CONVERSATION_TURN,
                 {
                     "conversationId": payload["conversationId"],
-                    "message": "Am I working in Sublime Text?",
+                    "message": "Hello, I hope you are ready to work",
                     "workDoneToken": f"copilot_chat://{self.view.window().id()}",  # Not sure where this comes from
                     "doc": prepare_completion_request(self.view)["doc"],
                     "computeSuggestions": True,
@@ -248,86 +247,7 @@ class CopilotConversationCreateCommand(LspTextCommand):
         )
 
     def _on_result_conversation_turn(self, payload) -> None:
-        pass
-
-
-class CopilotConversationContinueCommand(LspTextCommand):
-    @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str, *args, **kwargs):
-        pass
-
-    @_provide_plugin_session()
-    def input(self, plugin: CopilotPlugin, session: Session, args):
-        conversation_manager = WindowConversationManager(self.view.window())
-        if "messages" not in args:
-            if chat := args.get("chat"):
-                session.send_request(
-                    Request(
-                        REQ_CONVERSATION_TURN,
-                        {
-                            "conversationId": conversation_manager.conversation_id,
-                            "message": chat,
-                            "workDoneToken": f"copilot_chat://{self.view.window().id()}",  # Not sure where this comes from
-                            # "doc": Ji.Type.Optional(Z0),
-                            "computeSuggestions": True,
-                            # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
-                            # "source": Ji.Type.Optional(sd),
-                            # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
-                        },
-                    ),
-                    self._on_result_conversation_turn,
-                )
-            return CopilotConversationDialogTextInputHandler(
-                self.view,
-                conversation_manager.conversation,
-            )
-
-    def _on_result_conversation_turn(self, payload) -> None:
-        pass
-
-
-class CopilotConversationDialogTextInputHandler(sublime_plugin.TextInputHandler):
-    def __init__(self, view: sublime.View, conversation_history) -> None:
-        self.view = view
-        self.conversation_history = conversation_history
-
-    def name(self) -> str:
-        return "chat"
-
-    def placeholder(self) -> str:
-        return "Your message"
-
-    def initial_text(self) -> str:
-        return ""
-
-    def validate(self, text: str) -> bool:
-        return bool(text.strip())
-
-    def preview(self, text: str) -> Any:
-        history = f"""
-        <style>
-            a {{
-                text-decoration: none;
-                color: var(--accent);
-            }}
-            .system {{
-                color: var(--greenish);
-            }}
-
-            .user {{
-                color: var(--orangish);
-            }}
-        </style>
-        {"".join(f"<p>{entry['reply']}</p><hr>" for entry in self.conversation_history)}
-        """
-        if text:
-            content = sublime.Html(f"{history}<span class='user'>User</span>: {text}")
-        else:
-            content = sublime.Html(history)
-        return content
-
-    def confirm(self, text: str) -> None:
-        return
+        WindowConversationManager(self.view.window()).prompt()
 
 
 class CopilotConversationRatingCommand(LspTextCommand):

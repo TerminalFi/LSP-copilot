@@ -303,7 +303,7 @@ class CopilotPlugin(NpmClientHandler):
                         return
                     conversation_manager = WindowConversationManager(window)
                     conversation_manager.append_conversation_entry(params)
-                    conversation_manager.update()
+                    conversation_manager._update_conversation_panel("")
 
     @notification_handler(NTFY_LOG_MESSAGE)
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:

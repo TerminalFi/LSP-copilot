@@ -3,8 +3,9 @@ from __future__ import annotations
 import sublime
 
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
-from ..types import CopilotPayloadConversationEntry
+from ..types import CopilotPayloadConversationEntry, StLayout
 from ..utils import (
+    find_view_by_id,
     find_window_by_id,
     get_copilot_setting,
     remove_prefix,
@@ -27,6 +28,33 @@ class WindowConversationManager:
     @is_visible.setter
     def is_visible(self, value: bool) -> None:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible_conversation", value)
+
+    @property
+    def group_id(self) -> int:
+        """The ID of the group which is used to show panel completions."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_group_id", -1)
+
+    @group_id.setter
+    def group_id(self, value: int) -> None:
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_group_id", value)
+
+    @property
+    def original_layout(self) -> StLayout | None:
+        """The original window layout prior to panel presentation."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "original_layout", None)
+
+    @original_layout.setter
+    def original_layout(self, value: StLayout | None) -> None:
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "original_layout", value)
+
+    @property
+    def view_id(self) -> int:
+        """The ID of the sheet which is used to show panel completions."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_id", -1)
+
+    @view_id.setter
+    def view_id(self, value: int) -> None:
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_id", value)
 
     @property
     def conversation_id(self) -> str:
@@ -78,7 +106,92 @@ class WindowConversationManager:
         window_id = int(remove_prefix(token_id, "copilot_chat://"))
         return find_window_by_id(window_id)
 
-    def update(self):
-        if not (view := self.window.active_view()):
+    def prompt(self):
+        self.window.show_input_panel("Copilot Chat", "", self._update_conversation_panel, None, None)
+
+    def _update_conversation_panel(self, message: str) -> None:
+        self.append_conversation_entry({
+            "kind": "user",
+            "conversationId": self.conversation_id,
+            "reply": message,
+            "turnId": "user",
+            "annotations": [],
+            "hideText": False,
+        })
+        self.is_waiting = True
+        self.update()
+
+    def open(self, *, completion_target_count: int | None = None) -> None:
+        _ConversationEntry(self.window).open()
+
+    def update(self) -> None:
+        """Update the completion panel."""
+        _ConversationEntry(self.window).update()
+        self.prompt()
+
+    def close(self) -> None:
+        """Close the completion panel."""
+        _ConversationEntry(self.window).close()
+
+
+class _ConversationEntry:
+    def __init__(self, window: sublime.Window) -> None:
+        self.window = window
+        self.conversation_manager = WindowConversationManager(window)
+
+    @property
+    def conversation_content(self) -> str:
+        return "\n".join(entry["reply"] for entry in self.conversation_manager.conversation)
+
+    def open(self) -> None:
+        active_group = self.window.active_group()
+        if active_group == self.window.num_groups() - 1:
+            self._open_in_side_by_side(self.window)
+        else:
+            self._open_in_group(self.window, active_group + 1)
+
+        self.window.focus_view(self.window.active_view())  # type: ignore
+
+    def update(self) -> None:
+        if not (view := find_view_by_id(self.conversation_manager.view_id)):
             return
-        view.run_command("copilot_conversation_continue")
+
+        view.set_scratch(False)
+        view.run_command("select_all")
+        view.run_command("left_delete")
+        view.run_command("insert", {"characters": self.conversation_content})
+        view.set_read_only(True)
+
+    def close(self) -> None:
+        if not (view := find_view_by_id(self.conversation_manager.view_id)):
+            return
+        view.close()
+        self.conversation_manager.is_visible = False
+        if self.conversation_manager.original_layout:
+            self.window.set_layout(self.conversation_manager.original_layout)  # type: ignore
+            self.conversation_manager.original_layout = None
+
+        self.window.focus_view(self.window.active_view())  # type: ignore
+
+    def _open_in_group(self, window: sublime.Window, group_id: int) -> None:
+        self.conversation_manager.group_id = group_id
+
+        window.focus_group(group_id)
+        view = window.new_file()
+        view.set_name("Copilot Chat")
+        view.set_scratch(False)
+        # erase view
+        view.run_command("select_all")
+        view.run_command("left_delete")
+        view.run_command("insert", {"characters": self.conversation_content})
+        view.set_read_only(True)
+        self.conversation_manager.view_id = view.id()
+
+    def _open_in_side_by_side(self, window: sublime.Window) -> None:
+        self.conversation_manager.original_layout = window.layout()  # type: ignore
+        window.set_layout({
+            "cols": [0.0, 0.5, 1.0],
+            "rows": [0.0, 1.0],
+            "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
+        })
+        self._open_in_group(window, 1)
