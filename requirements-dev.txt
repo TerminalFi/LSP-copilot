@@ -8,15 +8,17 @@ markupsafe==2.1.5
     # via jinja2
 more-itertools==10.3.0
     # via -r requirements.in
-mypy==1.10.0
+mypy==1.10.1
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via mypy
-ruff==0.4.9
+ruff==0.4.10
     # via -r requirements-dev.in
 typing-extensions==4.12.2
     # via
     #   -r requirements.in
     #   mypy
+watchdog==4.0.1
+    # via -r requirements.in
 wcmatch==8.5.2
     # via -r requirements.in
