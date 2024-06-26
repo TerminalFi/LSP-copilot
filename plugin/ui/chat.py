@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import sublime
+from lsp_utils._client_handler.abstract_plugin import Request, Session
 
-from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
+from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, REQ_CONVERSATION_TURN
 from ..types import CopilotPayloadConversationEntry, StLayout
 from ..utils import (
     find_view_by_id,
     find_window_by_id,
     get_copilot_setting,
+    prepare_completion_request,
     remove_prefix,
     set_copilot_setting,
 )
@@ -37,6 +39,17 @@ class WindowConversationManager:
     @group_id.setter
     def group_id(self, value: int) -> None:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_group_id", value)
+
+    @property
+    def last_active_view_id(self) -> int:
+        """The ID of the group which is used to show panel completions."""
+        return get_copilot_setting(
+            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", -1
+        )
+
+    @last_active_view_id.setter
+    def last_active_view_id(self, value: int) -> None:
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", value)
 
     @property
     def original_layout(self) -> StLayout | None:
@@ -89,8 +102,9 @@ class WindowConversationManager:
     # normal methods #
     # -------------- #
 
-    def __init__(self, window: sublime.Window) -> None:
+    def __init__(self, session: Session, window: sublime.Window) -> None:
         self.window = window
+        self.session = session
 
     def reset(self) -> None:
         self.is_waiting = False
@@ -119,29 +133,51 @@ class WindowConversationManager:
             "hideText": False,
         })
         self.is_waiting = True
+        view_last_active_view = find_view_by_id(self.last_active_view_id)
+        self.session.send_request(
+            Request(
+                REQ_CONVERSATION_TURN,
+                {
+                    "conversationId": self.conversation_id,
+                    "message": message,
+                    "workDoneToken": f"copilot_chat://{self.window.id()}",  # Not sure where this comes from
+                    "doc": prepare_completion_request(view_last_active_view)["doc"],
+                    "computeSuggestions": True,
+                    "references": [],
+                    "source": "panel",
+                },
+            ),
+            self.prompt(),
+        )
         self.update()
 
     def open(self, *, completion_target_count: int | None = None) -> None:
-        _ConversationEntry(self.window).open()
+        _ConversationEntry(self.session, self.window).open()
 
     def update(self) -> None:
         """Update the completion panel."""
-        _ConversationEntry(self.window).update()
+        _ConversationEntry(self.session, self.window).update()
         self.prompt()
 
     def close(self) -> None:
         """Close the completion panel."""
-        _ConversationEntry(self.window).close()
+        _ConversationEntry(self.session, self.window).close()
 
 
 class _ConversationEntry:
-    def __init__(self, window: sublime.Window) -> None:
+    def __init__(self, session: Session, window: sublime.Window) -> None:
         self.window = window
-        self.conversation_manager = WindowConversationManager(window)
+        self.conversation_manager = WindowConversationManager(session, window)
 
     @property
     def conversation_content(self) -> str:
-        return "\n".join(entry["reply"] for entry in self.conversation_manager.conversation)
+        conversation_lines = []
+        for entry in self.conversation_manager.conversation:
+            if entry["kind"] == "user":
+                conversation_lines.append(f"user: {entry['reply']}")
+            else:
+                conversation_lines.append(f"system: {entry['reply']}")
+        return "\n".join(conversation_lines)
 
     def open(self) -> None:
         active_group = self.window.active_group()
@@ -155,8 +191,7 @@ class _ConversationEntry:
     def update(self) -> None:
         if not (view := find_view_by_id(self.conversation_manager.view_id)):
             return
-
-        view.set_scratch(False)
+        view.set_read_only(False)
         view.run_command("select_all")
         view.run_command("left_delete")
         view.run_command("insert", {"characters": self.conversation_content})

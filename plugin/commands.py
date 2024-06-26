@@ -25,7 +25,6 @@ from .constants import (
     REQ_CONVERSATION_PRECONDITIONS,
     REQ_CONVERSATION_RATING,
     REQ_CONVERSATION_TEMPLATES,
-    REQ_CONVERSATION_TURN,
     REQ_CONVERSATION_TURN_DELETE,
     REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
@@ -196,7 +195,6 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 class CopilotConversationCreateCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        WindowConversationManager(self.view.window()).open()
         session.send_request(
             Request(
                 REQ_CONVERSATION_PRECONDITIONS,
@@ -211,7 +209,6 @@ class CopilotConversationCreateCommand(LspTextCommand):
                 REQ_CONVERSATION_CREATE,
                 {
                     "turns": [{"request": ""}],
-                    # "options": Ji.Type.Optional(Mn),
                     "capabilities": {
                         "allSkills": True,
                         "skills": [],
@@ -228,26 +225,11 @@ class CopilotConversationCreateCommand(LspTextCommand):
         )
 
     def _on_result_conversation_create(self, session, payload) -> None:
-        WindowConversationManager(self.view.window()).conversation_id = payload["conversationId"]
-        session.send_request(
-            Request(
-                REQ_CONVERSATION_TURN,
-                {
-                    "conversationId": payload["conversationId"],
-                    "message": "Hello, I hope you are ready to work",
-                    "workDoneToken": f"copilot_chat://{self.view.window().id()}",  # Not sure where this comes from
-                    "doc": prepare_completion_request(self.view)["doc"],
-                    "computeSuggestions": True,
-                    "references": [prepare_completion_request(self.view)["doc"]],
-                    "source": "inline",
-                    "workspaceFolder": self.view.window().folders()[0],
-                },
-            ),
-            self._on_result_conversation_turn,
-        )
-
-    def _on_result_conversation_turn(self, payload) -> None:
-        WindowConversationManager(self.view.window()).prompt()
+        manager = WindowConversationManager(session, self.view.window())
+        manager.last_active_view_id = self.view.id()
+        manager.conversation_id = payload["conversationId"]
+        manager.open()
+        manager.prompt()
 
 
 class CopilotConversationRatingCommand(LspTextCommand):
@@ -267,7 +249,7 @@ class CopilotConversationRatingCommand(LspTextCommand):
             self._on_result_coversation_rating,
         )
 
-    def _on_result_coversation_rating(self, payload: Literal[OK]) -> None:
+    def _on_result_coversation_rating(self, payload: Literal["OK"]) -> None:
         # Returns OK
         pass
 
