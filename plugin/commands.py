@@ -197,6 +197,11 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 class CopilotConversationCreateCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        manager = WindowConversationManager(self.view.window())
+        if manager.conversation_id:
+            manager.open()
+            manager.prompt(callback=lambda x: self._on_prompt(session, x))
+            return
         session.send_request(
             Request(
                 REQ_CONVERSATION_PRECONDITIONS,

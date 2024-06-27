@@ -109,6 +109,8 @@ class WindowConversationManager:
         self.original_layout = None
         self.conversation_id = ""
         self.conversation = []
+        if view := find_view_by_id(self.view_id):
+            view.close()
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
         conversation_history = self.conversation

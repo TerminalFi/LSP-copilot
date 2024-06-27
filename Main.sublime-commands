@@ -1,6 +1,6 @@
 [
     {
-        "caption": "Copilot: New Conversation",
+        "caption": "Copilot: Chat",
         "command": "copilot_conversation_create"
     },
     {
