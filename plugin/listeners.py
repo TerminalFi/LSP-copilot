@@ -9,6 +9,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from .client import CopilotPlugin
+from .constants import PACKAGE_NAME
 from .decorators import _must_be_active_view
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
@@ -109,14 +110,10 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
     def on_activated_async(self) -> None:
         _, session = CopilotPlugin.plugin_session(self.view)
-
         if (session and CopilotPlugin.should_ignore(self.view)) or (
             not session and not CopilotPlugin.should_ignore(self.view)
         ):
-            window = self.view.window()
-            file_name = self.view.file_name()
-            self.view.close()
-            window.run_command("open_file", {"file": file_name})
+            self.view.run_command("lsp_restart_server", {"config_name": PACKAGE_NAME})
 
     def on_post_text_command(self, command_name: str, args: dict[str, Any] | None) -> None:
         if command_name == "lsp_save":
