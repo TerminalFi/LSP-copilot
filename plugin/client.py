@@ -49,6 +49,7 @@ from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .ui.chat import WindowConversationManager
 from .utils import (
     all_views,
+    all_windows,
     debounce,
     get_session_setting,
     prepare_completion_request,
@@ -130,6 +131,9 @@ class CopilotPlugin(NpmClientHandler):
         for view in all_views():
             ViewCompletionManager(view).reset()
             ViewPanelCompletionManager(view).reset()
+
+        for window in all_windows():
+            WindowConversationManager(window).reset()
 
     @classmethod
     def on_pre_start(

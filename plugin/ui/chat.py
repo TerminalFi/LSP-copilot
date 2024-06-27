@@ -106,6 +106,9 @@ class WindowConversationManager:
     def reset(self) -> None:
         self.is_waiting = False
         self.is_visible = False
+        self.original_layout = None
+        self.conversation_id = ""
+        self.conversation = []
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
         conversation_history = self.conversation
@@ -196,6 +199,7 @@ class _ConversationEntry:
         view.set_syntax_file("Packages/Markdown/Markdown.sublime-syntax")
         view.set_name("Copilot Chat")
         view.set_read_only(False)
+        view.set_scratch(True)
         view.run_command("move_to", {"to": "eof"})
         view.run_command("insert", {"characters": self.conversation_content(all=True)})
         view.set_read_only(True)

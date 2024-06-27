@@ -11,6 +11,7 @@ from watchdog.observers import Observer
 from .client import CopilotPlugin
 from .decorators import _must_be_active_view_not_ignored
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
+from .ui.chat import WindowConversationManager
 from .utils import (
     CopilotIgnore,
     get_copilot_view_setting,
@@ -73,6 +74,8 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
                 plugin.update_status_bar_text({"is_copilot_ignored": "ignored"})
             else:
                 plugin.update_status_bar_text()
+            if self.view.name() != "Copilot Chat":
+                WindowConversationManager(window).last_active_view_id = self.view.id()
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()

@@ -38,6 +38,7 @@ from .constants import (
     REQ_SIGN_OUT,
 )
 from .decorators import _must_be_active_view_not_ignored
+from .template import load_string_template
 from .types import (
     CopilotPayloadConversationTemplate,
     CopilotPayloadFileStatus,
@@ -216,9 +217,9 @@ class CopilotConversationCreateCommand(LspTextCommand):
                     },
                     "workDoneToken": f"copilot_chat://{self.view.window().id()}",
                     # "doc": Ji.Type.Optional(Z0),
-                    # "computeSuggestions": Ji.Type.Optional(Ji.Type.Boolean()),
+                    "computeSuggestions": True,
                     # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
-                    # "source": Ji.Type.Optional(sd),
+                    "source": "panel",
                     # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
                 },
             ),
@@ -227,13 +228,21 @@ class CopilotConversationCreateCommand(LspTextCommand):
 
     def _on_result_conversation_create(self, session, payload) -> None:
         manager = WindowConversationManager(self.view.window())
-        manager.last_active_view_id = self.view.id()
+        if self.view.name() != "Copilot Chat":
+            manager.last_active_view_id = self.view.id()
         manager.conversation_id = payload["conversationId"]
         manager.open()
         manager.prompt(callback=lambda x: self._on_prompt(session, x))
 
     def _on_prompt(self, session: Session, msg: str):
         manager = WindowConversationManager(self.view.window())
+        template = load_string_template(msg)
+        if not (view := find_view_by_id(manager.last_active_view_id)):
+            selections = []
+        else:
+            selections = [view.substr(region) for region in view.sel()]
+        msg = template.render({"selections": selections})
+        print(msg)
         manager.append_conversation_entry({
             "kind": "user",
             "conversationId": manager.conversation_id,
