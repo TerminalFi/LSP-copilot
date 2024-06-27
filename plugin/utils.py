@@ -23,6 +23,10 @@ _T = TypeVar("_T")
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
 
 
+def all_windows() -> list[sublime.Window]:
+    return sublime.windows()
+
+
 def all_views(
     window: sublime.Window | None = None,
     *,
@@ -302,9 +306,6 @@ class CopilotIgnore:
         for view in all_views():
             erase_copilot_view_setting(view, "is_copilot_ignored")
 
-    def log_info(self, message: str):
-        print(f"[COPILOT IGNORE] {message}\n")
-
     def unload_patterns(self):
         self.patterns.clear()
         erase_copilot_setting(self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns")
@@ -349,9 +350,4 @@ class CopilotIgnore:
         if not file:
             return False
 
-        if self.matches_any_pattern(file):
-            set_copilot_view_setting(view, "is_copilot_ignored", True)
-            return True
-        else:
-            erase_copilot_view_setting(view, "is_copilot_ignored")
-            return False
+        return self.matches_any_pattern(file)

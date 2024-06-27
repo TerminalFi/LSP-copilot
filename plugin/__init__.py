@@ -19,7 +19,7 @@ from .commands import (
     CopilotSignOutCommand,
 )
 from .listeners import EventListener, ViewEventListener, copilot_ignore_observer
-from .utils import CopilotIgnore
+from .utils import CopilotIgnore, all_windows
 
 __all__ = (
     # ST: core
@@ -51,6 +51,8 @@ def plugin_loaded() -> None:
     """Executed when this plugin is loaded."""
     CopilotPlugin.setup()
     copilot_ignore_observer.setup()
+    for window in all_windows():
+        CopilotIgnore(window).load_patterns()
 
 
 def plugin_unloaded() -> None:
