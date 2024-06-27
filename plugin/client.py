@@ -48,6 +48,7 @@ from .types import (
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .ui.chat import WindowConversationManager
 from .utils import (
+    CopilotIgnore,
     all_views,
     all_windows,
     debounce,
@@ -294,6 +295,12 @@ class CopilotPlugin(NpmClientHandler):
             except Exception as e:
                 log_warning(f'Invalid "status_text" template: {e}')
         session.set_config_status_async(rendered_text)
+
+    @classmethod
+    def should_ignore(cls, view: sublime.View) -> bool:
+        if not (window := view.window()):
+            return False
+        return CopilotIgnore(window).trigger(view)
 
     @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
