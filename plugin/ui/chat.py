@@ -156,10 +156,10 @@ class _ConversationEntry:
                 prefix = f"{current_kind}: "
             else:
                 prefix = ""
-            entry = entry["reply"]
+            reply = entry["reply"]
             if current_kind == "system" and entry.startswith("```"):
-                entry = f"\n{entry}\n"
-            conversation_lines.append(f"{prefix}{entry}\n")
+                reply = f"\n{reply}\n"
+            conversation_lines.append(f"{prefix}{reply}\n")
             previous_kind = current_kind
         if not all and len(conversation_lines) > 0:
             return conversation_lines[-1]

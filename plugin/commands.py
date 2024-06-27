@@ -197,7 +197,9 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 class CopilotConversationCreateCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        manager = WindowConversationManager(self.view.window())
+        if not (window := self.view.window()):
+            return
+        manager = WindowConversationManager(window)
         if manager.conversation_id:
             manager.open()
             manager.prompt(callback=lambda x: self._on_prompt(session, x))
@@ -232,7 +234,9 @@ class CopilotConversationCreateCommand(LspTextCommand):
         )
 
     def _on_result_conversation_create(self, session, payload) -> None:
-        manager = WindowConversationManager(self.view.window())
+        if not (window := self.view.window()):
+            return
+        manager = WindowConversationManager(window)
         if self.view.name() != "Copilot Chat":
             manager.last_active_view_id = self.view.id()
         manager.conversation_id = payload["conversationId"]
@@ -240,7 +244,9 @@ class CopilotConversationCreateCommand(LspTextCommand):
         manager.prompt(callback=lambda x: self._on_prompt(session, x))
 
     def _on_prompt(self, session: Session, msg: str):
-        manager = WindowConversationManager(self.view.window())
+        if not (window := self.view.window()):
+            return
+        manager = WindowConversationManager(window)
         template = load_string_template(msg)
         if not (view := find_view_by_id(manager.last_active_view_id)):
             selections = []
@@ -305,7 +311,9 @@ class CopilotConversationRatingCommand(LspTextCommand):
 class CopilotConversationDestroyCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        conversation_manager = WindowConversationManager(self.view.window())
+        if not (window := self.view.window()):
+            return
+        manager = WindowConversationManager(window)
         session.send_request(
             Request(
                 REQ_CONVERSATION_DESTROY,
