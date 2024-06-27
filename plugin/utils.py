@@ -23,10 +23,8 @@ _T = TypeVar("_T")
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
 
 
-def all_windows(
-    window: sublime.Window | None = None,
-) -> Generator[sublime.Window, None, None]:
-    yield from [window] if window else sublime.windows()
+def all_windows() -> list[sublime.Window]:
+    return sublime.windows()
 
 
 def all_views(
