@@ -4,8 +4,8 @@
         "command": "copilot_conversation_create"
     },
     {
-        "caption": "Copilot: Continue Last Conversation",
-        "command": "copilot_conversation_continue"
+        "caption": "Copilot: Destroy Conversation",
+        "command": "copilot_conversation_destroy"
     },
     {
         // Debug Command

@@ -247,7 +247,6 @@ class CopilotConversationCreateCommand(LspTextCommand):
         else:
             selections = [view.substr(region) for region in view.sel()]
         msg = template.render({"selections": selections})
-        print(msg)
         manager.append_conversation_entry({
             "kind": "user",
             "conversationId": manager.conversation_id,
@@ -305,20 +304,26 @@ class CopilotConversationRatingCommand(LspTextCommand):
 
 class CopilotConversationDestroyCommand(LspTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, conversation_id: str) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        conversation_manager = WindowConversationManager(self.view.window())
         session.send_request(
             Request(
                 REQ_CONVERSATION_DESTROY,
                 {
-                    "conversationId": conversation_id,
+                    "conversationId": conversation_manager.conversation_id,
                     "options": {},
                 },
             ),
             self._on_result_coversation_destroy,
         )
 
+        conversation_manager.reset()
+
     def _on_result_coversation_destroy(self, payload) -> None:
         print(f"_on_result_coversation_destroy {payload = }")
+
+    def is_enabled(self) -> bool:
+        return super().is_enabled() and bool(WindowConversationManager(self.view.window()).conversation_id)
 
 
 class CopilotConversationTurnDeleteCommand(LspTextCommand):
