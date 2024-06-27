@@ -157,7 +157,7 @@ class _ConversationEntry:
             else:
                 prefix = ""
             reply = entry["reply"]
-            if current_kind == "system" and entry.startswith("```"):
+            if current_kind == "system" and reply.startswith("```"):
                 reply = f"\n{reply}\n"
             conversation_lines.append(f"{prefix}{reply}\n")
             previous_kind = current_kind

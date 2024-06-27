@@ -38,6 +38,7 @@ from .constants import (
     REQ_SIGN_OUT,
 )
 from .decorators import _must_be_active_view
+from .template import load_string_template
 from .types import (
     CopilotPayloadConversationTemplate,
     CopilotPayloadFileStatus,

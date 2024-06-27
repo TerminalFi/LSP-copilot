@@ -11,7 +11,6 @@ from watchdog.observers import Observer
 from .client import CopilotPlugin
 from .decorators import _must_be_active_view
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .ui.chat import WindowConversationManager
 from .utils import (
     CopilotIgnore,
     get_copilot_view_setting,
@@ -61,6 +60,16 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
         if not self._is_saving and get_session_setting(session, "auto_ask_completions") and not vcm.is_waiting:
             plugin.request_get_completions(self.view)
 
+    def on_activated_async(self) -> None:
+        _, session = CopilotPlugin.plugin_session(self.view)
+        if (session and CopilotPlugin.should_ignore(self.view)) or (
+            not session and not CopilotPlugin.should_ignore(self.view)
+        ):
+            # Hacky way to trigger adding and removing views from session
+            prev_setting = self.view.settings().get("lsp_uri")
+            self.view.settings().set("lsp_uri", "")
+            sublime.set_timeout_async(lambda: self.view.settings().set("lsp_uri", prev_setting), 5)
+
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()
 
@@ -107,16 +116,6 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             return test(get_session_setting(session, "commit_completion_on_tab"))
 
         return None
-
-    def on_activated_async(self) -> None:
-        _, session = CopilotPlugin.plugin_session(self.view)
-        if (session and CopilotPlugin.should_ignore(self.view)) or (
-            not session and not CopilotPlugin.should_ignore(self.view)
-        ):
-            # Hacky way to trigger adding and removing views from session
-            prev_setting = self.view.settings().get("lsp_uri")
-            self.view.settings().set("lsp_uri", "")
-            sublime.set_timeout_async(lambda: self.view.settings().set("lsp_uri", prev_setting), 5)
 
     def on_post_text_command(self, command_name: str, args: dict[str, Any] | None) -> None:
         if command_name == "lsp_save":
