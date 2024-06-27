@@ -1,0 +1,120 @@
+<style>
+  html {
+    --copilot-close-foreground: var(--foreground);
+    --copilot-close-background: var(--background);
+    --copilot-close-border: var(--foreground);
+    --copilot-accept-foreground: var(--foreground);
+    --copilot-accept-background: var(--background);
+    --copilot-accept-border: var(--greenish);
+  }
+
+  .wrapper {
+    margin: 1rem 0.5rem 0 0.5rem;
+  }
+
+  .wrapper .navbar {
+    text-align: left;
+  }
+
+  .wrapper .synthesis-info {
+    display: inline-block;
+    text-size: 1.2em;
+  }
+
+  .wrapper .header {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .wrapper a {
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+    display: inline;
+    padding: 2px;
+    text-decoration: none;
+  }
+
+  .wrapper a.rating {
+    border-radius: 0px;
+    border-style: none;
+    border-width: 0px;
+    display: inline;
+    padding: 2px;
+    text-decoration: none;
+  }
+
+  .wrapper a.close {
+    background: var(--copilot-close-background);
+    border-color: var(--copilot-close-border);
+    color: var(--copilot-close-foreground);
+  }
+
+  .wrapper a.close i {
+    color: var(--copilot-close-border);
+  }
+
+  .wrapper a.accept {
+    background: var(--copilot-accept-background);
+    border-color: var(--copilot-accept-border);
+    color: var(--copilot-accept-foreground);
+  }
+
+
+  .wrapper a.accept {
+    background: var(--copilot-accept-background);
+    border-color: var(--copilot-accept-border);
+    color: var(--copilot-accept-foreground);
+  }
+
+  .wrapper a.accept i {
+    color: var(--copilot-accept-border);
+  }
+
+  .kind {
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+  }
+
+  .kind .system {
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+    background: color(var(--accent) alpha(0.5));
+    border-color: color(var(--accent) alpha(0.8));
+  }
+  .kind .user {
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+    background: color(var(--foreground) alpha(0.5));
+    border-color: color(var(--foreground) alpha(0.8));
+  }
+</style>
+
+<div class="wrapper">
+
+<div class="navbar">
+  <a class="close" title="Close Conversation Panel" href='#'><i>×</i> Close</a>&nbsp;
+  <h4 class="synthesis-info">
+    {% if is_waiting %}
+      ⌛ Fetching next response...
+    {% else %}
+      Awaiting user input...
+    {% endif %}
+  </h4>
+</div>
+
+{% for section in sections %}
+  <hr>
+  <div class="header">
+    <a class="rating" title="👍" href='#'>👍</a>
+    <a class="rating" title="👎" href='#'>👎</a>
+  </div>
+
+<span class="kind">{{ section.kind }}:</span> {{ section.message }}
+
+{% endfor %}
+
+</div>

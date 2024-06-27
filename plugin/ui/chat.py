@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from typing import Any
+
+import mdpopups
 import sublime
 
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
+from ..template import load_resource_template
 from ..types import CopilotPayloadConversationEntry, StLayout
 from ..utils import (
     find_view_by_id,
@@ -77,6 +81,15 @@ class WindowConversationManager:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_id", value)
 
     @property
+    def code_block_index(self) -> dict[int, str]:
+        """Whether the panel completions is visible."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "code_block_index", {})
+
+    @code_block_index.setter
+    def code_block_index(self, value: dict[int, str]) -> None:
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "code_block_index", value)
+
+    @property
     def is_waiting(self) -> bool:
         """Whether the converation completions is streaming."""
         return get_copilot_setting(
@@ -109,6 +122,8 @@ class WindowConversationManager:
         self.original_layout = None
         self.conversation_id = ""
         self.conversation = []
+        self.code_block_index = {}
+
         if view := find_view_by_id(self.view_id):
             view.close()
 
@@ -116,6 +131,11 @@ class WindowConversationManager:
         conversation_history = self.conversation
         conversation_history.append(entry)
         self.conversation = conversation_history
+
+    def insert_code_block_index(self, index: int, code_block: str) -> None:
+        code_block_index = self.code_block_index
+        code_block_index[index] = code_block
+        self.code_block_index = code_block_index
 
     @staticmethod
     def find_window_by_token_id(token_id: str) -> sublime.Window | None:
@@ -142,9 +162,19 @@ class _ConversationEntry:
         self.window = window
         self.conversation_manager = WindowConversationManager(window)
 
-    def conversation_content(self, all: bool) -> str:
-        conversation_lines = []
+    @property
+    def completion_content(self) -> str:
+        conversations_entries = self._synthesize()
+        return load_resource_template("chat_panel.md.jinja").render(
+            is_waiting=self.conversation_manager.is_waiting,
+            sections=[{"kind": entry["kind"], "message": entry["message"]} for entry in conversations_entries],
+        )
+
+    def _synthesize(self) -> list[dict[str, Any]]:
+        conversation_entries = []
         previous_kind = None
+        inside_code_block = False
+        code_block_counter = 0
 
         for entry in self.conversation_manager.conversation:
             current_kind = entry["kind"]
@@ -152,18 +182,54 @@ class _ConversationEntry:
             if current_kind == "report":
                 current_kind = "system"
 
-            if current_kind != previous_kind:
-                prefix = f"{current_kind}: "
-            else:
-                prefix = ""
             reply = entry["reply"]
-            if current_kind == "system" and reply.startswith("```"):
-                reply = f"\n{reply}\n"
-            conversation_lines.append(f"{prefix}{reply}\n")
+
+            # Determine whether to create a new entry or append to the last one
+            if current_kind != previous_kind:
+                contains_code = "```" in reply
+                new_entry = {"kind": current_kind, "message": [reply], "code_block": "", "code_block_index": -1}
+                if contains_code:
+                    parts = reply.split("```", 1)
+                    new_entry["message"] = [parts[0] + "```" + parts[1]]
+                    new_entry["code_block"] = "```" + parts[1]
+                    new_entry["code_block_index"] = code_block_counter
+                    code_block_counter += 1
+                    inside_code_block = True
+                conversation_entries.append(new_entry)
+            else:
+                if "```" in reply:
+                    parts = reply.split("```")
+                    if inside_code_block:
+                        conversation_entries[-1]["code_block"] += parts[0] + "```"
+                        conversation_entries[-1]["message"].append("```")
+                        if len(parts) > 1:
+                            conversation_entries[-1]["message"].append(parts[1])
+                            inside_code_block = False
+                    else:
+                        conversation_entries[-1]["message"].append(parts[0] + "```")
+                        conversation_entries[-1]["code_block"] = "```" + parts[1]
+                        conversation_entries[-1]["code_block_index"] = code_block_counter
+                        code_block_counter += 1
+                        inside_code_block = True
+                else:
+                    conversation_entries[-1]["message"].append(reply)
+                    if inside_code_block:
+                        conversation_entries[-1]["code_block"] += reply
+
             previous_kind = current_kind
-        if not all and len(conversation_lines) > 0:
-            return conversation_lines[-1]
-        return "".join(conversation_lines)
+
+        # Combine message lists into single strings and inject {{code_block_N}}
+        for entry in conversation_entries:
+            message = "".join(entry["message"])
+            if entry["code_block"]:
+                code_block_start = message.find("```")
+                if code_block_start != -1:
+                    code_block_tag = f"\n\n<a href='{sublime.command_url('copilot_copy_code', {'index': entry['code_block_index'], 'window_id': self.window.id()})}'>Copy Code</a><br>"
+                    message = message[:code_block_start] + code_block_tag + message[code_block_start:]
+            entry["message"] = message
+            self.conversation_manager.insert_code_block_index(f'{entry["code_block_index"]}', entry["code_block"])
+
+        return conversation_entries
 
     def open(self) -> None:
         active_group = self.window.active_group()
@@ -175,17 +241,17 @@ class _ConversationEntry:
         self.window.focus_view(self.window.active_view())  # type: ignore
 
     def update(self) -> None:
-        if not (view := find_view_by_id(self.conversation_manager.view_id)):
+        sheet = self.window.transient_sheet_in_group(self.conversation_manager.group_id)
+        if not isinstance(sheet, sublime.HtmlSheet):
             return
-        view.set_read_only(False)
-        view.run_command("move_to", {"to": "eof"})
-        view.run_command("append", {"characters": self.conversation_content(all=False)})
-        view.set_read_only(True)
+
+        mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True)
 
     def close(self) -> None:
-        if not (view := find_view_by_id(self.conversation_manager.view_id)):
+        sheet = self.window.transient_sheet_in_group(self.conversation_manager.group_id)
+        if not isinstance(sheet, sublime.HtmlSheet):
             return
-        view.close()
+
         self.conversation_manager.is_visible = False
         if self.conversation_manager.original_layout:
             self.window.set_layout(self.conversation_manager.original_layout)  # type: ignore
@@ -197,15 +263,14 @@ class _ConversationEntry:
         self.conversation_manager.group_id = group_id
 
         window.focus_group(group_id)
-        view = window.new_file()
-        view.set_syntax_file("Packages/Markdown/Markdown.sublime-syntax")
-        view.set_name("Copilot Chat")
-        view.set_read_only(False)
-        view.set_scratch(True)
-        view.run_command("move_to", {"to": "eof"})
-        view.run_command("insert", {"characters": self.conversation_content(all=True)})
-        view.set_read_only(True)
-        self.conversation_manager.view_id = view.id()
+        sheet = mdpopups.new_html_sheet(
+            window=window,
+            name="Panel Completions",
+            contents=self.completion_content,
+            md=True,
+            flags=sublime.TRANSIENT,
+        )
+        self.conversation_manager.view_id = sheet.id()
 
     def _open_in_side_by_side(self, window: sublime.Window) -> None:
         self.conversation_manager.original_layout = window.layout()  # type: ignore
