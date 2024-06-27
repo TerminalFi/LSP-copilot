@@ -9,7 +9,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from .client import CopilotPlugin
-from .decorators import _must_be_active_view_not_ignored
+from .decorators import _must_be_active_view
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
     CopilotIgnore,
@@ -46,7 +46,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def _is_saving(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "_is_saving", value)
 
-    @_must_be_active_view_not_ignored()
+    @_must_be_active_view()
     def on_modified_async(self) -> None:
         self._is_modified = True
 
@@ -59,20 +59,6 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
         if not self._is_saving and get_session_setting(session, "auto_ask_completions") and not vcm.is_waiting:
             plugin.request_get_completions(self.view)
-
-    def on_activated_async(self) -> None:
-        if (
-            (window := self.view.window())
-            and (plugin := CopilotPlugin.from_view(self.view))
-            and copilot_ignore_observer
-        ):
-            copilot_ignore_observer.add_folders(window.folders())
-            CopilotIgnore(window).load_patterns()
-            CopilotIgnore(window).trigger(self.view)
-            if get_copilot_view_setting(self.view, "is_copilot_ignored", False):
-                plugin.update_status_bar_text({"is_copilot_ignored": "ignored"})
-            else:
-                plugin.update_status_bar_text()
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()
@@ -121,6 +107,17 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
         return None
 
+    def on_activated_async(self) -> None:
+        _, session = CopilotPlugin.plugin_session(self.view)
+
+        if (session and CopilotPlugin.should_ignore(self.view)) or (
+            not session and not CopilotPlugin.should_ignore(self.view)
+        ):
+            window = self.view.window()
+            file_name = self.view.file_name()
+            self.view.close()
+            window.run_command("open_file", {"file": file_name})
+
     def on_post_text_command(self, command_name: str, args: dict[str, Any] | None) -> None:
         if command_name == "lsp_save":
             self._is_saving = True
@@ -133,7 +130,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_post_save_async(self) -> None:
         self._is_saving = False
 
-    @_must_be_active_view_not_ignored()
+    @_must_be_active_view()
     def on_selection_modified_async(self) -> None:
         if not self._is_modified:
             ViewCompletionManager(self.view).handle_selection_change()
