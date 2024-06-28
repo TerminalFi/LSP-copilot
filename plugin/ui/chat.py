@@ -168,7 +168,11 @@ class _ConversationEntry:
         return load_resource_template("chat_panel.md.jinja").render(
             is_waiting=self.conversation_manager.is_waiting,
             sections=[
-                {"kind": entry["kind"], "message": "".join(entry["messages"])} for entry in conversations_entries
+                {
+                    "kind": entry["kind"],
+                    "message": "".join(entry["messages"]),
+                }
+                for entry in conversations_entries
             ],
         )
 
@@ -201,10 +205,13 @@ class _ConversationEntry:
                     current_entry["code_block"].extend(code_block_lines)
                     if "```" in reply:
                         inside_code_block = False
+                reply = reply.replace("\n", "<br>") if not inside_code_block else reply
                 current_entry["messages"].append(reply)
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
+                if "```" not in reply:
+                    reply = reply.replace("\n", "<br>")
                 current_entry = {"kind": kind, "messages": [reply], "code_block": []}
                 if "```" in reply:
                     inside_code_block = True
@@ -252,7 +259,7 @@ class _ConversationEntry:
         window.focus_group(group_id)
         sheet = mdpopups.new_html_sheet(
             window=window,
-            name="Panel Completions",
+            name="Copilot Chat",
             contents=self.completion_content,
             md=True,
             flags=sublime.TRANSIENT,

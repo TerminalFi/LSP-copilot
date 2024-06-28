@@ -75,21 +75,16 @@
     border-radius: 3px;
     border-style: solid;
     border-width: 1px;
+    padding: 1px;
   }
 
-  .kind .system {
-    border-radius: 3px;
-    border-style: solid;
-    border-width: 1px;
-    background: color(var(--accent) alpha(0.5));
+  .report {
+    background: color(var(--accent) alpha(1));
     border-color: color(var(--accent) alpha(0.8));
   }
-  .kind .user {
-    border-radius: 3px;
-    border-style: solid;
-    border-width: 1px;
-    background: color(var(--foreground) alpha(0.5));
-    border-color: color(var(--foreground) alpha(0.8));
+  .user {
+    background: color(var(--greenish) alpha(1));
+    border-color: color(var(--greenish) alpha(0.8));
   }
 </style>
 
@@ -113,7 +108,9 @@
     <a class="rating" title="👎" href='#'>👎</a>
   </div>
 
-<span class="kind">{{ section.kind }}:</span> {{ section.message }}
+<span class="kind {{ section.kind }}">{{ section.kind }}:</span>
+
+{{ section.message }}
 
 {% endfor %}
 

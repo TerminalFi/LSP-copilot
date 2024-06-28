@@ -56,6 +56,7 @@ from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConvers
 from .utils import (
     find_view_by_id,
     get_session_setting,
+    get_view_language_id,
     message_dialog,
     ok_cancel_dialog,
     prepare_completion_request,
@@ -188,7 +189,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
         completion_manager.close()
 
 
-class CopilotConversationCreateCommand(LspTextCommand):
+class CopilotConversationChatCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         if not (window := self.view.window()):
@@ -242,11 +243,16 @@ class CopilotConversationCreateCommand(LspTextCommand):
             return
         manager = WindowConversationManager(window)
         template = load_string_template(msg)
-        if not (view := find_view_by_id(manager.last_active_view_id)):
-            selections = []
-        else:
-            selections = [view.substr(region) for region in view.sel()]
-        msg = template.render({"selections": selections})
+        sel = []
+        if view := find_view_by_id(manager.last_active_view_id):
+            lang = get_view_language_id(self.view, self.view.sel()[0].begin())
+            sel = [
+                f"""```{lang}
+{view.substr(region)}
+```"""
+                for region in view.sel()
+            ]
+        msg = template.render({"sel": sel})
         manager.append_conversation_entry({
             "kind": "user",
             "conversationId": manager.conversation_id,

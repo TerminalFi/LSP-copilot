@@ -1,7 +1,7 @@
 [
     {
         "caption": "Copilot: Chat",
-        "command": "copilot_conversation_create"
+        "command": "copilot_conversation_chat"
     },
     {
         "caption": "Copilot: Destroy Conversation",
