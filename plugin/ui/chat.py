@@ -167,69 +167,57 @@ class _ConversationEntry:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja").render(
             is_waiting=self.conversation_manager.is_waiting,
-            sections=[{"kind": entry["kind"], "message": entry["message"]} for entry in conversations_entries],
+            sections=[
+                {"kind": entry["kind"], "message": "".join(entry["messages"])} for entry in conversations_entries
+            ],
         )
 
     def _synthesize(self) -> list[dict[str, Any]]:
-        conversation_entries = []
-        previous_kind = None
+        transformed_conversation = []
+        current_entry = None
         inside_code_block = False
-        code_block_counter = 0
+        code_block_lines = []
+        code_block_index = -1
 
         for entry in self.conversation_manager.conversation:
-            current_kind = entry["kind"]
-            # Adjust kind for "report"
-            if current_kind == "report":
-                current_kind = "system"
-
+            kind = entry["kind"]
             reply = entry["reply"]
 
-            # Determine whether to create a new entry or append to the last one
-            if current_kind != previous_kind:
-                contains_code = "```" in reply
-                new_entry = {"kind": current_kind, "message": [reply], "code_block": "", "code_block_index": -1}
-                if contains_code:
-                    parts = reply.split("```", 1)
-                    new_entry["message"] = [parts[0] + "```" + parts[1]]
-                    new_entry["code_block"] = "```" + parts[1]
-                    new_entry["code_block_index"] = code_block_counter
-                    code_block_counter += 1
+            if current_entry and current_entry["kind"] == kind:
+                if "```" in reply and not inside_code_block:
                     inside_code_block = True
-                conversation_entries.append(new_entry)
+                    code_block_index += 1
+                    code_block_start = reply.index("```")
+                    code_block_lines = reply[code_block_start:].splitlines(True)
+                    reply = (
+                        reply[:code_block_start]
+                        + f"""<a href='{sublime.command_url("copilot_copy_code", {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index})}'>Copy</a>"""
+                        + "\n"
+                        + code_block_lines[0]
+                    )
+                    current_entry["code_block"].extend(code_block_lines)
+                elif inside_code_block:
+                    code_block_lines = reply.splitlines(True)
+                    current_entry["code_block"].extend(code_block_lines)
+                    if "```" in reply:
+                        inside_code_block = False
+                current_entry["messages"].append(reply)
             else:
+                if current_entry:
+                    transformed_conversation.append(current_entry)
+                current_entry = {"kind": kind, "messages": [reply], "code_block": []}
                 if "```" in reply:
-                    parts = reply.split("```")
-                    if inside_code_block:
-                        conversation_entries[-1]["code_block"] += parts[0] + "```"
-                        conversation_entries[-1]["message"].append("```")
-                        if len(parts) > 1:
-                            conversation_entries[-1]["message"].append(parts[1])
-                            inside_code_block = False
-                    else:
-                        conversation_entries[-1]["message"].append(parts[0] + "```")
-                        conversation_entries[-1]["code_block"] = "```" + parts[1]
-                        conversation_entries[-1]["code_block_index"] = code_block_counter
-                        code_block_counter += 1
-                        inside_code_block = True
-                else:
-                    conversation_entries[-1]["message"].append(reply)
-                    if inside_code_block:
-                        conversation_entries[-1]["code_block"] += reply
+                    inside_code_block = True
+                    code_block_index += 1
+                    code_block_start = reply.index("```")
+                    code_block_lines = reply[code_block_start:].splitlines(True)
+                    current_entry["code_block"].extend(code_block_lines)
+                    current_entry["code_block_index"] = code_block_index
 
-            previous_kind = current_kind
+        if current_entry:
+            transformed_conversation.append(current_entry)
 
-        # Combine message lists into single strings and inject {{code_block_N}}
-        for entry in conversation_entries:
-            message = "".join(entry["message"])
-            if entry["code_block"]:
-                code_block_start = message.find("```")
-                if code_block_start != -1:
-                    code_block_tag = f"\n\n<a href='{sublime.command_url('copilot_copy_code', {'index': entry['code_block_index'], 'window_id': self.window.id()})}'>Copy Code</a><br>"
-                    message = message[:code_block_start] + code_block_tag + message[code_block_start:]
-            entry["message"] = message
-            self.conversation_manager.insert_code_block_index(f'{entry["code_block_index"]}', entry["code_block"])
-
-        return conversation_entries
+        return transformed_conversation
 
     def open(self) -> None:
         active_group = self.window.active_group()
@@ -244,7 +232,6 @@ class _ConversationEntry:
         sheet = self.window.transient_sheet_in_group(self.conversation_manager.group_id)
         if not isinstance(sheet, sublime.HtmlSheet):
             return
-
         mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True)
 
     def close(self) -> None:
