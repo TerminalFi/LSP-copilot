@@ -165,7 +165,7 @@ class _ConversationEntry:
     @property
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
-        return load_resource_template("chat_panel.md.jinja").render(
+        return load_resource_template("chat_panel.md.jinja", True).render(
             is_waiting=self.conversation_manager.is_waiting,
             sections=[
                 {
@@ -205,13 +205,13 @@ class _ConversationEntry:
                     current_entry["code_block"].extend(code_block_lines)
                     if "```" in reply:
                         inside_code_block = False
-                reply = reply.replace("\n", "<br>") if not inside_code_block else reply
+                # reply = reply.replace("\n", "<br>") if not inside_code_block else reply
                 current_entry["messages"].append(reply)
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
-                if "```" not in reply:
-                    reply = reply.replace("\n", "<br>")
+                # if "```" not in reply:
+                #     reply = reply.replace("\n", "<br>")
                 current_entry = {"kind": kind, "messages": [reply], "code_block": []}
                 if "```" in reply:
                     inside_code_block = True
@@ -239,7 +239,9 @@ class _ConversationEntry:
         sheet = self.window.transient_sheet_in_group(self.conversation_manager.group_id)
         if not isinstance(sheet, sublime.HtmlSheet):
             return
-        mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True)
+        view = find_view_by_id(self.conversation_manager.last_active_view_id)
+
+        mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True, wrapper_class="wrapper")
 
     def close(self) -> None:
         sheet = self.window.transient_sheet_in_group(self.conversation_manager.group_id)
@@ -263,6 +265,7 @@ class _ConversationEntry:
             contents=self.completion_content,
             md=True,
             flags=sublime.TRANSIENT,
+            wrapper_class="wrapper",
         )
         self.conversation_manager.view_id = sheet.id()
 
