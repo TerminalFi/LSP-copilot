@@ -317,27 +317,39 @@ class CopilotConversationRatingCommand(LspTextCommand):
         return get_session_setting(session, "debug")
 
 
+class CopilotConversationDestroyShimCommand(LspWindowCommand):
+    def run(self, conversation_id: str) -> None:
+        conversation_manager = WindowConversationManager(self.window)
+        if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
+            return
+        view.run_command("copilot_conversation_destroy", {"conversation_id": conversation_id})
+
+
 class CopilotConversationDestroyCommand(LspTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        if not (window := self.view.window()):
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, conversation_id: str) -> None:
+        conversation_manager = WindowConversationManager(self.view.window())
+        if conversation_manager.conversation_id != conversation_id:
             return
-        manager = WindowConversationManager(window)
+
         session.send_request(
             Request(
                 REQ_CONVERSATION_DESTROY,
                 {
-                    "conversationId": conversation_manager.conversation_id,
+                    "conversationId": conversation_id,
                     "options": {},
                 },
             ),
             self._on_result_coversation_destroy,
         )
 
-        conversation_manager.reset()
-
     def _on_result_coversation_destroy(self, payload) -> None:
-        print(f"_on_result_coversation_destroy {payload = }")
+        if payload != "OK":
+            status_message("Failed to destroy conversation.")
+            return
+        conversation_manager = WindowConversationManager(self.view.window())
+        conversation_manager.close()
+        conversation_manager.reset()
 
     def is_enabled(self) -> bool:
         return super().is_enabled() and bool(WindowConversationManager(self.view.window()).conversation_id)

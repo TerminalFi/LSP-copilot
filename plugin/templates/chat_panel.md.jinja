@@ -1,5 +1,8 @@
 <style>
   html {
+    --copilot-delete-foreground: var(--redish);
+    --copilot-delete-background: var(--background);
+    --copilot-delete-border: var(--redish);
     --copilot-close-foreground: var(--foreground);
     --copilot-close-background: var(--background);
     --copilot-close-border: var(--foreground);
@@ -42,6 +45,16 @@
     display: inline;
     padding: 2px;
     text-decoration: none;
+  }
+
+  .wrapper a.delete {
+    background: var(--copilot-delete-background);
+    border-color: var(--copilot-delete-border);
+    color: var(--copilot-delete-foreground);
+  }
+
+  .wrapper a.delete i {
+    color: var(--copilot-delete-border);
   }
 
   .wrapper a.close {
@@ -89,7 +102,8 @@
 </style>
 
 <div class="navbar">
-  <a class="close" title="Close Conversation" href='{{ close_url }}'><i>×</i> Close</a>&nbsp;
+  <a class="delete" title="Delete Conversation" href='{{ delete_url }}'><i>×</i> Delete</a>
+  <a class="close" title="Close Conversation" href='{{ close_url }}'><i>×</i> Close</a>
   <h4 class="synthesis-info">
     {% if is_waiting %}
       ⌛ Fetching next response...

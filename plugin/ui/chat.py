@@ -166,6 +166,9 @@ class _ConversationEntry:
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", True).render(
+            delete_url=sublime.command_url(
+                "copilot_conversation_destroy_shim", {"conversation_id": self.conversation_manager.conversation_id}
+            ),
             close_url=sublime.command_url(
                 "copilot_conversation_close", {"window_id": self.conversation_manager.window.id()}
             ),
@@ -198,15 +201,7 @@ class _ConversationEntry:
                     code_block_lines = reply[code_block_start:].splitlines(True)
                     reply = (
                         reply[:code_block_start]
-                        + f"""<a href='{
-                            sublime.command_url(
-                                "copilot_conversation_copy_code",
-                                {
-                                    "window_id": self.conversation_manager.window.id(),
-                                    "code_block_index": code_block_index,
-                                },
-                            )
-                        }'>Copy</a>"""
+                        + f"""<a href='{sublime.command_url("copilot_conversation_copy_code", {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index})}'>Copy</a>"""
                         + "\n\n"
                         + code_block_lines[0]
                     )
@@ -243,6 +238,7 @@ class _ConversationEntry:
         sheet = self.window.transient_sheet_in_group(self.conversation_manager.group_id)
         if not isinstance(sheet, sublime.HtmlSheet):
             return
+
         mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True, wrapper_class="wrapper")
 
     def close(self) -> None:
@@ -253,7 +249,6 @@ class _ConversationEntry:
         sheet.close()
         self.conversation_manager.is_visible = False
         if self.conversation_manager.original_layout:
-            print("reset layout")
             self.window.set_layout(self.conversation_manager.original_layout)  # type: ignore
             self.conversation_manager.original_layout = None
 
