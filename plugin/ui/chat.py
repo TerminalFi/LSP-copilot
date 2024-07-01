@@ -166,6 +166,9 @@ class _ConversationEntry:
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", True).render(
+            close_url=sublime.command_url(
+                "copilot_conversation_close", {"window_id": self.conversation_manager.window.id()}
+            ),
             delete_url=sublime.command_url(
                 "copilot_conversation_destroy_shim", {"conversation_id": self.conversation_manager.conversation_id}
             ),
@@ -200,7 +203,7 @@ class _ConversationEntry:
         code_block_index = -1
 
         for entry in self.conversation_manager.conversation:
-            kind = entry["kind"]
+            kind = entry["kind"] if entry["kind"] == "user" else "system"
             reply = entry["reply"]
             turn_id = entry["turnId"]
 
@@ -210,21 +213,22 @@ class _ConversationEntry:
                     code_block_index += 1
                     code_block_start = reply.index("```")
                     code_block_lines = reply[code_block_start:].splitlines(True)
+                    command_url = sublime.command_url(
+                        "copilot_conversation_copy_code",
+                        {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
+                    )
                     reply = (
-                        reply[:code_block_start]
-                        + f"""<a href='{sublime.command_url("copilot_conversation_copy_code", {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index})}'>Copy</a>"""
-                        + "\n\n"
-                        + code_block_lines[0]
+                        reply[:code_block_start] + f"<a href='{command_url}'>Copy</a>" + "\n\n" + code_block_lines[0]
                     )
                 elif inside_code_block:
-                    code_block_lines = reply.splitlines(True)
                     if "```" in reply:
                         inside_code_block = False
+                        code_block_lines = []
                         self.conversation_manager.insert_code_block_index(
                             code_block_index, "".join(current_entry["code_block"])
                         )
                     else:
-                        current_entry["code_block"].extend(code_block_lines)
+                        current_entry["code_block"].extend(reply)
                 current_entry["messages"].append(reply)
             else:
                 if current_entry:
