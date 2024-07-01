@@ -266,6 +266,10 @@ class CopilotConversationChatCommand(LspTextCommand):
             "annotations": [],
             "hideText": False,
         })
+
+        if not (request := prepare_completion_request(view)):
+            return
+
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN,
@@ -273,7 +277,7 @@ class CopilotConversationChatCommand(LspTextCommand):
                     "conversationId": manager.conversation_id,
                     "message": msg,
                     "workDoneToken": f"copilot_chat://{manager.window.id()}",  # Not sure where this comes from
-                    "doc": prepare_completion_request(view)["doc"],
+                    "doc": request["doc"],
                     "computeSuggestions": True,
                     "references": [],
                     "source": "panel",
@@ -298,7 +302,6 @@ class CopilotConversationRatingShimCommand(LspWindowCommand):
     def run(self, turn_id: str, rating: int) -> None:
         conversation_manager = WindowConversationManager(self.window)
         if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
-            print("no view found")
             return
         view.run_command("copilot_conversation_rating", {"turn_id": turn_id, "rating": rating})
 
