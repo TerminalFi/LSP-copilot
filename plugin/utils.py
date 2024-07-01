@@ -357,3 +357,7 @@ class CopilotIgnore:
             return False
 
         return self.matches_any_pattern(file)
+
+
+def find_index_by_key_value(items, key, value):
+    return next((index for index, item in enumerate(items) if item.get(key) == value), -1)

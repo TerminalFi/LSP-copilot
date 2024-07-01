@@ -52,6 +52,7 @@ from .types import (
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import (
+    find_index_by_key_value,
     find_view_by_id,
     find_window_by_id,
     get_session_setting,
@@ -239,6 +240,8 @@ class CopilotConversationChatCommand(LspTextCommand):
     def _on_prompt(self, session: Session, msg: str):
         if not (window := self.view.window()):
             return
+        import uuid
+
         manager = WindowConversationManager(window)
         template = load_string_template(msg)
         sel = []
@@ -255,7 +258,7 @@ class CopilotConversationChatCommand(LspTextCommand):
             "kind": "user",
             "conversationId": manager.conversation_id,
             "reply": msg,
-            "turnId": manager.current_turn_id,
+            "turnId": str(uuid.uuid4()),
             "annotations": [],
             "hideText": False,
         })
@@ -369,7 +372,10 @@ class CopilotConversationTurnDeleteShimCommand(LspWindowCommand):
         conversation_manager = WindowConversationManager(self.window)
         if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
             return
-        view.run_command("copilot_conversation_turn_delete", {"window_id": window_id, "conversation_id": conversation_id, "turn_id": turn_id})
+        view.run_command(
+            "copilot_conversation_turn_delete",
+            {"window_id": window_id, "conversation_id": conversation_id, "turn_id": turn_id},
+        )
 
 
 # Should be passed the window id and then remove all turns with turn_id from historu and then reload
@@ -384,12 +390,20 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
         conversation_id: str,
         turn_id: str,
     ) -> None:
+        if not (window := find_window_by_id(window_id)):
+            return
+
+        conversation_manager = WindowConversationManager(window)
+        if conversation_manager.conversation_id != conversation_id:
+            return
+
+        index = find_index_by_key_value(conversation_manager.conversation, "turnId", turn_id)
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN_DELETE,
                 {
                     "conversationId": conversation_id,
-                    "turnId": turn_id,
+                    "turnId": conversation_manager.conversation[index + 1]["turnId"],
                     "options": {},
                 },
             ),
@@ -400,9 +414,6 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
         if payload != "OK":
             status_message("Failed to delete turn.")
             return
-
-        def find_index_by_key_value(items, key, value):
-            return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
 
         if not (window := find_window_by_id(window_id)):
             return

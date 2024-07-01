@@ -54,15 +54,6 @@ class WindowConversationManager:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", value)
 
     @property
-    def current_turn_id(self) -> str:
-        """The ID of the group which is used to show panel completions."""
-        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "current_turn_id", -1)
-
-    @current_turn_id.setter
-    def current_turn_id(self, value: int) -> None:
-        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "current_turn_id", value)
-
-    @property
     def original_layout(self) -> StLayout | None:
         """The original window layout prior to panel presentation."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "original_layout", None)
@@ -190,7 +181,6 @@ class _ConversationEntry:
                         {
                             "conversation_id": self.conversation_manager.conversation_id,
                             "window_id": self.conversation_manager.window.id(),
-                            "conversation_id": self.conversation_manager.conversation_id,
                             "turn_id": entry["turnId"],
                         },
                     ),
@@ -241,7 +231,7 @@ class _ConversationEntry:
                     )
                     reply = (
                         reply[:code_block_start]
-                        + f"<a href='{copy_command_url}'>Copy</a><span></span>"  # Span seems required to separate the two links
+                        + f"<a href='{copy_command_url}'>Copy</a><span></span>"
                         + f" <a href='{insert_command_url}'>Insert</a>"
                         + "\n\n"
                         + code_block_lines[0]
