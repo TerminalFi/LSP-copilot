@@ -291,6 +291,15 @@ class CopilotConversationCloseCommand(CopilotWindowCommand):
         WindowConversationManager(window).close()
 
 
+class CopilotConversationRatingShimCommand(LspWindowCommand):
+    def run(self, turn_id: str, rating: int) -> None:
+        conversation_manager = WindowConversationManager(self.window)
+        if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
+            print("no view found")
+            return
+        view.run_command("copilot_conversation_rating", {"turn_id": turn_id, "rating": rating})
+
+
 class CopilotConversationRatingCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
@@ -400,9 +409,6 @@ class CopilotConversationInsertCodeCommand(LspTextCommand):
                 {
                     "turnId": turn_id,
                     "rating": rating,
-                    # doc: H2.Type.Optional(Z0),
-                    # options: H2.Type.Optional(Mn),
-                    # source: H2.Type.Optional(sd),
                 },
             ),
             self._on_result_coversation_rating,

@@ -196,6 +196,8 @@ def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
 
 
 def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
+    if not view:
+        return None
     if len(sel := view.sel()) != 1:
         return None
 

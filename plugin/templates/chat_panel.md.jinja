@@ -101,6 +101,7 @@
   }
 </style>
 
+
 <div class="navbar">
   <a class="delete" title="Delete Conversation" href='{{ delete_url }}'><i>×</i> Delete</a>
   <a class="close" title="Close Conversation" href='{{ close_url }}'><i>×</i> Close</a>
@@ -116,14 +117,17 @@
 {% for section in sections %}
 
 ---
+
+{{ if section.kind == 'report' }}
   <div class="header">
-    <a class="rating" title="👍" href='#'>👍</a>
-    <a class="rating" title="👎" href='#'>👎</a>
+    <a class="rating" title="👍" href='{{ section.thumbs_up_url }}'>👍</a>
+    <a class="rating" title="👎" href='{{ section.thumbs_down_url }}'>👎</a>
   </div>
+{{ endif }}
+
 
 <span class="kind {{ section.kind }}">{{ section.kind }}:</span>
 
 {{ section.message }}
 
 {% endfor %}
-

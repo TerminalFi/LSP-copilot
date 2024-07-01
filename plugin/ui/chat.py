@@ -169,14 +169,25 @@ class _ConversationEntry:
             delete_url=sublime.command_url(
                 "copilot_conversation_destroy_shim", {"conversation_id": self.conversation_manager.conversation_id}
             ),
-            close_url=sublime.command_url(
-                "copilot_conversation_close", {"window_id": self.conversation_manager.window.id()}
-            ),
             is_waiting=self.conversation_manager.is_waiting,
             sections=[
                 {
                     "kind": entry["kind"],
                     "message": "".join(entry["messages"]),
+                    "thumbs_up_url": sublime.command_url(
+                        "copilot_conversation_rating_shim",
+                        {
+                            "turn_id": entry["turnId"],
+                            "rating": 1,
+                        },
+                    ),
+                    "thumbs_down_url": sublime.command_url(
+                        "copilot_conversation_rating_shim",
+                        {
+                            "turn_id": entry["turnId"],
+                            "rating": 0,
+                        },
+                    ),
                 }
                 for entry in conversations_entries
             ],
@@ -192,6 +203,7 @@ class _ConversationEntry:
         for entry in self.conversation_manager.conversation:
             kind = entry["kind"]
             reply = entry["reply"]
+            turn_id = entry["turnId"]
 
             if current_entry and current_entry["kind"] == kind:
                 if "```" in reply and not inside_code_block:
@@ -218,7 +230,7 @@ class _ConversationEntry:
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
-                current_entry = {"kind": kind, "messages": [reply], "code_block": []}
+                current_entry = {"kind": kind, "messages": [reply], "code_block": [], "turnId": turn_id}
 
         if current_entry:
             transformed_conversation.append(current_entry)
