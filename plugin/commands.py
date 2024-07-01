@@ -207,6 +207,8 @@ class CopilotConversationChatCommand(LspTextCommand):
         )
 
     def _on_result_conversation_preconditions(self, session, payload) -> None:
+        if not (window := self.view.window()):
+            return
         session.send_request(
             Request(
                 REQ_CONVERSATION_CREATE,
@@ -216,7 +218,7 @@ class CopilotConversationChatCommand(LspTextCommand):
                         "allSkills": True,
                         "skills": [],
                     },
-                    "workDoneToken": f"copilot_chat://{self.view.window().id()}",
+                    "workDoneToken": f"copilot_chat://{window.id()}",
                     # "doc": Ji.Type.Optional(Z0),
                     "computeSuggestions": True,
                     # "references": Ji.Type.Optional(Ji.Type.Array(k8)),
@@ -322,10 +324,6 @@ class CopilotConversationRatingCommand(LspTextCommand):
         # Returns OK
         pass
 
-    @_provide_plugin_session(failed_return=False)
-    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
-        return get_session_setting(session, "debug")
-
 
 class CopilotConversationDestroyShimCommand(LspWindowCommand):
     def run(self, conversation_id: str) -> None:
@@ -427,10 +425,6 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
         conversation_manager.conversation = conversation
         conversation_manager.update()
 
-    @_provide_plugin_session(failed_return=False)
-    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
-        return get_session_setting(session, "debug")
-
 
 class CopilotConversationCopyCodeCommand(LspWindowCommand):
     def run(self, window_id: int, code_block_index: int) -> None:
@@ -470,10 +464,6 @@ class CopilotConversationAgentsCommand(LspTextCommand):
             return
         window.show_quick_panel([(item["id"], item["description"]) for item in payload], lambda _: None)
 
-    @_provide_plugin_session(failed_return=False)
-    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
-        return get_session_setting(session, "debug")
-
 
 class CopilotConversationTemplatesCommand(LspTextCommand):
     @_provide_plugin_session()
@@ -489,10 +479,6 @@ class CopilotConversationTemplatesCommand(LspTextCommand):
         window.show_quick_panel(
             [(item["id"], item["description"], ", ".join(item["scopes"])) for item in payload], lambda _: None
         )
-
-    @_provide_plugin_session(failed_return=False)
-    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
-        return get_session_setting(session, "debug")
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):

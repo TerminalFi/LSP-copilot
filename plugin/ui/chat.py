@@ -207,7 +207,7 @@ class _ConversationEntry:
         transformed_conversation = []
         current_entry = None
         inside_code_block = False
-        code_block_lines = []
+        code_block_lines: list[str] = []
         code_block_index = -1
 
         for entry in self.conversation_manager.conversation:
