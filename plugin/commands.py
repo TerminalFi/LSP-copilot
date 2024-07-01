@@ -20,7 +20,6 @@ from .constants import (
     REQ_CONVERSATION_AGENTS,
     REQ_CONVERSATION_CREATE,
     REQ_CONVERSATION_DESTROY,
-    REQ_CONVERSATION_INSERT_CODE,
     REQ_CONVERSATION_PRECONDITIONS,
     REQ_CONVERSATION_RATING,
     REQ_CONVERSATION_TEMPLATES,
@@ -412,30 +411,7 @@ class CopilotConversationInsertCodeCommand(LspWindowCommand):
         if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
             return
 
-        view.run_command("insert", {"characters": code})
-
-
-class CopilotConversationInsertCodeCommand(LspTextCommand):
-    @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
-        session.send_request(
-            Request(
-                REQ_CONVERSATION_INSERT_CODE,
-                {
-                    "turnId": turn_id,
-                    "rating": rating,
-                },
-            ),
-            self._on_result_coversation_rating,
-        )
-
-    def _on_result_coversation_rating(self, payload: Literal[OK]) -> None:
-        # Returns OK
-        pass
-
-    @_provide_plugin_session(failed_return=False)
-    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
-        return get_session_setting(session, "debug")
+        view.run_command("append", {"characters": code})
 
 
 class CopilotConversationAgentsCommand(LspTextCommand):

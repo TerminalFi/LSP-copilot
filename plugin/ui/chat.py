@@ -213,12 +213,20 @@ class _ConversationEntry:
                     code_block_index += 1
                     code_block_start = reply.index("```")
                     code_block_lines = reply[code_block_start:].splitlines(True)
-                    command_url = sublime.command_url(
+                    copy_command_url = sublime.command_url(
                         "copilot_conversation_copy_code",
                         {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
                     )
+                    insert_command_url = sublime.command_url(
+                        "copilot_conversation_insert_code",
+                        {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
+                    )
                     reply = (
-                        reply[:code_block_start] + f"<a href='{command_url}'>Copy</a>" + "\n\n" + code_block_lines[0]
+                        reply[:code_block_start]
+                        + f"<a href='{copy_command_url}'>Copy</a><span></span>"  # Span seems required to separate the two links
+                        + f" <a href='{insert_command_url}'>Insert</a>"
+                        + "\n\n"
+                        + code_block_lines[0]
                     )
                 elif inside_code_block:
                     if "```" in reply:
