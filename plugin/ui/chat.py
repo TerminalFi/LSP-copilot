@@ -176,6 +176,13 @@ class _ConversationEntry:
                 {
                     "kind": entry["kind"],
                     "message": "".join(entry["messages"]),
+                    "turn_delete_url": sublime.command_url(
+                        "copilot_conversation_turn_delete_shim",
+                        {
+                            "conversation_id": self.conversation_manager.conversation_id,
+                            "turn_id": entry["turnId"],
+                        },
+                    ),
                     "thumbs_up_url": sublime.command_url(
                         "copilot_conversation_rating_shim",
                         {

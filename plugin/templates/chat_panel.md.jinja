@@ -111,12 +111,14 @@
 
 ---
 
-{% if section.kind == "report" %}
 <div class="header">
+{% if section.kind == "system" %}
   <a class="rating" title="👍" href='{{ section.thumbs_up_url }}'>👍</a>
   <a class="rating" title="👎" href='{{ section.thumbs_down_url }}'>👎</a>
-</div>
+{% else %}
+  <a class="delete" title="Delete Turn" href='{{ section.turn_delete_url }}'><i>×</i> Delete</a>
 {% endif %}
+</div>
 
 <span class="kind {{ section.kind }}">{{ section.kind }}:</span>
 

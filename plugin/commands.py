@@ -362,7 +362,16 @@ class CopilotConversationDestroyCommand(LspTextCommand):
     def is_enabled(self) -> bool:
         return super().is_enabled() and bool(WindowConversationManager(self.view.window()).conversation_id)
 
+# Should be passed the window_id
+class CopilotConversationTurnDeleteShimCommand(LspWindowCommand):
+    def run(self, conversation_id: str, turn_id: str) -> None:
+        conversation_manager = WindowConversationManager(self.window)
+        if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
+            return
+        view.run_command("copilot_conversation_turn_delete", {"conversation_id": conversation_id, "turn_id": turn_id})
 
+
+# Should be passed the window id and then remove all turns with turn_id from historu and then reload
 class CopilotConversationTurnDeleteCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, conversation_id: str, turn_id: str) -> None:
@@ -373,7 +382,6 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
                     "conversationId": conversation_id,
                     "turnId": turn_id,
                     "options": {},
-                    # "source": V8.Type.Optional(sd),
                 },
             ),
             self._on_result_coversation_turn_delete,
