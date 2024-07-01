@@ -240,19 +240,21 @@ class CopilotConversationChatCommand(LspTextCommand):
     def _on_prompt(self, session: Session, msg: str):
         if not (window := self.view.window()):
             return
+
         import uuid
 
         manager = WindowConversationManager(window)
         template = load_string_template(msg)
         sel = []
-        if view := find_view_by_id(manager.last_active_view_id):
-            lang = get_view_language_id(self.view, self.view.sel()[0].begin())
-            sel = [
-                f"""```{lang}
+        if not (view := find_view_by_id(manager.last_active_view_id)):
+            return
+        lang = get_view_language_id(view, view.sel()[0].begin())
+        sel = [
+            f"""```{lang}
 {view.substr(region)}
 ```"""
-                for region in view.sel()
-            ]
+            for region in view.sel()
+        ]
         msg = template.render({"sel": sel})
         manager.append_conversation_entry({
             "kind": "user",
@@ -262,17 +264,14 @@ class CopilotConversationChatCommand(LspTextCommand):
             "annotations": [],
             "hideText": False,
         })
-        manager.is_waiting = True
-        view_last_active_view = find_view_by_id(manager.last_active_view_id)
-
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN,
                 {
                     "conversationId": manager.conversation_id,
                     "message": msg,
-                    "workDoneToken": f"copilot_chat://{self.view.window().id()}",  # Not sure where this comes from
-                    "doc": prepare_completion_request(view_last_active_view)["doc"],
+                    "workDoneToken": f"copilot_chat://{manager.window.id()}",  # Not sure where this comes from
+                    "doc": prepare_completion_request(view)["doc"],
                     "computeSuggestions": True,
                     "references": [],
                     "source": "panel",
