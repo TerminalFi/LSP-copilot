@@ -72,6 +72,24 @@ class WindowConversationManager:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_id", value)
 
     @property
+    def suggested_title(self) -> str:
+        """Suggested title of the conversation"""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "suggested_title", "")
+
+    @suggested_title.setter
+    def suggested_title(self, value: str) -> None:
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "suggested_title", value)
+
+    @property
+    def follow_up(self) -> str:
+        """Suggested title of the conversation"""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", "")
+
+    @follow_up.setter
+    def follow_up(self, value: str) -> None:
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", value)
+
+    @property
     def conversation_id(self) -> str:
         """Whether the panel completions is visible."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_id", "")
@@ -120,6 +138,7 @@ class WindowConversationManager:
         self.is_waiting = False
         self.is_visible = False
         self.original_layout = None
+        self.suggested_title = ""
         self.conversation_id = ""
         self.conversation = []
         self.code_block_index = {}
@@ -143,7 +162,9 @@ class WindowConversationManager:
         return find_window_by_id(window_id)
 
     def prompt(self, callback):
-        self.window.show_input_panel("Copilot Chat", "", callback, None, None)
+        follow_up = self.follow_up
+        self.follow_up = ""
+        self.window.show_input_panel("Copilot Chat", follow_up, callback, None, None)
 
     def open(self, *, completion_target_count: int | None = None) -> None:
         _ConversationEntry(self.window).open()
@@ -166,6 +187,7 @@ class _ConversationEntry:
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", True).render(
+            suggested_title=self.conversation_manager.suggested_title,
             close_url=sublime.command_url(
                 "copilot_conversation_close", {"window_id": self.conversation_manager.window.id()}
             ),

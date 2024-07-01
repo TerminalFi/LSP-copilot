@@ -19,9 +19,10 @@
     text-align: left;
   }
 
-  .wrapper .synthesis-info {
+  .wrapper .suggested-title {
     display: inline-block;
     text-size: 1.2em;
+    margin-bottom: 1rem;
   }
 
   .wrapper .header {
@@ -101,6 +102,17 @@
   }
 </style>
 
+<div>
+  <h3 class="suggested-title">
+  {% if suggested_title %}
+  Copilot Chat | {{ suggested_title }}
+  {% else %}
+  Copilot Chat
+  {% endif %}
+  </h3>
+</div>
+
+---
 
 <div class="navbar">
   <a class="delete" title="Delete Conversation" href='{{ delete_url }}'><i>×</i> Delete</a>

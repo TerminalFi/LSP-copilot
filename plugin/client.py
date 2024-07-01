@@ -310,10 +310,18 @@ class CopilotPlugin(NpmClientHandler):
         if notification.method == "$/progress":
             if (token := notification.params["token"]) and token.startswith("copilot_chat://"):
                 if params := notification.params["value"]:
+                    if not (window := WindowConversationManager.find_window_by_token_id(token)):
+                        return
+
+                    conversation_manager = WindowConversationManager(window)
+                    if suggest_title := params.get("suggestedTitle", None):
+                        conversation_manager.suggested_title = suggest_title
+                        conversation_manager.update()
+
+                    if followup := params.get("followUp", None):
+                        message = followup.get("message", "")
+                        conversation_manager.follow_up = message
                     if params.get("reply", None):
-                        if not (window := WindowConversationManager.find_window_by_token_id(token)):
-                            return
-                        conversation_manager = WindowConversationManager(window)
                         conversation_manager.append_conversation_entry(params)
                         conversation_manager.update()
 
