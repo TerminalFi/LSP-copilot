@@ -255,7 +255,7 @@ class CopilotConversationChatCommand(LspTextCommand):
             "kind": "user",
             "conversationId": manager.conversation_id,
             "reply": msg,
-            "turnId": "user",
+            "turnId": manager.current_turn_id,
             "annotations": [],
             "hideText": False,
         })
@@ -362,19 +362,28 @@ class CopilotConversationDestroyCommand(LspTextCommand):
     def is_enabled(self) -> bool:
         return super().is_enabled() and bool(WindowConversationManager(self.view.window()).conversation_id)
 
+
 # Should be passed the window_id
 class CopilotConversationTurnDeleteShimCommand(LspWindowCommand):
-    def run(self, conversation_id: str, turn_id: str) -> None:
+    def run(self, window_id: int, conversation_id: str, turn_id: str) -> None:
         conversation_manager = WindowConversationManager(self.window)
         if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
             return
-        view.run_command("copilot_conversation_turn_delete", {"conversation_id": conversation_id, "turn_id": turn_id})
+        view.run_command("copilot_conversation_turn_delete", {"window_id": window_id, "conversation_id": conversation_id, "turn_id": turn_id})
 
 
 # Should be passed the window id and then remove all turns with turn_id from historu and then reload
 class CopilotConversationTurnDeleteCommand(LspTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, conversation_id: str, turn_id: str) -> None:
+    def run(
+        self,
+        plugin: CopilotPlugin,
+        session: Session,
+        _: sublime.Edit,
+        window_id: int,
+        conversation_id: str,
+        turn_id: str,
+    ) -> None:
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN_DELETE,
@@ -384,11 +393,29 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
                     "options": {},
                 },
             ),
-            self._on_result_coversation_turn_delete,
+            lambda x: self._on_result_coversation_turn_delete(window_id, conversation_id, turn_id, x),
         )
 
-    def _on_result_coversation_turn_delete(self, payload) -> None:
-        pass
+    def _on_result_coversation_turn_delete(self, window_id: int, conversation_id: str, turn_id: str, payload) -> None:
+        if payload != "OK":
+            status_message("Failed to delete turn.")
+            return
+
+        def find_index_by_key_value(items, key, value):
+            return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
+
+        if not (window := find_window_by_id(window_id)):
+            return
+
+        conversation_manager = WindowConversationManager(window)
+        if conversation_manager.conversation_id != conversation_id:
+            return
+
+        index = find_index_by_key_value(conversation_manager.conversation, "turnId", turn_id)
+        conversation = conversation_manager.conversation
+        del conversation[index:]
+        conversation_manager.conversation = conversation
+        conversation_manager.update()
 
     @_provide_plugin_session(failed_return=False)
     def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:

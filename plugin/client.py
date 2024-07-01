@@ -309,12 +309,15 @@ class CopilotPlugin(NpmClientHandler):
     def on_server_notification_async(self, notification) -> None:
         if notification.method == "$/progress":
             if (token := notification.params["token"]) and token.startswith("copilot_chat://"):
-                if (params := notification.params["value"]) and params.get("reply", None):
+                if params := notification.params["value"]:
                     if not (window := WindowConversationManager.find_window_by_token_id(token)):
                         return
                     conversation_manager = WindowConversationManager(window)
-                    conversation_manager.append_conversation_entry(params)
-                    conversation_manager.update()
+                    if (kind := params.get("kind", None)) and kind == "begin":
+                        conversation_manager.current_turn_id = params.get("turnId")
+                    if params.get("reply", None):
+                        conversation_manager.append_conversation_entry(params)
+                        conversation_manager.update()
 
     @notification_handler(NTFY_LOG_MESSAGE)
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
