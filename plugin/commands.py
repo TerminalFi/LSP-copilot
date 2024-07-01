@@ -185,8 +185,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
             view = find_view_by_id(view_id)
         if not view:
             return
-        completion_manager = ViewPanelCompletionManager(view)
-        completion_manager.close()
+        ViewPanelCompletionManager(view).close()
 
 
 class CopilotConversationChatCommand(LspTextCommand):
@@ -282,6 +281,16 @@ class CopilotConversationChatCommand(LspTextCommand):
         manager.update()
 
 
+class CopilotConversationCloseCommand(CopilotWindowCommand):
+    def run(self, window_id: int | None = None) -> None:
+        if not window_id:
+            return
+        if not (window := find_window_by_id(window_id)):
+            return
+
+        WindowConversationManager(window).close()
+
+
 class CopilotConversationRatingCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
@@ -366,8 +375,7 @@ class CopilotConversationCopyCodeCommand(LspWindowCommand):
         conversation_manager = WindowConversationManager(window)
         if not (code := conversation_manager.code_block_index.get(str(code_block_index), None)):
             return
-        print(code)
-        print(f"index: {code_block_index}")
+
         sublime.set_clipboard(code)
 
 

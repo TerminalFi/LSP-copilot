@@ -166,6 +166,9 @@ class _ConversationEntry:
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", True).render(
+            close_url=sublime.command_url(
+                "copilot_conversation_close", {"window_id": self.conversation_manager.window.id()}
+            ),
             is_waiting=self.conversation_manager.is_waiting,
             sections=[
                 {
@@ -195,7 +198,15 @@ class _ConversationEntry:
                     code_block_lines = reply[code_block_start:].splitlines(True)
                     reply = (
                         reply[:code_block_start]
-                        + f"""<a href='{sublime.command_url("copilot_conversation_copy_code", {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index})}'>Copy</a>"""
+                        + f"""<a href='{
+                            sublime.command_url(
+                                "copilot_conversation_copy_code",
+                                {
+                                    "window_id": self.conversation_manager.window.id(),
+                                    "code_block_index": code_block_index,
+                                },
+                            )
+                        }'>Copy</a>"""
                         + "\n\n"
                         + code_block_lines[0]
                     )
@@ -213,13 +224,6 @@ class _ConversationEntry:
                 if current_entry:
                     transformed_conversation.append(current_entry)
                 current_entry = {"kind": kind, "messages": [reply], "code_block": []}
-                # if "```" in reply:
-                #     inside_code_block = True
-                #     code_block_index += 1
-                #     code_block_start = reply.index("```")
-                #     code_block_lines = reply[code_block_start:].splitlines(True)
-                #     current_entry["code_block"].extend(code_block_lines)
-                #     current_entry["code_block_index"] = code_block_index
 
         if current_entry:
             transformed_conversation.append(current_entry)
@@ -239,8 +243,6 @@ class _ConversationEntry:
         sheet = self.window.transient_sheet_in_group(self.conversation_manager.group_id)
         if not isinstance(sheet, sublime.HtmlSheet):
             return
-        view = find_view_by_id(self.conversation_manager.last_active_view_id)
-
         mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True, wrapper_class="wrapper")
 
     def close(self) -> None:
@@ -248,8 +250,10 @@ class _ConversationEntry:
         if not isinstance(sheet, sublime.HtmlSheet):
             return
 
+        sheet.close()
         self.conversation_manager.is_visible = False
         if self.conversation_manager.original_layout:
+            print("reset layout")
             self.window.set_layout(self.conversation_manager.original_layout)  # type: ignore
             self.conversation_manager.original_layout = None
 
