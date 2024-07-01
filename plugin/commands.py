@@ -18,7 +18,6 @@ from .constants import (
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
     REQ_CONVERSATION_AGENTS,
-    REQ_CONVERSATION_COPY_CODE,
     REQ_CONVERSATION_CREATE,
     REQ_CONVERSATION_DESTROY,
     REQ_CONVERSATION_INSERT_CODE,
@@ -55,6 +54,7 @@ from .types import (
 from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import (
     find_view_by_id,
+    find_window_by_id,
     get_session_setting,
     get_view_language_id,
     message_dialog,
@@ -358,30 +358,17 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
         return get_session_setting(session, "debug")
 
 
-class CopilotConversationCopyCodeCommand(LspTextCommand):
-    @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
-        session.send_request(
-            Request(
-                REQ_CONVERSATION_COPY_CODE,
-                {
-                    "turnId": turn_id,
-                    "rating": rating,
-                    # doc: H2.Type.Optional(Z0),
-                    # options: H2.Type.Optional(Mn),
-                    # source: H2.Type.Optional(sd),
-                },
-            ),
-            self._on_result_coversation_rating,
-        )
+class CopilotConversationCopyCodeCommand(LspWindowCommand):
+    def run(self, window_id: int, code_block_index: int) -> None:
+        if not (window := find_window_by_id(window_id)):
+            return
 
-    def _on_result_coversation_rating(self, payload: Literal[OK]) -> None:
-        # Returns OK
-        pass
-
-    @_provide_plugin_session(failed_return=False)
-    def is_visible(self, plugin: CopilotPlugin, session: Session) -> bool:
-        return get_session_setting(session, "debug")
+        conversation_manager = WindowConversationManager(window)
+        if not (code := conversation_manager.code_block_index.get(str(code_block_index), None)):
+            return
+        print(code)
+        print(f"index: {code_block_index}")
+        sublime.set_clipboard(code)
 
 
 class CopilotConversationInsertCodeCommand(LspTextCommand):

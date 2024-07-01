@@ -11,6 +11,7 @@ from .commands import (
     CopilotClosePanelCompletionCommand,
     CopilotConversationAgentsCommand,
     CopilotConversationChatCommand,
+    CopilotConversationCopyCodeCommand,
     CopilotConversationDestroyCommand,
     CopilotConversationRatingCommand,
     CopilotConversationTemplatesCommand,
@@ -51,6 +52,7 @@ __all__ = (
     "CopilotConversationAgentsCommand",
     "CopilotConversationTemplatesCommand",
     "CopilotConversationRatingCommand",
+    "CopilotConversationCopyCodeCommand",
     # ST: event listeners
     "EventListener",
     "ViewEventListener",

@@ -81,12 +81,12 @@ class WindowConversationManager:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_id", value)
 
     @property
-    def code_block_index(self) -> dict[int, str]:
+    def code_block_index(self) -> dict[str, str]:
         """Whether the panel completions is visible."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "code_block_index", {})
 
     @code_block_index.setter
-    def code_block_index(self, value: dict[int, str]) -> None:
+    def code_block_index(self, value: dict[str, str]) -> None:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "code_block_index", value)
 
     @property
@@ -134,7 +134,7 @@ class WindowConversationManager:
 
     def insert_code_block_index(self, index: int, code_block: str) -> None:
         code_block_index = self.code_block_index
-        code_block_index[index] = code_block
+        code_block_index[str(index)] = code_block
         self.code_block_index = code_block_index
 
     @staticmethod
@@ -195,31 +195,31 @@ class _ConversationEntry:
                     code_block_lines = reply[code_block_start:].splitlines(True)
                     reply = (
                         reply[:code_block_start]
-                        + f"""<a href='{sublime.command_url("copilot_copy_code", {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index})}'>Copy</a>"""
-                        + "\n"
+                        + f"""<a href='{sublime.command_url("copilot_conversation_copy_code", {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index})}'>Copy</a>"""
+                        + "\n\n"
                         + code_block_lines[0]
                     )
-                    current_entry["code_block"].extend(code_block_lines)
                 elif inside_code_block:
                     code_block_lines = reply.splitlines(True)
-                    current_entry["code_block"].extend(code_block_lines)
                     if "```" in reply:
                         inside_code_block = False
-                # reply = reply.replace("\n", "<br>") if not inside_code_block else reply
+                        self.conversation_manager.insert_code_block_index(
+                            code_block_index, "".join(current_entry["code_block"])
+                        )
+                    else:
+                        current_entry["code_block"].extend(code_block_lines)
                 current_entry["messages"].append(reply)
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
-                # if "```" not in reply:
-                #     reply = reply.replace("\n", "<br>")
                 current_entry = {"kind": kind, "messages": [reply], "code_block": []}
-                if "```" in reply:
-                    inside_code_block = True
-                    code_block_index += 1
-                    code_block_start = reply.index("```")
-                    code_block_lines = reply[code_block_start:].splitlines(True)
-                    current_entry["code_block"].extend(code_block_lines)
-                    current_entry["code_block_index"] = code_block_index
+                # if "```" in reply:
+                #     inside_code_block = True
+                #     code_block_index += 1
+                #     code_block_start = reply.index("```")
+                #     code_block_lines = reply[code_block_start:].splitlines(True)
+                #     current_entry["code_block"].extend(code_block_lines)
+                #     current_entry["code_block_index"] = code_block_index
 
         if current_entry:
             transformed_conversation.append(current_entry)
