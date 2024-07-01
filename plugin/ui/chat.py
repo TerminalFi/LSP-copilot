@@ -169,7 +169,6 @@ class _ConversationEntry:
             delete_url=sublime.command_url(
                 "copilot_conversation_destroy_shim", {"conversation_id": self.conversation_manager.conversation_id}
             ),
-            is_waiting=self.conversation_manager.is_waiting,
             sections=[
                 {
                     "kind": entry["kind"],

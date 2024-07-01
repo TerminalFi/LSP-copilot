@@ -105,25 +105,16 @@
 <div class="navbar">
   <a class="delete" title="Delete Conversation" href='{{ delete_url }}'><i>×</i> Delete</a>
   <a class="close" title="Close Conversation" href='{{ close_url }}'><i>×</i> Close</a>
-  <h4 class="synthesis-info">
-    {% if is_waiting %}
-      ⌛ Fetching next response...
-    {% else %}
-      Awaiting user input...
-    {% endif %}
-  </h4>
 </div>
 
 {% for section in sections %}
 
 ---
 
-{{ if section.kind == 'report' }}
-  <div class="header">
-    <a class="rating" title="👍" href='{{ section.thumbs_up_url }}'>👍</a>
-    <a class="rating" title="👎" href='{{ section.thumbs_down_url }}'>👎</a>
-  </div>
-{{ endif }}
+<div class="header">
+  <a class="rating" title="👍" href='{{ section.thumbs_up_url }}'>👍</a>
+  <a class="rating" title="👎" href='{{ section.thumbs_down_url }}'>👎</a>
+</div>
 
 
 <span class="kind {{ section.kind }}">{{ section.kind }}:</span>

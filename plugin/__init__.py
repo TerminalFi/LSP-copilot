@@ -13,6 +13,7 @@ from .commands import (
     CopilotConversationChatCommand,
     CopilotConversationCloseCommand,
     CopilotConversationCopyCodeCommand,
+    CopilotConversationInsertCodeCommand,
     CopilotConversationDestroyCommand,
     CopilotConversationDestroyShimCommand,
     CopilotConversationRatingCommand,
@@ -59,6 +60,7 @@ __all__ = (
     "CopilotConversationRatingShimCommand",
     "CopilotConversationRatingCommand",
     "CopilotConversationCopyCodeCommand",
+    "CopilotConversationInsertCodeCommand",
     # ST: event listeners
     "EventListener",
     "ViewEventListener",

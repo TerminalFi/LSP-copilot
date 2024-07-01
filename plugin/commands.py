@@ -400,6 +400,21 @@ class CopilotConversationCopyCodeCommand(LspWindowCommand):
         sublime.set_clipboard(code)
 
 
+class CopilotConversationInsertCodeCommand(LspWindowCommand):
+    def run(self, window_id: int, code_block_index: int) -> None:
+        if not (window := find_window_by_id(window_id)):
+            return
+
+        conversation_manager = WindowConversationManager(window)
+        if not (code := conversation_manager.code_block_index.get(str(code_block_index), None)):
+            return
+
+        if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
+            return
+
+        view.run_command("insert", {"characters": code})
+
+
 class CopilotConversationInsertCodeCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
