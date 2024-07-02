@@ -139,6 +139,7 @@ class WindowConversationManager:
         self.is_visible = False
         self.original_layout = None
         self.suggested_title = ""
+        self.follow_up = ""
         self.conversation_id = ""
         self.conversation = []
         self.code_block_index = {}
@@ -162,9 +163,7 @@ class WindowConversationManager:
         return find_window_by_id(window_id)
 
     def prompt(self, callback):
-        follow_up = self.follow_up
-        self.follow_up = ""
-        self.window.show_input_panel("Copilot Chat", follow_up, callback, None, None)
+        self.window.show_input_panel("Copilot Chat", "", callback, None, None)
 
     def open(self, *, completion_target_count: int | None = None) -> None:
         _ConversationEntry(self.window).open()
@@ -188,6 +187,7 @@ class _ConversationEntry:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", True).render(
             suggested_title=self.conversation_manager.suggested_title,
+            follow_up=self.conversation_manager.follow_up,
             close_url=sublime.command_url(
                 "copilot_conversation_close", {"window_id": self.conversation_manager.window.id()}
             ),

@@ -322,14 +322,15 @@ class CopilotPlugin(NpmClientHandler):
                     conversation_manager = WindowConversationManager(window)
                     if suggest_title := params.get("suggestedTitle", None):
                         conversation_manager.suggested_title = suggest_title
-                        conversation_manager.update()
+
+                    if params.get("reply", None):
+                        conversation_manager.append_conversation_entry(params)
 
                     if followup := params.get("followUp", None):
                         message = followup.get("message", "")
                         conversation_manager.follow_up = message
-                    if params.get("reply", None):
-                        conversation_manager.append_conversation_entry(params)
-                        conversation_manager.update()
+
+                    conversation_manager.update()
 
     @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
