@@ -339,8 +339,11 @@ class CopilotConversationDestroyShimCommand(LspWindowCommand):
 class CopilotConversationDestroyCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, conversation_id: str) -> None:
-        conversation_manager = WindowConversationManager(self.view.window())
-        if conversation_manager.conversation_id != conversation_id:
+        if not (
+            (window := self.view.window())
+            and (conversation_manager := WindowConversationManager(window))
+            and conversation_manager.conversation_id == conversation_id
+        ):
             return
 
         session.send_request(
@@ -355,15 +358,19 @@ class CopilotConversationDestroyCommand(LspTextCommand):
         )
 
     def _on_result_coversation_destroy(self, payload) -> None:
+        if not (window := self.view.window()):
+            return
         if payload != "OK":
             status_message("Failed to destroy conversation.")
             return
-        conversation_manager = WindowConversationManager(self.view.window())
+        conversation_manager = WindowConversationManager(window)
         conversation_manager.close()
         conversation_manager.reset()
 
-    def is_enabled(self) -> bool:
-        return super().is_enabled() and bool(WindowConversationManager(self.view.window()).conversation_id)
+    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:
+        if not (window := self.view.window()):
+            return False
+        return super().is_enabled() and bool(WindowConversationManager(window).conversation_id)
 
 
 # Should be passed the window_id
