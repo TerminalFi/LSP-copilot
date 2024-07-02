@@ -45,6 +45,7 @@ from .types import (
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
+    ActivityIndicator,
     CopilotIgnore,
     all_views,
     debounce,
@@ -117,10 +118,14 @@ class CopilotPlugin(NpmClientHandler):
         is_authorized=False,
     )
 
+    _activity_indicator: ActivityIndicator | None = None
+
     def __init__(self, session: weakref.ref[Session]) -> None:
         super().__init__(session)
         if sess := session():
             self.window_attrs[sess.window.id()].client_ref = weakref.ref(self)
+
+        self._activity_indicator = ActivityIndicator(self.update_status_bar_text)
 
         # Note that ST persists view settings after ST is closed. If the user closes ST
         # during awaiting Copilot's response, the internal state management will be corrupted.
@@ -352,6 +357,8 @@ class CopilotPlugin(NpmClientHandler):
             callback = lambda _: None  # noqa: E731
         else:
             completion_manager.is_waiting = True
+            if self._activity_indicator:
+                self._activity_indicator.start()
             callback = functools.partial(self._on_get_completions, view, region=sel[0].to_tuple())
 
         session.send_request_async(Request(request, params), callback)
@@ -364,6 +371,8 @@ class CopilotPlugin(NpmClientHandler):
     ) -> None:
         completion_manager = ViewCompletionManager(view)
         completion_manager.is_waiting = False
+        if self._activity_indicator:
+            self._activity_indicator.stop()
 
         if not (session := self.weaksession()):
             return
