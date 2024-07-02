@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import os
 import textwrap
 import threading
@@ -355,30 +356,28 @@ class CopilotIgnore:
 
 
 class ActivityIndicator:
-    def __init__(self, callback: Callable[[dict[str, Any]], None] | None = None):
+    def __init__(self, callback: Callable[[dict[str, Any]], None] | None = None) -> None:
         self.thread: threading.Thread | None = None
-        # This pattern taken from PC
-        self.animation = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]
+        self.animation = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]  # taken from Package Control
+        self.animation_cycled = itertools.cycle(self.animation)
         self.callback = callback
         self.stop_event = threading.Event()
-        self.last_index = 0
 
-    def start(self):
-        if self.thread is None or not self.thread.is_alive():
+    def start(self) -> None:
+        if not (self.thread and self.thread.is_alive()):
             self.stop_event.clear()
             self.thread = threading.Thread(target=self._run, daemon=True)
             self.thread.start()
 
-    def stop(self):
-        if self.thread is not None:
+    def stop(self) -> None:
+        if self.thread:
             self.stop_event.set()
             self.thread.join()
             if self.callback:
-                self.callback()  # type: ignore
+                self.callback({"is_waiting": ""})
 
-    def _run(self):
+    def _run(self) -> None:
         while not self.stop_event.is_set():
             if self.callback:
-                self.callback({"is_waiting": self.animation[self.last_index]})
-            self.last_index = (self.last_index + 1) % len(self.animation)
+                self.callback({"is_waiting": next(self.animation_cycled)})
             time.sleep(0.1)

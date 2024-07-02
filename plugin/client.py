@@ -118,7 +118,7 @@ class CopilotPlugin(NpmClientHandler):
         is_authorized=False,
     )
 
-    _activity_indicator = None
+    _activity_indicator: ActivityIndicator | None = None
 
     def __init__(self, session: weakref.ref[Session]) -> None:
         super().__init__(session)
