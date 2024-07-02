@@ -196,17 +196,17 @@ class CopilotConversationChatCommand(LspTextCommand):
         manager = WindowConversationManager(window)
         if manager.conversation_id:
             manager.open()
-            manager.prompt(callback=lambda x: self._on_prompt(session, x))
+            manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x))
             return
         session.send_request(
             Request(
                 REQ_CONVERSATION_PRECONDITIONS,
                 {},
             ),
-            lambda x: self._on_result_conversation_preconditions(session, x),
+            lambda x: self._on_result_conversation_preconditions(plugin, session, x),
         )
 
-    def _on_result_conversation_preconditions(self, session, payload) -> None:
+    def _on_result_conversation_preconditions(self, plugin: CopilotPlugin, session: Session, payload) -> None:
         if not (window := self.view.window()):
             return
         session.send_request(
@@ -226,10 +226,10 @@ class CopilotConversationChatCommand(LspTextCommand):
                     # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
                 },
             ),
-            lambda x: self._on_result_conversation_create(session, x),
+            lambda x: self._on_result_conversation_create(plugin, session, x),
         )
 
-    def _on_result_conversation_create(self, session, payload) -> None:
+    def _on_result_conversation_create(self, plugin: CopilotPlugin, session: Session, payload) -> None:
         if not (window := self.view.window()):
             return
         manager = WindowConversationManager(window)
@@ -237,9 +237,9 @@ class CopilotConversationChatCommand(LspTextCommand):
             manager.last_active_view_id = self.view.id()
         manager.conversation_id = payload["conversationId"]
         manager.open()
-        manager.prompt(callback=lambda x: self._on_prompt(session, x))
+        manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x))
 
-    def _on_prompt(self, session: Session, msg: str):
+    def _on_prompt(self, plugin: CopilotPlugin, session: Session, msg: str):
         if not (window := self.view.window()):
             return
 
@@ -259,7 +259,7 @@ class CopilotConversationChatCommand(LspTextCommand):
         ]
         msg = template.render({"sel": sel})
         manager.append_conversation_entry({
-            "kind": "user",
+            "kind": plugin.get_account_status().user or "user",
             "conversationId": manager.conversation_id,
             "reply": msg,
             "turnId": str(uuid.uuid4()),
@@ -574,13 +574,13 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
     def _on_result_check_status(self, payload: CopilotPayloadSignInConfirm | CopilotPayloadSignOut) -> None:
         if payload["status"] == "OK":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=True)
+            CopilotPlugin.set_account_status(signed_in=True, authorized=True, user=payload["user"])
             message_dialog('Signed in and authorized with user "{}".', payload["user"])
         elif payload["status"] == "MaybeOk":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=True)
+            CopilotPlugin.set_account_status(signed_in=True, authorized=True, user=payload["user"])
             message_dialog('(localChecksOnly) Signed in and authorized with user "{}".', payload["user"])
         elif payload["status"] == "NotAuthorized":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=False)
+            CopilotPlugin.set_account_status(signed_in=True, authorized=False, user=payload["user"])
             message_dialog("Your GitHub account doesn't subscribe to Copilot.", is_error_=True)
         else:
             CopilotPlugin.set_account_status(signed_in=False, authorized=False)
@@ -705,5 +705,5 @@ class CopilotSignOutCommand(CopilotTextCommand):
 
         rmtree_ex(str(session_dir), ignore_errors=True)
         if not session_dir.is_dir():
-            CopilotPlugin.set_account_status(signed_in=False, authorized=False)
+            CopilotPlugin.set_account_status(signed_in=False, authorized=False, user=None)
             message_dialog("Sign out OK. Bye!")

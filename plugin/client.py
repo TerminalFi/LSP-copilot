@@ -119,6 +119,7 @@ class CopilotPlugin(NpmClientHandler):
     _account_status = AccountStatus(
         has_signed_in=False,
         is_authorized=False,
+        user="",
     )
 
     def __init__(self, session: weakref.ref[Session]) -> None:
@@ -157,6 +158,7 @@ class CopilotPlugin(NpmClientHandler):
             self.set_account_status(
                 signed_in=result["status"] in {"NotAuthorized", "OK"},
                 authorized=result["status"] == "OK",
+                user=result.get("user", None),
             )
 
         def _on_set_editor_info(result: str, failed: bool) -> None:
@@ -233,12 +235,15 @@ class CopilotPlugin(NpmClientHandler):
         *,
         signed_in: bool | None = None,
         authorized: bool | None = None,
+        user: str | None = None,
         quiet: bool = False,
     ) -> None:
         if signed_in is not None:
             cls._account_status.has_signed_in = signed_in
         if authorized is not None:
             cls._account_status.is_authorized = authorized
+        if user is not None:
+            cls._account_status.user = user
 
         if not quiet:
             if not cls._account_status.has_signed_in:

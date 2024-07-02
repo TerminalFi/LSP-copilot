@@ -233,7 +233,7 @@ class _ConversationEntry:
         code_block_index = -1
 
         for entry in self.conversation_manager.conversation:
-            kind = entry["kind"] if entry["kind"] == "user" else "system"
+            kind = entry["kind"]
             reply = entry["reply"]
             turn_id = entry["turnId"]
 
