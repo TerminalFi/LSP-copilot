@@ -272,6 +272,12 @@ class CopilotPlugin(NpmClientHandler):
         plugin = cls.from_view(view)
         return (plugin, plugin.weaksession()) if plugin else (None, None)
 
+    @classmethod
+    def should_ignore(cls, view: sublime.View) -> bool:
+        if not (window := view.window()):
+            return False
+        return CopilotIgnore(window).trigger(view)
+
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()
         return bool(session and session.session_view_for_view_async(view))
@@ -296,16 +302,6 @@ class CopilotPlugin(NpmClientHandler):
                 log_warning(f'Invalid "status_text" template: {e}')
         session.set_config_status_async(rendered_text)
 
-    @classmethod
-    def should_ignore(cls, view: sublime.View) -> bool:
-        if not (window := view.window()):
-            return False
-        return CopilotIgnore(window).trigger(view)
-
-    @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
-    def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
-        pass
-
     def on_server_notification_async(self, notification) -> None:
         if notification.method == "$/progress":
             if (token := notification.params["token"]) and token.startswith("copilot_chat://"):
@@ -324,6 +320,10 @@ class CopilotPlugin(NpmClientHandler):
                     if params.get("reply", None):
                         conversation_manager.append_conversation_entry(params)
                         conversation_manager.update()
+
+    @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
+    def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
+        pass
 
     @notification_handler(NTFY_LOG_MESSAGE)
     def _handle_log_message_notification(self, payload: CopilotPayloadLogMessage) -> None:
