@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import itertools
 import os
 import textwrap
 import threading
+import time
 from collections.abc import Callable, Generator, Iterable
 from functools import wraps
 from itertools import takewhile
@@ -299,6 +301,10 @@ def _generate_completion_region(
     )
 
 
+def find_index_by_key_value(items, key, value):
+    return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
+
+
 class CopilotIgnore:
     def __init__(self, window: sublime.Window):
         self.window = window
@@ -359,5 +365,29 @@ class CopilotIgnore:
         return self.matches_any_pattern(file)
 
 
-def find_index_by_key_value(items, key, value):
-    return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
+class ActivityIndicator:
+    def __init__(self, callback: Callable[[dict[str, Any]], None] | None = None) -> None:
+        self.thread: threading.Thread | None = None
+        self.animation = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]  # taken from Package Control
+        self.animation_cycled = itertools.cycle(self.animation)
+        self.callback = callback
+        self.stop_event = threading.Event()
+
+    def start(self) -> None:
+        if not (self.thread and self.thread.is_alive()):
+            self.stop_event.clear()
+            self.thread = threading.Thread(target=self._run, daemon=True)
+            self.thread.start()
+
+    def stop(self) -> None:
+        if self.thread:
+            self.stop_event.set()
+            self.thread.join()
+            if self.callback:
+                self.callback({"is_waiting": ""})
+
+    def _run(self) -> None:
+        while not self.stop_event.is_set():
+            if self.callback:
+                self.callback({"is_waiting": next(self.animation_cycled)})
+            time.sleep(0.1)
