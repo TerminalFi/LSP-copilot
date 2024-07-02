@@ -226,6 +226,26 @@ class _ConversationEntry:
         )
 
     def _synthesize(self) -> list[dict[str, Any]]:
+        def process_code_block(reply, inside_code_block, code_block_index):
+            code_block_start = reply.index("```")
+            code_block_lines = reply[code_block_start:].splitlines(True)
+            copy_command_url = sublime.command_url(
+                "copilot_conversation_copy_code",
+                {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
+            )
+            insert_command_url = sublime.command_url(
+                "copilot_conversation_insert_code",
+                {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
+            )
+            reply = (
+                reply[:code_block_start]
+                + f"<a href='{copy_command_url}'>Copy</a><span></span>"
+                + f" <a href='{insert_command_url}'>Insert</a>"
+                + "\n\n"
+                + code_block_lines[0]
+            )
+            return reply, code_block_lines
+
         transformed_conversation = []
         current_entry = None
         inside_code_block = False
@@ -241,23 +261,7 @@ class _ConversationEntry:
                 if "```" in reply and not inside_code_block:
                     inside_code_block = True
                     code_block_index += 1
-                    code_block_start = reply.index("```")
-                    code_block_lines = reply[code_block_start:].splitlines(True)
-                    copy_command_url = sublime.command_url(
-                        "copilot_conversation_copy_code",
-                        {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
-                    )
-                    insert_command_url = sublime.command_url(
-                        "copilot_conversation_insert_code",
-                        {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
-                    )
-                    reply = (
-                        reply[:code_block_start]
-                        + f"<a href='{copy_command_url}'>Copy</a><span></span>"
-                        + f" <a href='{insert_command_url}'>Insert</a>"
-                        + "\n\n"
-                        + code_block_lines[0]
-                    )
+                    reply, code_block_lines = process_code_block(reply, inside_code_block, code_block_index)
                 elif inside_code_block:
                     if "```" in reply:
                         inside_code_block = False
@@ -271,6 +275,10 @@ class _ConversationEntry:
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
+                if "```" in reply:
+                    inside_code_block = True
+                    code_block_index += 1
+                    reply, code_block_lines = process_code_block(reply, inside_code_block, code_block_index)
                 current_entry = {"kind": kind, "messages": [reply], "code_block": [], "turnId": turn_id}
 
         if current_entry:
