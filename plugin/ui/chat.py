@@ -252,7 +252,6 @@ class _ConversationEntry:
                 + "\n\n"
                 + code_block_lines[0]
             )
-            print(reply)
             return reply, code_block_lines
 
         transformed_conversation = []
@@ -278,8 +277,9 @@ class _ConversationEntry:
                         self.conversation_manager.insert_code_block_index(
                             code_block_index, "".join(current_entry["code_block"])
                         )
+                        current_entry["code_block"] = []
                     else:
-                        current_entry["code_block"].extend(reply)
+                        current_entry["code_block"].append(reply)
                 current_entry["messages"].append(reply)
             else:
                 if current_entry:
