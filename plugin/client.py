@@ -3,8 +3,6 @@ from __future__ import annotations
 import functools
 import json
 import os
-import threading
-import time
 import weakref
 from collections import defaultdict
 from collections.abc import Callable
@@ -47,6 +45,7 @@ from .types import (
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
 from .utils import (
+    ActivityIndicator,
     CopilotIgnore,
     all_views,
     debounce,
@@ -90,36 +89,6 @@ def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callab
         return cast(T_Callable, wrapped)
 
     return decorator
-
-
-class ActivityIndicator:
-    def __init__(self, callback: Callable[[dict[str, Any]], None] | None = None):
-        self.thread: threading.Thread | None = None
-        # This pattern taken from PC
-        self.animation = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]
-        self.callback = callback
-        self.stop_event = threading.Event()
-        self.last_index = 0
-
-    def start(self):
-        if self.thread is None or not self.thread.is_alive():
-            self.stop_event.clear()
-            self.thread = threading.Thread(target=self._run, daemon=True)
-            self.thread.start()
-
-    def stop(self):
-        if self.thread is not None:
-            self.stop_event.set()
-            self.thread.join()
-            if self.callback:
-                self.callback()  # type: ignore
-
-    def _run(self):
-        while not self.stop_event.is_set():
-            if self.callback:
-                self.callback({"is_waiting": self.animation[self.last_index]})
-            self.last_index = (self.last_index + 1) % len(self.animation)
-            time.sleep(0.1)
 
 
 class CopilotPlugin(NpmClientHandler):

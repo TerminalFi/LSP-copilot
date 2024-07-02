@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import textwrap
 import threading
+import time
 from collections.abc import Callable, Generator, Iterable
 from functools import wraps
 from itertools import takewhile
@@ -351,3 +352,33 @@ class CopilotIgnore:
             return False
 
         return self.matches_any_pattern(file)
+
+
+class ActivityIndicator:
+    def __init__(self, callback: Callable[[dict[str, Any]], None] | None = None):
+        self.thread: threading.Thread | None = None
+        # This pattern taken from PC
+        self.animation = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]
+        self.callback = callback
+        self.stop_event = threading.Event()
+        self.last_index = 0
+
+    def start(self):
+        if self.thread is None or not self.thread.is_alive():
+            self.stop_event.clear()
+            self.thread = threading.Thread(target=self._run, daemon=True)
+            self.thread.start()
+
+    def stop(self):
+        if self.thread is not None:
+            self.stop_event.set()
+            self.thread.join()
+            if self.callback:
+                self.callback()  # type: ignore
+
+    def _run(self):
+        while not self.stop_event.is_set():
+            if self.callback:
+                self.callback({"is_waiting": self.animation[self.last_index]})
+            self.last_index = (self.last_index + 1) % len(self.animation)
+            time.sleep(0.1)
