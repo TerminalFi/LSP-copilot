@@ -252,9 +252,9 @@ class CopilotConversationChatCommand(LspTextCommand):
             return
         lang = get_view_language_id(view, view.sel()[0].begin())
         sel = [
-            f"""```{lang}
+            f"""\n```{lang}
 {view.substr(region)}
-```"""
+```\n"""
             for region in view.sel()
         ]
         msg = template.render({"sel": sel})

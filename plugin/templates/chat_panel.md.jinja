@@ -3,9 +3,15 @@
     --copilot-delete-foreground: var(--redish);
     --copilot-delete-background: var(--background);
     --copilot-delete-border: var(--redish);
+
+    --copilot-delete-conversation-foreground: color(var(--redish) a(0.75));
+    --copilot-delete-conversation-background: var(--background);
+    --copilot-delete-conversation-border: color(var(--redish) a(0.75));
+
     --copilot-close-foreground: var(--foreground);
     --copilot-close-background: var(--background);
     --copilot-close-border: var(--foreground);
+
     --copilot-accept-foreground: var(--foreground);
     --copilot-accept-background: var(--background);
     --copilot-accept-border: var(--greenish);
@@ -15,15 +21,19 @@
     margin: 1rem 0.5rem 0 0.5rem;
   }
 
-  .wrapper .navbar {
-    text-align: left;
-  }
-
   .wrapper .suggested-title {
     display: inline-block;
     text-size: 1.2em;
     margin-bottom: 1rem;
+    padding-bottom: 1rem;
   }
+
+  .wrapper .navbar {
+    text-align: left;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
 
   .wrapper .header {
     display: block;
@@ -56,6 +66,16 @@
 
   .wrapper a.delete i {
     color: var(--copilot-delete-border);
+  }
+
+  .wrapper a.delete-conversation {
+    background: var(--copilot-delete-conversation-background);
+    border-color: var(--copilot-delete-conversation-border);
+    color: var(--copilot-delete-conversation-foreground);
+  }
+
+  .wrapper a.delete-conversation i {
+    color: var(--copilot-delete-conversation-border);
   }
 
   .wrapper a.close {
@@ -102,21 +122,18 @@
   }
 </style>
 
-<div>
-  <h3 class="suggested-title">
-  {% if suggested_title %}
-  Copilot Chat | {{ suggested_title }}
-  {% else %}
-  Copilot Chat
-  {% endif %}
-  </h3>
-</div>
 
----
+<h3 class="suggested-title">
+{% if suggested_title %}
+Copilot Chat | {{ suggested_title }}
+{% else %}
+Copilot Chat
+{% endif %}
+</h3>
 
 <div class="navbar">
-  <a class="delete" title="Delete Conversation" href='{{ delete_url }}'><i>×</i> Delete</a>
-  <a class="close" title="Close Conversation" href='{{ close_url }}'><i>×</i> Close</a>
+  <a class="delete-conversation" title="Delete Conversation" href='{{ delete_url }}'><i>×</i> Delete Conversation</a>
+  <a class="close" title="Close Conversation" href='{{ close_url }}'><i>×</i> Close Conversation</a>
 </div>
 
 {% for section in sections %}
