@@ -94,7 +94,7 @@ def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callab
 
 class ActivityIndicator:
     def __init__(self, callback: Callable[[dict[str, Any]], None] | None = None):
-        self.thread = None
+        self.thread: threading.Thread | None = None
         # This pattern taken from PC
         self.animation = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]
         self.callback = callback
