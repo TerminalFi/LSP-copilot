@@ -4,10 +4,6 @@
     --copilot-delete-background: var(--background);
     --copilot-delete-border: var(--redish);
 
-    --copilot-delete-conversation-foreground: color(var(--redish) a(0.75));
-    --copilot-delete-conversation-background: var(--background);
-    --copilot-delete-conversation-border: color(var(--redish) a(0.75));
-
     --copilot-close-foreground: var(--foreground);
     --copilot-close-background: var(--background);
     --copilot-close-border: var(--foreground);
@@ -21,7 +17,11 @@
     margin: 1rem 0.5rem 0 0.5rem;
   }
 
-  .wrapper .suggested-title {
+  .wrapper hr {
+    color: color(var(--foreground) a(0.25));
+  }
+
+  .wrapper .navbar .suggested-title {
     display: inline-block;
     text-size: 1.2em;
     margin-bottom: 1rem;
@@ -33,7 +33,6 @@
     margin-top: 1rem;
     margin-bottom: 1rem;
   }
-
 
   .wrapper .header {
     display: block;
@@ -49,7 +48,7 @@
     text-decoration: none;
   }
 
-  .wrapper a.follow-up {
+  .wrapper a.icon-link {
     border-radius: 0px;
     border-style: none;
     border-width: 0px;
@@ -76,24 +75,16 @@
     color: var(--copilot-delete-border);
   }
 
-  .wrapper a.delete-conversation {
-    background: var(--copilot-delete-conversation-background);
-    border-color: var(--copilot-delete-conversation-border);
-    color: var(--copilot-delete-conversation-foreground);
-  }
-
-  .wrapper a.delete-conversation i {
-    color: var(--copilot-delete-conversation-border);
+  .wrapper a.icon-link {
+    border-radius: 0px;
+    border-style: none;
+    border-width: 0px;
   }
 
   .wrapper a.close {
-    background: var(--copilot-close-background);
-    border-color: var(--copilot-close-border);
-    color: var(--copilot-close-foreground);
-  }
-
-  .wrapper a.close i {
-    color: var(--copilot-close-border);
+    border-radius: 0px;
+    border-style: none;
+    border-width: 0px;
   }
 
   .wrapper a.accept {
@@ -126,29 +117,35 @@
     height: 1.25em;
     color: var(--foreground)
   }
+
+  .wrapper .icon.delete-icon {
+    width: 1em;
+    height: 1em;
+    color: var(--foreground)
+  }
 </style>
 
 
-<h3 class="suggested-title">
-Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
-</h3>
 
 
 <div class="navbar">
-  <a class="delete-conversation" title="Delete Conversation" href='{{ delete_url }}'><i>×</i> Delete Conversation</a>
-  <a class="close" title="Close Conversation" href='{{ close_url }}'><i>×</i> Close Conversation</a>
+  <a class="icon-link" title="Delete Conversation" href='{{ delete_url }}'><img class="icon" src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAC6UlEQVR4nO1bzW7TQBDeFhDQO/AA9AGKeAoocAbKM0CbIPUCko8cgAMIiRaJAuUAeQlfUCIl3+eEa4AiFQ6A+FH7AotGdqQlqpC9tjd2vZ80x92dmZ359os8UapEkFwEcJvkuo0laxdVXUHyI0mdxwCMVV0B4EOjE8C4Be4CuGdjJO8AODvrODw8mg4ACySvkGzZPmkObU18FZ9zB661ngPQBvAnL5u7tsTnNYnBOniSr2cdSAGJ2LZKAoD21GafSG7YPmmuLPFxZyoJq1mDXzDLHsDzMAxPqJpAfCW5Zfj/u9vtnky9AcnL5s3XKfgJxGezEgAsp16M+EfIZOFTVVOQ3DQusmXb/xuqpiD5zLjIdtNb4JI1CZLcqiEJvjD8/5lZGDFWVOZTspP01HrFbRPA51zPoKECtw+BEHqptZ5XNtBxElblHZ11IBb2C8BNaylsQkSEkIi0RYUV4DtTuGUSPocBJAPj9gPVNNAngOVWgNZ6nuQNsUKIpW4VwDj4CcmsqAYmIKgyyVQyAdqybWzWVTIBtGwbm3VVTUBg45TLs1LDJ4C+AgLfAvQcoD0J0r8C2j+D9DogKEs7uNYcqeF1AL0OCLwOoNcB2usAeh2gvQ6g1wFBWdrBteZIDa8D6HVA4HUAG6wD8O/k2P2qfRcA8MBqJC4toii6Zjj1JsOEyQqA6xm/DGVeR7JjJOCqKhokzxsHfLOeuykBnU7nCIAfE//6/f65wg/R8a18nRwSRdEFVRHIGKxxObulfb4H8NBog2EYhkdLOSibT8cAvM/KT1aIougUyT0jCY/UjEHyiRH8fq/XO1P2gS1zHA3A41lUgtz8VPDiy63SD9YH/JMEwGgwGFwUMnJEeMtTZS8+vFKuMB6Pjx/0dxoA30m+Tbii0BHYZM+OyfZm8OKTcgkdV4LME+/nnOjMY3tOyv5/GI1Gp0WFAfjiMPBdYXshZVUVaK3nRIAkirHwkVrZU/YeDodLRb7zfwHqTq32fc3Z3AAAAABJRU5ErkJggg=='/></a>
+  <a class="close" title="Close Conversation" href='{{ close_url }}'><img class="icon" src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAABHUlEQVR4nO3ZUQqDMAwGYE+xya447/kTSKAPA7fTbAgbyNhEa5rE0v/JFyUfapvQrmtpaWmpJsx8JaLeuw4i6qdasm4WkUFEniIyemKIqJ9qeNcybH5ASunEzLfpAcz8EJFLZxwA508NInLPrsETAy2EJwbaCA8MSiEsMSiNsMCYIUpizBElMG4ITYw7QgMTBrEHEw6RgwmL2IIJj1iDOQxiCXM4xJ8ZYpxfRxjUst/M4d7EPF+fk9twtitVfFr48WNHGJs3ZWl1OgwGK5bY8Bhs2CfCYpCx2YXDYMeOHQYDhbbDHQPF3skNgwINoDkGBbtYMwwMWvFUGmM5T6RSGI+hKGljPCe7pIWJMJ4mDUw1R2/VHIa2tLS0dBHzAmxUFOEJOOSdAAAAAElFTkSuQmCC'/></a>
+  <h3 class="suggested-title">
+  Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
+  </h3>
 </div>
 
-{% for section in sections %}
-
 ---
+
+{% for section in sections %}
 
 <div class="header">
 {% if section.kind == "report" %}
   <a class="rating" title="Thumbs Up" href='{{ section.thumbs_up_url }}'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAADM0lEQVR4nO1ZSWgUQRQtleCuREIkgoLLQUVBPbgiRM8ieIh4yMmDHhTUo2K8eRAVElBQDxH0IATiQcGD2wiGntj9XqdtotG4gIoRV4xR3G0p5jcMcSaZ0DWdbpkHden6vPqvfy2/filVQQUVxA7LsiaSbCb5jmQfgFO+71erNKGtrW0cyaskg/wG4JFlWTNUWkDysDj+squraxnJRQDuiqBjKg0AsBHAb5I/AawOvzuOs06EPFFJB4AaHQWJxoH8vu7u7iki5KtKMoIgGEPysjh7IwiCsfn9MsW0wIcqyQCwRxx9Q3JWgf7jIvKESips214O4BuAPwA2De4HMInkexG6QiURnudNJtkjf7u5kA3JHdJ/WyUVJM+Kk34mk5lQyCbcegFsVUkEgAZx8DOAhYVsHMepD88UAFUqabBtex7JfonG9mJ2ANrF5qBKGgBUkbwjf/pCMTvP8+aS/KXPDs/zalXSAOCI/OVnQyWCJFvE7oxKGhzHqQ9TEJJritl1dnZO01NPb8mu6y5WSYLnebUkX8mU2l/KAVmoyebwoVgj2Ucyq9McndoYT0EAXBFHrg9OQQaDZCPJH8XElNoA3M9mszONCQGwK0xBANRFOUD1uhqq2bY9m+RmAPdkzPNGROjLEMmPQrpFxQSSCyQy/aYI94mIaypG+L5fHa4pI4RagBA2GCEsfdylEpEHpghfC+E/6Xk5AWB9GBGSOyMTyukc6KKCihG9vb3jSZ4Mx4+cdIZboTEPRz7+bhHipFqIlds1oy/60RYCYJUIeZFaIQBqSLriQ0tqhZD0JRpPI5dcRzkil0TI96Gy7cQLCXL1sqPiw820L/aa/2LXsm17ifjwPBIRyU+aqKOjY6qKGQDm5C341khkOmnTRLp+a8zD0sZtJPkl3LUi53okTwtZk4oRAFplSrlGqjD6zSO8HeqigooJjuOsFCE9xkj1U4GIaR/uvm4KyBW/zb6pAJgvD5ua+CKA6cbIhynJknxslNh13bV5Yt4COKSfCUyXbADU6YtUWJIFsFeVo+ary0FRyzwjKAedK+tUBrBBv53ruhOAAcPODwC4RXJb2QRUUEEFKrX4C0BJhOndFBCaAAAAAElFTkSuQmCC" /></a>
   <a class="rating" title="Thumbs Down" href='{{ section.thumbs_down_url }}'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAADJUlEQVR4nO2ZXYhNURTH95jkW0yD0DwQJRJKPkLEq5IyT3gRzQPFmzCvHjQPJoqiTHlRV14oJR+3GGfGOf//PsdtmDGUyEe+vxv5OtpmHd2me+/MuPveOSf3V/vl3tXa+7/32uuss45SFSpUqJAPkutIniDZCeAzydDWQK+/GwA2h2FYpUoByVkk0zYX3s9osS7C87wVJF/Lrr0g2ej7/sIgCMbYnAfAVJINJN+LmAbbJxGJONva2jpOlRit9SYR8sCa0yicjIiSxW0fAIwWIT02L/afcCrHSUR4nrdEhHQqG0h2Mg4bVRkBcErm1W1tbVOKdkiyyzjUWi+wssKBz7uF5BeJhoe+708v1uFH46ycYRXhum4dyYyVVBzldDVE+L4/T9bwONFCtNaTJLw+JVZIGIZVJJtkDdcSKwTAeTmNrySXJ1nI7ShrOY5Tk2QhtezFiDmS6MsOYKkIeZJoIY7j1ETvKYkWQnKXCHGLdfTDOEqlUtWqjHR3d48geQzATxFSX5RDeYkypzLN2ioHNu+qKKQAbLfh8LKVHRn8vPNlA7tsOdwjQq6oMpLJZCZaueTZWQPAO3G6UZUJrfVsOZEP1pwC2ClCXprmwL/6MY0Ks9OFhuu6dVrrDQDuypynrRZvAC5GIRaG4bBC9iS3kvxmocd1JwiCycomxiHJ5zLBvkK2AHYXasABeJtvkHwG4CbJvbZbTX/xPG+N5PXvharR9vb28Sa2AfzSWs9VcQTAIdndRyam89mRbBa7kyqOABhO8paEyZl8dkEQzJCqoMd6nNvCdd2ZJnRkx7flswNwTmwOqLgCoD7r8s7JZaO1Xi02T81JqrhCskV2PJNOp0f285ZX1hJnUJj0aFqaIqY5lw2AHfL/dRVnXNddZJoDJtUCWJ+nGf1mKLqVgyZ6AJoSJle5H6ViAEdVnAl7+08XJISu9i1hSC4WIfdU3AFQa7KTLHh/9n8dHR1jrX7rKDUA1kYlDIBlWb+vtP71qdSQPBg9O0wiMLVWVke9SSWFVCpVTfJSjqr3fqHaLJY4jjOK5GGSr+Spftz3/QlDva4KFf5nfgMy4oS6h0egIwAAAABJRU5ErkJggg==" /></a>
 {% else %}
-  <a class="delete" title="Delete Turn" href='{{ section.turn_delete_url }}'><img class="icon" src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAC6UlEQVR4nO1bzW7TQBDeFhDQO/AA9AGKeAoocAbKM0CbIPUCko8cgAMIiRaJAuUAeQlfUCIl3+eEa4AiFQ6A+FH7AotGdqQlqpC9tjd2vZ80x92dmZ359os8UapEkFwEcJvkuo0laxdVXUHyI0mdxwCMVV0B4EOjE8C4Be4CuGdjJO8AODvrODw8mg4ACySvkGzZPmkObU18FZ9zB661ngPQBvAnL5u7tsTnNYnBOniSr2cdSAGJ2LZKAoD21GafSG7YPmmuLPFxZyoJq1mDXzDLHsDzMAxPqJpAfCW5Zfj/u9vtnky9AcnL5s3XKfgJxGezEgAsp16M+EfIZOFTVVOQ3DQusmXb/xuqpiD5zLjIdtNb4JI1CZLcqiEJvjD8/5lZGDFWVOZTspP01HrFbRPA51zPoKECtw+BEHqptZ5XNtBxElblHZ11IBb2C8BNaylsQkSEkIi0RYUV4DtTuGUSPocBJAPj9gPVNNAngOVWgNZ6nuQNsUKIpW4VwDj4CcmsqAYmIKgyyVQyAdqybWzWVTIBtGwbm3VVTUBg45TLs1LDJ4C+AgLfAvQcoD0J0r8C2j+D9DogKEs7uNYcqeF1AL0OCLwOoNcB2usAeh2gvQ6g1wFBWdrBteZIDa8D6HVA4HUAG6wD8O/k2P2qfRcA8MBqJC4toii6Zjj1JsOEyQqA6xm/DGVeR7JjJOCqKhokzxsHfLOeuykBnU7nCIAfE//6/f65wg/R8a18nRwSRdEFVRHIGKxxObulfb4H8NBog2EYhkdLOSibT8cAvM/KT1aIougUyT0jCY/UjEHyiRH8fq/XO1P2gS1zHA3A41lUgtz8VPDiy63SD9YH/JMEwGgwGFwUMnJEeMtTZS8+vFKuMB6Pjx/0dxoA30m+Tbii0BHYZM+OyfZm8OKTcgkdV4LME+/nnOjMY3tOyv5/GI1Gp0WFAfjiMPBdYXshZVUVaK3nRIAkirHwkVrZU/YeDodLRb7zfwHqTq32fc3Z3AAAAABJRU5ErkJggg=='/></a>
+  <a class="delete" title="Delete Turn" href='{{ section.turn_delete_url }}'><img class="icon delete-icon" src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAC6UlEQVR4nO1bzW7TQBDeFhDQO/AA9AGKeAoocAbKM0CbIPUCko8cgAMIiRaJAuUAeQlfUCIl3+eEa4AiFQ6A+FH7AotGdqQlqpC9tjd2vZ80x92dmZ359os8UapEkFwEcJvkuo0laxdVXUHyI0mdxwCMVV0B4EOjE8C4Be4CuGdjJO8AODvrODw8mg4ACySvkGzZPmkObU18FZ9zB661ngPQBvAnL5u7tsTnNYnBOniSr2cdSAGJ2LZKAoD21GafSG7YPmmuLPFxZyoJq1mDXzDLHsDzMAxPqJpAfCW5Zfj/u9vtnky9AcnL5s3XKfgJxGezEgAsp16M+EfIZOFTVVOQ3DQusmXb/xuqpiD5zLjIdtNb4JI1CZLcqiEJvjD8/5lZGDFWVOZTspP01HrFbRPA51zPoKECtw+BEHqptZ5XNtBxElblHZ11IBb2C8BNaylsQkSEkIi0RYUV4DtTuGUSPocBJAPj9gPVNNAngOVWgNZ6nuQNsUKIpW4VwDj4CcmsqAYmIKgyyVQyAdqybWzWVTIBtGwbm3VVTUBg45TLs1LDJ4C+AgLfAvQcoD0J0r8C2j+D9DogKEs7uNYcqeF1AL0OCLwOoNcB2usAeh2gvQ6g1wFBWdrBteZIDa8D6HVA4HUAG6wD8O/k2P2qfRcA8MBqJC4toii6Zjj1JsOEyQqA6xm/DGVeR7JjJOCqKhokzxsHfLOeuykBnU7nCIAfE//6/f65wg/R8a18nRwSRdEFVRHIGKxxObulfb4H8NBog2EYhkdLOSibT8cAvM/KT1aIougUyT0jCY/UjEHyiRH8fq/XO1P2gS1zHA3A41lUgtz8VPDiy63SD9YH/JMEwGgwGFwUMnJEeMtTZS8+vFKuMB6Pjx/0dxoA30m+Tbii0BHYZM+OyfZm8OKTcgkdV4LME+/nnOjMY3tOyv5/GI1Gp0WFAfjiMPBdYXshZVUVaK3nRIAkirHwkVrZU/YeDodLRb7zfwHqTq32fc3Z3AAAAABJRU5ErkJggg=='/></a>
 {% endif %}
 </div>
 
@@ -156,8 +153,10 @@ Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
 
 {{ section.message }}
 
+---
+
 {% endfor %}
 
 {% if follow_up != "" %}
-Follow up: <a class="follow-up" href="#">{{ follow_up }}</a>
+Follow up: <a class="icon-link" href='{{ follow_up_url }}'>{{ follow_up }}</a>
 {% endif %}

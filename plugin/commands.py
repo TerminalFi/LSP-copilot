@@ -188,15 +188,27 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
         ViewPanelCompletionManager(view).close()
 
 
+class CopilotConversationChatShimCommand(LspWindowCommand):
+    def run(self, window_id: int, follow_up: str = "") -> None:
+        if not (window := find_window_by_id(window_id)):
+            return
+
+        conversation_manager = WindowConversationManager(window)
+        if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
+            return
+
+        view.run_command("copilot_conversation_chat", {"follow_up": follow_up})
+
+
 class CopilotConversationChatCommand(LspTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, follow_up: str = "") -> None:
         if not (window := self.view.window()):
             return
         manager = WindowConversationManager(window)
         if manager.conversation_id:
             manager.open()
-            manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x))
+            manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x), initial_text=follow_up)
             return
         session.send_request(
             Request(

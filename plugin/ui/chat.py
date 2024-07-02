@@ -15,6 +15,7 @@ from ..utils import (
     remove_prefix,
     set_copilot_setting,
 )
+from .resources import UI_ICON_COPY, UI_ICON_INSERT
 
 
 class WindowConversationManager:
@@ -162,8 +163,8 @@ class WindowConversationManager:
         window_id = int(remove_prefix(token_id, "copilot_chat://"))
         return find_window_by_id(window_id)
 
-    def prompt(self, callback):
-        self.window.show_input_panel("Copilot Chat", "", callback, None, None)
+    def prompt(self, callback, initial_text: str = ""):
+        self.window.show_input_panel("Copilot Chat", initial_text, callback, None, None)
 
     def open(self, *, completion_target_count: int | None = None) -> None:
         _ConversationEntry(self.window).open()
@@ -188,6 +189,10 @@ class _ConversationEntry:
         return load_resource_template("chat_panel.md.jinja", True).render(
             suggested_title=self.conversation_manager.suggested_title,
             follow_up=self.conversation_manager.follow_up,
+            follow_up_url=sublime.command_url(
+                "copilot_conversation_chat_shim",
+                {"window_id": self.conversation_manager.window.id(), "follow_up": self.conversation_manager.follow_up},
+            ),
             close_url=sublime.command_url(
                 "copilot_conversation_close", {"window_id": self.conversation_manager.window.id()}
             ),
@@ -239,11 +244,15 @@ class _ConversationEntry:
             )
             reply = (
                 reply[:code_block_start]
-                + f"<a href='{copy_command_url}'>Copy</a><span></span>"
-                + f" <a href='{insert_command_url}'>Insert</a>"
+                + f"<a class='icon-link' href='{copy_command_url}'>"
+                + f"<img class='icon icon-link' src='{UI_ICON_COPY}' /></a>"
+                + "<span></span>"
+                + f" <a class='icon-link' href='{insert_command_url}'>"
+                + f"<img class='icon icon-link' src='{UI_ICON_INSERT}' /></a>"
                 + "\n\n"
                 + code_block_lines[0]
             )
+            print(reply)
             return reply, code_block_lines
 
         transformed_conversation = []
