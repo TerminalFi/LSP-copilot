@@ -1,5 +1,23 @@
 [
     {
+        "caption": "Copilot: Chat",
+        "command": "copilot_conversation_chat"
+    },
+    {
+        "caption": "Copilot: Destroy Conversation",
+        "command": "copilot_conversation_destroy"
+    },
+    {
+        // Debug Command
+        "caption": "Copilot: Conversation Agents",
+        "command": "copilot_conversation_agents",
+    },
+    {
+        // Debug Command
+        "caption": "Copilot: Conversation Templates",
+        "command": "copilot_conversation_templates",
+    },
+    {
         "caption": "Copilot: Check Status",
         "command": "copilot_check_status"
     },

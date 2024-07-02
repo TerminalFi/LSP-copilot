@@ -10,6 +10,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 class AccountStatus:
     has_signed_in: bool
     is_authorized: bool
+    user: str
 
 
 # ---------------------------- #
@@ -136,3 +137,88 @@ class CopilotPayloadPanelSolution(TypedDict, total=True):
 
 class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
     solutionCountTarget: int
+
+
+# --------------------- #
+#  Copilot Chat Types   #
+# --------------------- #
+
+
+class CopilotPayloadConversationEntry(TypedDict, total=True):
+    kind: str
+    conversationId: str
+    turnId: str
+    reply: str
+    annotations: list[str]
+    hideText: bool
+
+
+class CopilotPayloadConversationTemplate(TypedDict, total=True):
+    id: str
+    description: str
+    shortDescription: str
+    scopes: list[str]
+
+
+# class CopilotRequestCoversationPreconditions(TypedDict, total=True):
+#     pass
+
+
+# class CopilotRequestCoversationPersistance(TypedDict, total=True):
+#     pass
+
+
+# class CopilotRequestCoversationChatCreate(TypedDict, total=True):
+#     pass
+
+
+# class CopilotRequestCoversationChatTurn(TypedDict, total=True):
+#     workDoneToken: str | int
+#     conversationId: str
+#     message: str
+#     followUp: dict[str, str]
+#     options: dict[str, str]  # {}
+#     doc: dict[str, str]
+#     computeSuggestions: bool
+#     references: list[dict[str, str]]  # List of doc type
+#     workspaceFolder: str
+
+#     # doc = {
+#     #             uri: Qi.Type.String(),
+#     #             position: Qi.Type.Optional(
+#     #                 Qi.Type.Object({
+#     #                     line: Qi.Type.Number({ minimum: 0 }),
+#     #                     character: Qi.Type.Number({ minimum: 0 }),
+#     #                 }),
+#     #             ),
+#     #             visibleRange: Qi.Type.Optional(R8),
+#     #             selection: Qi.Type.Optional(R8),
+#     #             openedAt: Qi.Type.Optional(Qi.Type.String()),
+#     #             activeAt: Qi.Type.Optional(Qi.Type.String()),
+#     #         }
+#     # {
+#     #         workDoneToken: no.Type.Union([no.Type.String(), no.Type.Number()]),
+#     #         conversationId: no.Type.String(),
+#     #         message: no.Type.String(),
+#     #         followUp: no.Type.Optional(
+#     #             no.Type.Object({ id: no.Type.String(), type: no.Type.String() }),
+#     #         ),
+#     #         options: no.Type.Optional(Mn),
+#     #         doc: no.Type.Optional(Z0),
+#     #         computeSuggestions: no.Type.Optional(no.Type.Boolean()),
+#     #         references: no.Type.Optional(no.Type.Array(k8)),
+#     #         workspaceFolder: no.Type.Optional(no.Type.String()),
+#     #     }
+
+
+class CopilotRequestCoversationAgent(TypedDict, total=True):
+    id: str
+    description: str
+
+
+class CopilotPayloadConversationContext(TypedDict, total=True):
+    conversationId: str
+    """E.g., `"e3b0d5e3-0c3b-4292-a5ea-15d6003e7c45"`."""
+    turnId: str
+    """E.g., `"09ac7601-6c28-4617-b3e4-13f5ff8502b7"`."""
+    skillId: Literal["current-editor", "project-labels", "recent-files"]
