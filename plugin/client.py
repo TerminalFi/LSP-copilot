@@ -3,6 +3,8 @@ from __future__ import annotations
 import functools
 import json
 import os
+import threading
+import time
 import weakref
 from collections import defaultdict
 from collections.abc import Callable
@@ -90,6 +92,36 @@ def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callab
     return decorator
 
 
+class ActivityIndicator:
+    def __init__(self, callback: Callable[[dict[str, Any]], None] | None = None):
+        self.thread = None
+        # This pattern taken from PC
+        self.animation = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]
+        self.callback = callback
+        self.stop_event = threading.Event()
+        self.last_index = 0
+
+    def start(self):
+        if self.thread is None or not self.thread.is_alive():
+            self.stop_event.clear()
+            self.thread = threading.Thread(target=self._run, daemon=True)
+            self.thread.start()
+
+    def stop(self):
+        if self.thread is not None:
+            self.stop_event.set()
+            self.thread.join()
+            if self.callback:
+                self.callback()  # type: ignore
+
+    def _run(self):
+        while not self.stop_event.is_set():
+            if self.callback:
+                self.callback({"is_waiting": self.animation[self.last_index]})
+            self.last_index = (self.last_index + 1) % len(self.animation)
+            time.sleep(0.1)
+
+
 class CopilotPlugin(NpmClientHandler):
     package_name = PACKAGE_NAME
     server_directory = "language-server"
@@ -117,10 +149,14 @@ class CopilotPlugin(NpmClientHandler):
         is_authorized=False,
     )
 
+    _activity_indicator = None
+
     def __init__(self, session: weakref.ref[Session]) -> None:
         super().__init__(session)
         if sess := session():
             self.window_attrs[sess.window.id()].client_ref = weakref.ref(self)
+
+        self._activity_indicator = ActivityIndicator(self.update_status_bar_text)
 
         # Note that ST persists view settings after ST is closed. If the user closes ST
         # during awaiting Copilot's response, the internal state management will be corrupted.
@@ -352,6 +388,8 @@ class CopilotPlugin(NpmClientHandler):
             callback = lambda _: None  # noqa: E731
         else:
             completion_manager.is_waiting = True
+            if self._activity_indicator:
+                self._activity_indicator.start()
             callback = functools.partial(self._on_get_completions, view, region=sel[0].to_tuple())
 
         session.send_request_async(Request(request, params), callback)
@@ -364,6 +402,8 @@ class CopilotPlugin(NpmClientHandler):
     ) -> None:
         completion_manager = ViewCompletionManager(view)
         completion_manager.is_waiting = False
+        if self._activity_indicator:
+            self._activity_indicator.stop()
 
         if not (session := self.weaksession()):
             return
