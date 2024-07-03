@@ -203,7 +203,7 @@ def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
     if len(sel := view.sel()) != 1:
         return None
 
-    file_path = view.file_name() or ""
+    file_path = view.file_name() or f"buffer:{view.buffer().id()}"
     row, col = view.rowcol(sel[0].begin())
     return {
         "doc": {
@@ -212,7 +212,7 @@ def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
             "indentSize": 1,  # there is no such concept in ST
             "insertSpaces": view.settings().get("translate_tabs_to_spaces"),
             "path": file_path,
-            "uri": file_path and filename_to_uri(file_path),
+            "uri": file_path if file_path.startswith("buffer:") else file_path and filename_to_uri(file_path),
             "relativePath": get_project_relative_path(file_path),
             "languageId": get_view_language_id(view),
             "position": {"line": row, "character": col},
