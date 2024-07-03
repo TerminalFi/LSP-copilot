@@ -174,7 +174,7 @@ class _ConversationEntry:
     @property
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
-        return load_resource_template("chat_panel.md.jinja", True).render(
+        return load_resource_template("chat_panel.md.jinja", keep_trailing_newlines=True).render(
             suggested_title=self.conversation_manager.suggested_title,
             follow_up=self.conversation_manager.follow_up,
             follow_up_url=sublime.command_url(
