@@ -258,6 +258,10 @@ class CopilotConversationChatCommand(LspTextCommand):
         import uuid
 
         manager = WindowConversationManager(window)
+        if manager.is_waiting:
+            manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x), initial_text=msg)
+            return
+
         template = load_string_template(msg)
         sel = []
         if not (view := find_view_by_id(manager.last_active_view_id)):
@@ -288,7 +292,7 @@ class CopilotConversationChatCommand(LspTextCommand):
                 {
                     "conversationId": manager.conversation_id,
                     "message": msg,
-                    "workDoneToken": f"copilot_chat://{manager.window.id()}",  # Not sure where this comes from
+                    "workDoneToken": f"copilot_chat://{manager.window.id()}",
                     "doc": request["doc"],
                     "computeSuggestions": True,
                     "references": [],
@@ -297,6 +301,7 @@ class CopilotConversationChatCommand(LspTextCommand):
             ),
             manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x)),
         )
+        manager.is_waiting = True
         manager.update()
 
 

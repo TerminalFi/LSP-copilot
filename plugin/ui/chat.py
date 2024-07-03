@@ -24,17 +24,6 @@ class WindowConversationManager:
     # ------------- #
 
     @property
-    def is_visible(self) -> bool:
-        """Whether the panel completions is visible."""
-        return get_copilot_setting(
-            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible_conversation", False
-        )
-
-    @is_visible.setter
-    def is_visible(self, value: bool) -> None:
-        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible_conversation", value)
-
-    @property
     def group_id(self) -> int:
         """The ID of the group which is used to show panel completions."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_group_id", -1)

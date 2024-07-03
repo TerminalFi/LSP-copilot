@@ -320,6 +320,9 @@ class CopilotPlugin(NpmClientHandler):
                         return
 
                     conversation_manager = WindowConversationManager(window)
+                    if params.get("kind", None) == "end":
+                        conversation_manager.is_waiting = False
+
                     if suggest_title := params.get("suggestedTitle", None):
                         conversation_manager.suggested_title = suggest_title
 
