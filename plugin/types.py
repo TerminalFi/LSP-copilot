@@ -10,6 +10,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 class AccountStatus:
     has_signed_in: bool
     is_authorized: bool
+    user: str
 
 
 # ---------------------------- #
@@ -136,3 +137,37 @@ class CopilotPayloadPanelSolution(TypedDict, total=True):
 
 class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
     solutionCountTarget: int
+
+
+# --------------------- #
+#  Copilot Chat Types   #
+# --------------------- #
+
+
+class CopilotPayloadConversationEntry(TypedDict, total=True):
+    kind: str
+    conversationId: str
+    turnId: str
+    reply: str
+    annotations: list[str]
+    hideText: bool
+
+
+class CopilotPayloadConversationTemplate(TypedDict, total=True):
+    id: str
+    description: str
+    shortDescription: str
+    scopes: list[str]
+
+
+class CopilotRequestCoversationAgent(TypedDict, total=True):
+    id: str
+    description: str
+
+
+class CopilotPayloadConversationContext(TypedDict, total=True):
+    conversationId: str
+    """E.g., `"e3b0d5e3-0c3b-4292-a5ea-15d6003e7c45"`."""
+    turnId: str
+    """E.g., `"09ac7601-6c28-4617-b3e4-13f5ff8502b7"`."""
+    skillId: Literal["current-editor", "project-labels", "recent-files"]  # not the complet list yet

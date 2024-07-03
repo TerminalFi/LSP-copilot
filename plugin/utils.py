@@ -102,6 +102,10 @@ def find_view_by_id(id: int) -> sublime.View | None:
     return first_true(all_views(include_transient=True), pred=lambda view: view.id() == id)
 
 
+def find_window_by_id(id: int) -> sublime.Window | None:
+    return first_true(all_windows(), pred=lambda window: window.id() == id)
+
+
 def is_active_view(obj: Any) -> bool:
     return bool(obj and obj == sublime.active_window().active_view())
 
@@ -194,6 +198,8 @@ def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
 
 
 def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
+    if not view:
+        return None
     if len(sel := view.sel()) != 1:
         return None
 
@@ -293,6 +299,10 @@ def _generate_completion_region(
             completion["range"]["end"]["character"],
         ),
     )
+
+
+def find_index_by_key_value(items, key, value):
+    return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
 
 
 class CopilotIgnore:

@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 import sublime
 from LSP.plugin import ClientConfig, DottedDict, Request, Session, WorkspaceFolder
-from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler
+from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler, request_handler
 
 from .constants import (
     NTFY_FEATURE_FLAGS_NOTIFICATION,
@@ -24,6 +24,7 @@ from .constants import (
     NTFY_STATUS_NOTIFICATION,
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
+    REQ_CONVERSATION_CONTEXT,
     REQ_GET_COMPLETIONS,
     REQ_GET_COMPLETIONS_CYCLING,
     REQ_GET_VERSION,
@@ -34,6 +35,7 @@ from .template import load_string_template
 from .types import (
     AccountStatus,
     CopilotPayloadCompletions,
+    CopilotPayloadConversationContext,
     CopilotPayloadFeatureFlagsNotification,
     CopilotPayloadGetVersion,
     CopilotPayloadLogMessage,
@@ -44,10 +46,12 @@ from .types import (
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
+from .ui.chat import WindowConversationManager
 from .utils import (
     ActivityIndicator,
     CopilotIgnore,
     all_views,
+    all_windows,
     debounce,
     get_session_setting,
     prepare_completion_request,
@@ -116,6 +120,7 @@ class CopilotPlugin(NpmClientHandler):
     _account_status = AccountStatus(
         has_signed_in=False,
         is_authorized=False,
+        user="",
     )
 
     _activity_indicator: ActivityIndicator | None = None
@@ -133,6 +138,9 @@ class CopilotPlugin(NpmClientHandler):
         for view in all_views():
             ViewCompletionManager(view).reset()
             ViewPanelCompletionManager(view).reset()
+
+        for window in all_windows():
+            WindowConversationManager(window).reset()
 
     @classmethod
     def on_pre_start(
@@ -155,6 +163,7 @@ class CopilotPlugin(NpmClientHandler):
             self.set_account_status(
                 signed_in=result["status"] in {"NotAuthorized", "OK"},
                 authorized=result["status"] == "OK",
+                user=result.get("user", None),
             )
 
         def _on_set_editor_info(result: str, failed: bool) -> None:
@@ -203,7 +212,7 @@ class CopilotPlugin(NpmClientHandler):
     def editor_info(cls) -> dict[str, Any]:
         return {
             "editorInfo": {
-                "name": "Sublime Text",
+                "name": "vscode",
                 "version": sublime.version(),
             },
             "editorPluginInfo": {
@@ -231,12 +240,15 @@ class CopilotPlugin(NpmClientHandler):
         *,
         signed_in: bool | None = None,
         authorized: bool | None = None,
+        user: str | None = None,
         quiet: bool = False,
     ) -> None:
         if signed_in is not None:
             cls._account_status.has_signed_in = signed_in
         if authorized is not None:
             cls._account_status.is_authorized = authorized
+        if user is not None:
+            cls._account_status.user = user
 
         if not quiet:
             if not cls._account_status.has_signed_in:
@@ -270,6 +282,12 @@ class CopilotPlugin(NpmClientHandler):
         plugin = cls.from_view(view)
         return (plugin, plugin.weaksession()) if plugin else (None, None)
 
+    @classmethod
+    def should_ignore(cls, view: sublime.View) -> bool:
+        if not (window := view.window()):
+            return False
+        return CopilotIgnore(window).trigger(view)
+
     def is_valid_for_view(self, view: sublime.View) -> bool:
         session = self.weaksession()
         return bool(session and session.session_view_for_view_async(view))
@@ -294,11 +312,28 @@ class CopilotPlugin(NpmClientHandler):
                 log_warning(f'Invalid "status_text" template: {e}')
         session.set_config_status_async(rendered_text)
 
-    @classmethod
-    def should_ignore(cls, view: sublime.View) -> bool:
-        if not (window := view.window()):
-            return False
-        return CopilotIgnore(window).trigger(view)
+    def on_server_notification_async(self, notification) -> None:
+        if notification.method == "$/progress":
+            if (token := notification.params["token"]) and token.startswith("copilot_chat://"):
+                if params := notification.params["value"]:
+                    if not (window := WindowConversationManager.find_window_by_token_id(token)):
+                        return
+
+                    conversation_manager = WindowConversationManager(window)
+                    if params.get("kind", None) == "end":
+                        conversation_manager.is_waiting = False
+
+                    if suggest_title := params.get("suggestedTitle", None):
+                        conversation_manager.suggested_title = suggest_title
+
+                    if params.get("reply", None):
+                        conversation_manager.append_conversation_entry(params)
+
+                    if followup := params.get("followUp", None):
+                        message = followup.get("message", "")
+                        conversation_manager.follow_up = message
+
+                    conversation_manager.update()
 
     @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
@@ -331,6 +366,14 @@ class CopilotPlugin(NpmClientHandler):
     @notification_handler(NTFY_STATUS_NOTIFICATION)
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
         pass
+
+    @request_handler(REQ_CONVERSATION_CONTEXT)
+    def _handle_conversation_context_request(
+        self,
+        payload: CopilotPayloadConversationContext,
+        respond: Callable[[Any], None],
+    ) -> None:
+        respond(None)  # what?
 
     @_guard_view()
     @debounce()
