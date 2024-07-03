@@ -252,12 +252,11 @@ class _ConversationEntry:
                 + "\n\n"
                 + code_block_lines[0]
             )
-            return reply, code_block_lines
+            return reply
 
         transformed_conversation = []
         current_entry = None
         inside_code_block = False
-        code_block_lines: list[str] = []
         code_block_index = -1
 
         for entry in self.conversation_manager.conversation:
@@ -269,11 +268,10 @@ class _ConversationEntry:
                 if "```" in reply and not inside_code_block:
                     inside_code_block = True
                     code_block_index += 1
-                    reply, code_block_lines = process_code_block(reply, inside_code_block, code_block_index)
+                    reply = process_code_block(reply, inside_code_block, code_block_index)
                 elif inside_code_block:
                     if "```" in reply:
                         inside_code_block = False
-                        code_block_lines = []
                         self.conversation_manager.insert_code_block_index(
                             code_block_index, "".join(current_entry["code_block"])
                         )
@@ -287,7 +285,7 @@ class _ConversationEntry:
                 if "```" in reply:
                     inside_code_block = True
                     code_block_index += 1
-                    reply, code_block_lines = process_code_block(reply, inside_code_block, code_block_index)
+                    reply = process_code_block(reply, inside_code_block, code_block_index)
                 current_entry = {"kind": kind, "messages": [reply], "code_block": [], "turnId": turn_id}
 
         if current_entry:

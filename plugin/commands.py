@@ -444,6 +444,7 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
         index = find_index_by_key_value(conversation_manager.conversation, "turnId", turn_id)
         conversation = conversation_manager.conversation
         del conversation[index:]
+        conversation_manager.follow_up = ""
         conversation_manager.conversation = conversation
         conversation_manager.update()
 
