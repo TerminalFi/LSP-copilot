@@ -13,8 +13,7 @@ from .constants import PACKAGE_NAME
 
 @lru_cache
 def load_string_template(template: str, keep_trailing_newlines: bool = False) -> jinja2.Template:
-    if keep_trailing_newlines:
-        return JINJA_TEMPLATE_ENV2.from_string(template)
+    JINJA_TEMPLATE_ENV.keep_trailing_newline = keep_trailing_newlines
     return JINJA_TEMPLATE_ENV.from_string(template)
 
 
@@ -40,8 +39,3 @@ JINJA_TEMPLATE_ENV = jinja2.Environment(
     extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
 )
 JINJA_TEMPLATE_ENV.globals.update(JINJA_GLOBALS)
-
-JINJA_TEMPLATE_ENV2 = jinja2.Environment(
-    extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"], keep_trailing_newline=True
-)
-JINJA_TEMPLATE_ENV2.globals.update(JINJA_GLOBALS)
