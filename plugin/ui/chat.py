@@ -6,7 +6,7 @@ import mdpopups
 import sublime
 
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
-from ..template import load_resource_template
+from ..template import base64_resource_url, load_resource_template
 from ..types import CopilotPayloadConversationEntry, StLayout
 from ..utils import (
     find_view_by_id,
@@ -15,7 +15,6 @@ from ..utils import (
     remove_prefix,
     set_copilot_setting,
 )
-from .resources import UI_ICON_COPY, UI_ICON_INSERT
 
 
 class WindowConversationManager:
@@ -234,10 +233,10 @@ class _ConversationEntry:
             reply = (
                 reply[:code_block_start]
                 + f"<a class='icon-link' href='{copy_command_url}'>"
-                + f"<img class='icon icon-link' src='{UI_ICON_COPY}' /></a>"
+                + f"<img class='icon icon-link' src='{base64_resource_url('copy.png')}' /></a>"
                 + "<span></span>"
                 + f" <a class='icon-link' href='{insert_command_url}'>"
-                + f"<img class='icon icon-link' src='{UI_ICON_INSERT}' /></a>"
+                + f"<img class='icon icon-link' src='{base64_resource_url('insert.png')}' /></a>"
                 + "\n\n"
                 + code_block_lines[0]
             )
