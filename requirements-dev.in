@@ -1,4 +1,4 @@
 -r requirements.in
 
 mypy
-ruff>=0.4
+ruff>=0.5
