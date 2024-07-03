@@ -65,6 +65,15 @@ class ViewCompletionManager:
         set_copilot_view_setting(self.view, "completion_style", value)
 
     @property
+    def completion_popup_css(self) -> str:
+        """The completion style."""
+        return get_copilot_view_setting(self.view, "completion_popup_css", "")
+
+    @completion_popup_css.setter
+    def completion_popup_css(self, value: str) -> None:
+        set_copilot_view_setting(self.view, "completion_popup_css", value)
+
+    @property
     def completion_index(self) -> int:
         """The index of the current chosen completion."""
         return get_copilot_view_setting(self.view, "completion_index", 0)
@@ -145,6 +154,7 @@ class ViewCompletionManager:
         completions: list[CopilotPayloadCompletion] | None = None,
         completion_index: int | None = None,
         completion_style: str | None = None,
+        completion_popup_css: str | None = None,  # if we need to extend anymore. We should just pass session settings
     ) -> None:
         if not is_active_view(self.view):
             return
@@ -156,6 +166,8 @@ class ViewCompletionManager:
             self.completion_index = completion_index
         if completion_style is not None:
             self.completion_style = completion_style
+        if completion_popup_css is not None:
+            self.completion_popup_css = completion_popup_css
 
         completion = self.current_completion
         if not completion:
@@ -219,6 +231,9 @@ class _PopupCompletion(_BaseCompletion):
     @property
     def popup_content(self) -> str:
         return load_resource_template("completion@popup.md.jinja").render(
+            completion_popup_max_width=get_copilot_view_setting(self.view, "completion_popup_css", "").replace(
+                "\\n", "\n"
+            ),
             code=self.popup_code,
             completion=self.completion,
             count=self.count,

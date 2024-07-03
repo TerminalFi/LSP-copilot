@@ -389,4 +389,9 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         preprocess_completions(view, completions)
-        completion_manager.show(completions, 0, get_session_setting(session, "completion_style"))
+        completion_manager.show(
+            completions,
+            0,
+            get_session_setting(session, "completion_style"),
+            get_session_setting(session, "completion_popup_css"),
+        )

@@ -38,6 +38,11 @@
                         "phantom"
                       ]
                     },
+                    "completion_popup_css": {
+                      "default": "",
+                      "markdownDescription": "Custom CSS to style the completion popup. The CSS is applied to the completion popup only.",
+                      "type": "string"
+                    },
                     "debug": {
                       "default": false,
                       "markdownDescription": "Enables `debug` mode fo the LSP-copilot. Enabling all commands regardless of status requirements.",
