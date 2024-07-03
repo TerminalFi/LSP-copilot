@@ -43,7 +43,7 @@ REQ_CONVERSATION_PRECONDITIONS = "conversation/preconditions"  # done
 REQ_CONVERSATION_RATING = "conversation/rating"  # done
 REQ_CONVERSATION_TEMPLATES = "conversation/templates"  # done
 REQ_CONVERSATION_TURN = "conversation/turn"  # done
-REQ_CONVERSATION_TURN_DELETE = "conversation/turnDelete"
+REQ_CONVERSATION_TURN_DELETE = "conversation/turnDelete"  # done
 
 # --------------------- #
 # Copilot notifications #
