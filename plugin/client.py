@@ -30,6 +30,7 @@ from .constants import (
     REQ_GET_VERSION,
     REQ_SET_EDITOR_INFO,
 )
+from .helpers import ActivityIndicator, CopilotIgnore, GithubInfo
 from .log import log_warning
 from .template import load_string_template
 from .types import (
@@ -47,11 +48,8 @@ from .types import (
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import (
-    ActivityIndicator,
-    CopilotIgnore,
     all_views,
     all_windows,
-    cache_github_avatar,
     debounce,
     get_session_setting,
     prepare_completion_request,
@@ -249,7 +247,7 @@ class CopilotPlugin(NpmClientHandler):
             cls._account_status.is_authorized = authorized
         if user is not None:
             cls._account_status.user = user
-            cache_github_avatar(user)
+            GithubInfo.fetch_avatar(user)
 
         if not quiet:
             if not cls._account_status.has_signed_in:

@@ -36,6 +36,7 @@ from .constants import (
     REQ_SIGN_OUT,
 )
 from .decorators import _must_be_active_view
+from .helpers import GithubInfo
 from .template import load_string_template
 from .types import (
     CopilotPayloadConversationTemplate,
@@ -595,6 +596,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
             user = ""
 
         CopilotPlugin.set_account_status(user=user)
+        GithubInfo.fetch_avatar(user)
 
         if payload["status"] == "OK":
             CopilotPlugin.set_account_status(signed_in=True, authorized=True)
@@ -730,3 +732,5 @@ class CopilotSignOutCommand(CopilotTextCommand):
         if not session_dir.is_dir():
             CopilotPlugin.set_account_status(signed_in=False, authorized=False, user=None)
             message_dialog("Sign out OK. Bye!")
+
+        GithubInfo.fetch_avatar("")

@@ -6,16 +6,10 @@ import mdpopups
 import sublime
 
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
+from ..helpers import GithubInfo
 from ..template import base64_resource_url, load_resource_template
 from ..types import CopilotPayloadConversationEntry, StLayout
-from ..utils import (
-    find_view_by_id,
-    find_window_by_id,
-    get_cached_github_avatar_data_url,
-    get_copilot_setting,
-    remove_prefix,
-    set_copilot_setting,
-)
+from ..utils import find_view_by_id, find_window_by_id, get_copilot_setting, remove_prefix, set_copilot_setting
 
 
 class WindowConversationManager:
@@ -176,7 +170,7 @@ class _ConversationEntry:
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", keep_trailing_newlines=True).render(
-            avatar_data_url=get_cached_github_avatar_data_url(),
+            avatar_data_url=GithubInfo.avatar_data_url,
             suggested_title=self.conversation_manager.suggested_title,
             follow_up=self.conversation_manager.follow_up,
             follow_up_url=sublime.command_url(

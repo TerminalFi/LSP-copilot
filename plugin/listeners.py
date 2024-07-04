@@ -10,13 +10,9 @@ from watchdog.observers import Observer
 
 from .client import CopilotPlugin
 from .decorators import _must_be_active_view
+from .helpers import CopilotIgnore
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import (
-    CopilotIgnore,
-    get_copilot_view_setting,
-    get_session_setting,
-    set_copilot_view_setting,
-)
+from .utils import get_copilot_view_setting, get_session_setting, set_copilot_view_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):

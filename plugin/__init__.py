@@ -31,8 +31,9 @@ from .commands import (
     CopilotSignInWithGithubTokenCommand,
     CopilotSignOutCommand,
 )
+from .helpers import CopilotIgnore
 from .listeners import EventListener, ViewEventListener, copilot_ignore_observer
-from .utils import CopilotIgnore, all_windows
+from .utils import all_windows
 
 __all__ = (
     # ST: core
