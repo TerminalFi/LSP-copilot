@@ -591,14 +591,19 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
         session.send_request(Request(REQ_CHECK_STATUS, {"localChecksOnly": local_checks}), self._on_result_check_status)
 
     def _on_result_check_status(self, payload: CopilotPayloadSignInConfirm | CopilotPayloadSignOut) -> None:
+        if not ((user := payload.get("user")) and isinstance(user, str)):
+            user = ""
+
+        CopilotPlugin.set_account_status(user=user)
+
         if payload["status"] == "OK":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=True, user=payload["user"])
-            message_dialog('Signed in and authorized with user "{}".', payload["user"])
+            CopilotPlugin.set_account_status(signed_in=True, authorized=True)
+            message_dialog(f'Signed in and authorized with user "{user}".')
         elif payload["status"] == "MaybeOk":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=True, user=payload["user"])
-            message_dialog('(localChecksOnly) Signed in and authorized with user "{}".', payload["user"])
+            CopilotPlugin.set_account_status(signed_in=True, authorized=True)
+            message_dialog(f'(localChecksOnly) Signed in and authorized with user "{user}".')
         elif payload["status"] == "NotAuthorized":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=False, user=payload["user"])
+            CopilotPlugin.set_account_status(signed_in=True, authorized=False)
             message_dialog("Your GitHub account doesn't subscribe to Copilot.", is_error_=True)
         else:
             CopilotPlugin.set_account_status(signed_in=False, authorized=False)

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import base64
+import gzip
 import itertools
+import mimetypes
 import os
 import textwrap
 import threading
 import time
+import urllib.request
 from collections.abc import Callable, Generator, Iterable
-from functools import wraps
+from functools import lru_cache, wraps
 from itertools import takewhile
 from operator import itemgetter
 from typing import Any, TypeVar, Union, cast
@@ -18,7 +22,12 @@ from LSP.plugin.core.url import filename_to_uri
 from more_itertools import duplicates_everseen, first_true
 from wcmatch import glob
 
-from .constants import COPILOT_VIEW_SETTINGS_PREFIX, COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
+from .constants import (
+    COPILOT_VIEW_SETTINGS_PREFIX,
+    COPILOT_WINDOW_SETTINGS_PREFIX,
+    GITHUB_AVATAR_PATH,
+    PACKAGE_NAME,
+)
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
 
 _T = TypeVar("_T")
@@ -303,6 +312,44 @@ def _generate_completion_region(
 
 def find_index_by_key_value(items, key, value):
     return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
+
+
+def simple_urlopen(url: str, *, chunk_size: int = 512 * 1024) -> bytes:
+    with urllib.request.urlopen(url) as resp:
+        data = b""
+        while chunk := resp.read(chunk_size):
+            data += chunk
+        if resp.info().get("Content-Encoding") == "gzip":
+            data = gzip.decompress(data)
+    return data
+
+
+def cache_github_avatar(username: str, *, size: int = 128) -> None:
+    data = simple_urlopen(f"https://github.com/{username}.png?size={size}")
+    GITHUB_AVATAR_PATH.parent.mkdir(parents=True, exist_ok=True)
+    GITHUB_AVATAR_PATH.write_bytes(data)
+
+
+@lru_cache
+def get_cached_github_avatar() -> bytes:
+    try:
+        return GITHUB_AVATAR_PATH.read_bytes()
+    except Exception:
+        return b""
+
+
+@lru_cache
+def get_cached_github_avatar_data_url() -> str:
+    data = get_cached_github_avatar()
+    mime_type = mimetypes.guess_type(GITHUB_AVATAR_PATH)[0] or "unknown"
+    return bytes_to_data_url(data, mime_type=mime_type)
+
+
+def bytes_to_data_url(data: bytes, *, mime_type: str) -> str:
+    if not data:
+        return ""
+    data_b64 = base64.b64encode(data).decode()
+    return f"data:{mime_type};base64,{data_b64}"
 
 
 class CopilotIgnore:

@@ -1,8 +1,24 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import sublime
+
 assert __package__
 
 PACKAGE_NAME = __package__.partition(".")[0]
+
+
+# ---------------- #
+#  Github Avatar   #
+# ---------------- #
+
+GITHUB_AVATAR_PATH = Path(sublime.cache_path()) / f"{PACKAGE_NAME}/avatar.png"
+
+# ---------------- #
+# Setting Prefixes #
+# ---------------- #
+
 
 COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 COPILOT_WINDOW_SETTINGS_PREFIX = "copilot"

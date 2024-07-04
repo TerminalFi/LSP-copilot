@@ -45,13 +45,13 @@ from .types import (
     NetworkProxy,
     T_Callable,
 )
-from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .ui.chat import WindowConversationManager
+from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import (
     ActivityIndicator,
     CopilotIgnore,
     all_views,
     all_windows,
+    cache_github_avatar,
     debounce,
     get_session_setting,
     prepare_completion_request,
@@ -120,7 +120,6 @@ class CopilotPlugin(NpmClientHandler):
     _account_status = AccountStatus(
         has_signed_in=False,
         is_authorized=False,
-        user="",
     )
 
     _activity_indicator: ActivityIndicator | None = None
@@ -160,10 +159,11 @@ class CopilotPlugin(NpmClientHandler):
             self.server_version_gh = response.get("version", "")
 
         def _on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
+            user = result.get("user")
             self.set_account_status(
                 signed_in=result["status"] in {"NotAuthorized", "OK"},
                 authorized=result["status"] == "OK",
-                user=result.get("user", None),
+                user=user,
             )
 
         def _on_set_editor_info(result: str, failed: bool) -> None:
@@ -249,6 +249,7 @@ class CopilotPlugin(NpmClientHandler):
             cls._account_status.is_authorized = authorized
         if user is not None:
             cls._account_status.user = user
+            cache_github_avatar(user)
 
         if not quiet:
             if not cls._account_status.has_signed_in:
