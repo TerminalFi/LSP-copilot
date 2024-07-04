@@ -11,7 +11,8 @@ from typing import Any
 import sublime
 from wcmatch import glob
 
-from .constants import COPILOT_WINDOW_SETTINGS_PREFIX
+from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
+from .log import log_error
 from .utils import (
     all_views,
     all_windows,
@@ -54,18 +55,50 @@ class ActivityIndicator:
 
 
 class GithubInfo:
-    # @todo if we want to cache avatar to filesystem, we probably only delete it when sign out
+    AVATAR_PATH = Path(sublime.cache_path()) / f"{PACKAGE_NAME}/avatar.png"
+
     avatar_bytes = b""
     avatar_data_url = ""
 
     @classmethod
-    def fetch_avatar(cls, username: str, *, size: int = 64) -> None:
-        if username:
-            cls.avatar_bytes = simple_urlopen(f"https://github.com/{username}.png?size={size}")
+    def load_avatar_cache(cls) -> bool:
+        """Loads the avatar from the cache directory. Returns successful or not."""
+        try:
+            cls.avatar_bytes = cls.AVATAR_PATH.read_bytes()
             cls.avatar_data_url = bytes_to_data_url(cls.avatar_bytes, mime_type="image/png")
-        else:
-            cls.avatar_bytes = b""
-            cls.avatar_data_url = ""
+        except FileNotFoundError:
+            return False
+        return True
+
+    @classmethod
+    def fetch_avatar(cls, username: str, *, size: int = 64) -> None:
+        """If there is no cached avatar, fetches the avatar from GitHub and saves it to the cache."""
+        if not username:
+            log_error("No username provided for fetching avatar.")
+            return
+
+        if not cls.avatar_bytes and cls.load_avatar_cache():
+            return
+
+        cls.update_avatar(username, size=size)
+
+    @classmethod
+    def update_avatar(cls, username: str, *, size: int = 64) -> None:
+        """Updates the avatar from GitHub and saves it to the cache directory."""
+        if not username:
+            cls.clear_avatar()
+            return
+
+        cls.AVATAR_PATH.parent.mkdir(parents=True, exist_ok=True)
+        cls.AVATAR_PATH.write_bytes(simple_urlopen(f"https://github.com/{username}.png?size={size}"))
+        cls.load_avatar_cache()
+
+    @classmethod
+    def clear_avatar(cls) -> None:
+        cls.avatar_bytes = b""
+        cls.avatar_data_url = ""
+
+        cls.AVATAR_PATH.unlink(missing_ok=True)
 
 
 class CopilotIgnore:

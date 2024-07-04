@@ -596,7 +596,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
             user = ""
 
         CopilotPlugin.set_account_status(user=user)
-        GithubInfo.fetch_avatar(user)
+        GithubInfo.update_avatar(user)
 
         if payload["status"] == "OK":
             CopilotPlugin.set_account_status(signed_in=True, authorized=True)
@@ -733,4 +733,4 @@ class CopilotSignOutCommand(CopilotTextCommand):
             CopilotPlugin.set_account_status(signed_in=False, authorized=False, user=None)
             message_dialog("Sign out OK. Bye!")
 
-        GithubInfo.fetch_avatar("")
+        GithubInfo.clear_avatar()
