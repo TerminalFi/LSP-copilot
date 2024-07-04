@@ -150,8 +150,7 @@
   {%- if section.kind == "report" -%}
     <img class="icon" src="{{ base64_resource_url('github.png') }}"> Github Copilot
   {%- else -%}
-    {% if avatar_data_url %}<img class="icon" src="{{ avatar_data_url }}">{% endif %}
-    {{ section.kind }}:
+    {% if avatar_data_url %}<img class="icon" src="{{ avatar_data_url }}">{% endif %} {{ section.kind }}:
   {%- endif -%}
 </span>
 
