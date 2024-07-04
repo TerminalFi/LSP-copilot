@@ -53,6 +53,7 @@ from .utils import (
     all_views,
     all_windows,
     debounce,
+    download_github_avatar_image,
     get_session_setting,
     prepare_completion_request,
     preprocess_completions,
@@ -121,6 +122,7 @@ class CopilotPlugin(NpmClientHandler):
         has_signed_in=False,
         is_authorized=False,
         user="",
+        avatar="",
     )
 
     _activity_indicator: ActivityIndicator | None = None
@@ -160,10 +162,14 @@ class CopilotPlugin(NpmClientHandler):
             self.server_version_gh = response.get("version", "")
 
         def _on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
+            avatar = ""
+            if user := result.get("user"):
+                download_github_avatar_image(user)
             self.set_account_status(
                 signed_in=result["status"] in {"NotAuthorized", "OK"},
                 authorized=result["status"] == "OK",
                 user=result.get("user", None),
+                avatar=avatar,
             )
 
         def _on_set_editor_info(result: str, failed: bool) -> None:
@@ -241,6 +247,7 @@ class CopilotPlugin(NpmClientHandler):
         signed_in: bool | None = None,
         authorized: bool | None = None,
         user: str | None = None,
+        avatar: str | None = None,
         quiet: bool = False,
     ) -> None:
         if signed_in is not None:
@@ -249,6 +256,8 @@ class CopilotPlugin(NpmClientHandler):
             cls._account_status.is_authorized = authorized
         if user is not None:
             cls._account_status.user = user
+        if avatar is not None:
+            cls._account_status.avatar = avatar
 
         if not quiet:
             if not cls._account_status.has_signed_in:

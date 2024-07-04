@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import mimetypes
 import os
 import textwrap
 import threading
@@ -11,6 +12,7 @@ from itertools import takewhile
 from operator import itemgetter
 from typing import Any, TypeVar, Union, cast
 
+import requests
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
@@ -18,7 +20,13 @@ from LSP.plugin.core.url import filename_to_uri
 from more_itertools import duplicates_everseen, first_true
 from wcmatch import glob
 
-from .constants import COPILOT_VIEW_SETTINGS_PREFIX, COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
+from .constants import (
+    COPILOT_VIEW_SETTINGS_PREFIX,
+    COPILOT_WINDOW_SETTINGS_PREFIX,
+    DEFAULT_EXTENSION,
+    DEFAULT_MIME_TYPE,
+    PACKAGE_NAME,
+)
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
 
 _T = TypeVar("_T")
@@ -303,6 +311,38 @@ def _generate_completion_region(
 
 def find_index_by_key_value(items, key, value):
     return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
+
+
+def download_github_avatar_image(username: str) -> str:
+    url = f"https://api.github.com/users/{username}"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        avatar_url = data.get("avatar_url", "")
+
+        if not avatar_url:
+            return ""
+
+        image_response = requests.get(avatar_url)
+        image_response.raise_for_status()
+
+        mime_type = image_response.headers.get("Content-Type", DEFAULT_MIME_TYPE)
+        extension = mimetypes.guess_extension(mime_type) or DEFAULT_EXTENSION
+
+        cache_path = sublime.cache_path()
+        package_path = os.path.join(cache_path, PACKAGE_NAME)
+        os.makedirs(package_path, exist_ok=True)  # Ensure the directory exists
+        file_path = os.path.join(package_path, f"avatar{extension}")
+
+        with open(file_path, "wb") as file:
+            file.write(image_response.content)
+
+        return file_path
+
+    except requests.RequestException:
+        return ""  # Return an empty string if any request fails
 
 
 class CopilotIgnore:

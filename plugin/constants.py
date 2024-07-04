@@ -4,6 +4,20 @@ assert __package__
 
 PACKAGE_NAME = __package__.partition(".")[0]
 
+
+# ---------------- #
+#  Github Avatar   #
+# ---------------- #
+
+DEFAULT_MIME_TYPE = "image/png"
+DEFAULT_EXTENSION = ".png"
+
+
+# ---------------- #
+# Setting Prefixes #
+# ---------------- #
+
+
 COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 COPILOT_WINDOW_SETTINGS_PREFIX = "copilot"
 COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX = "copilot.conversation"

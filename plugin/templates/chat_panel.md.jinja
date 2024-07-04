@@ -146,7 +146,7 @@
 {% endif %}
 </div>
 
-<span class="kind {{ section.kind }}">{% if section.kind == "report" %}<img class="icon" src="{{ base64_resource_url('github.png') }}"> Github Copilot{% else %}{{ section.kind }}{% endif %}: </span>
+<span class="kind {{ section.kind }}">{% if section.kind == "report" %}<img class="icon" src="{{ base64_resource_url('github.png') }}"> Github Copilot{% else %}<img class="icon" src="{{ base64_resource_url('avatar.png', True) }}"> {{ section.kind }}{% endif %}: </span>
 
 {{ section.message }}
 

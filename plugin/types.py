@@ -11,6 +11,7 @@ class AccountStatus:
     has_signed_in: bool
     is_authorized: bool
     user: str
+    avatar: str
 
 
 # ---------------------------- #
