@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from typing import Any
 
 import sublime
 import sublime_plugin
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
+from watchdog.observers.api import ObservedWatch
 
 from .client import CopilotPlugin
 from .decorators import _must_be_active_view
 from .helpers import CopilotIgnore
 from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .utils import get_copilot_view_setting, get_session_setting, set_copilot_view_setting
+from .utils import all_windows, get_copilot_view_setting, get_session_setting, set_copilot_view_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
@@ -151,32 +153,31 @@ class EventListener(sublime_plugin.EventListener):
 
         return None
 
-    def on_new_window(self, window: sublime.Window):
+    def on_new_window(self, window: sublime.Window) -> None:
         if not copilot_ignore_observer:
             return
         copilot_ignore_observer.add_folders(window.folders())
 
-    def on_pre_close_window(self, window: sublime.Window):
+    def on_pre_close_window(self, window: sublime.Window) -> None:
         if not copilot_ignore_observer:
             return
         copilot_ignore_observer.remove_folders(window.folders())
 
 
 class CopilotIgnoreHandler(FileSystemEventHandler):
-    def __init__(self):
+    def __init__(self) -> None:
         self.filename = ".copilotignore"
 
-    def on_modified(self, event):
+    def on_modified(self, event: FileSystemEvent) -> None:
         if not event.is_directory and event.src_path.endswith(self.filename):
             self.update_window_patterns(event.src_path)
 
-    def on_created(self, event):
+    def on_created(self, event: FileSystemEvent) -> None:
         if not event.is_directory and event.src_path.endswith(self.filename):
             self.update_window_patterns(event.src_path)
 
-    def update_window_patterns(self, path: str):
-        windows = sublime.windows()
-        for window in windows:
+    def update_window_patterns(self, path: str) -> None:
+        for window in all_windows():
             if not self._best_matched_folder(path, window.folders()):
                 continue
             # Update patterns for specific window and folder
@@ -192,38 +193,38 @@ class CopilotIgnoreHandler(FileSystemEventHandler):
 
 
 class CopilotIgnoreObserver:
-    def __init__(self, folders: list[str] = []):
+    def __init__(self, folders: Iterable[str] | None = None) -> None:
         self.observer = Observer()
         self._event_handler = CopilotIgnoreHandler()
-        self._folders: list[str] = folders
-        self._observers: dict[str, Any] = {}
+        self._folders = list(folders or [])
+        self._scheduler: dict[str, ObservedWatch] = {}
 
-    def setup(self):
+    def setup(self) -> None:
         self.add_folders(self._folders)
         self.observer.start()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         self.observer.stop()
         self.observer.join()
 
-    def add_folders(self, folders: list[str]):
+    def add_folders(self, folders: Iterable[str]) -> None:
         for folder in folders:
             self.add_folder(folder)
 
-    def add_folder(self, folder):
+    def add_folder(self, folder: str) -> None:
         if folder not in self._folders:
             self._folders.append(folder)
         observer = self.observer.schedule(self._event_handler, folder, recursive=False)
-        self._observers[folder] = observer
+        self._scheduler[folder] = observer
 
-    def remove_folders(self, folders: list[str]):
+    def remove_folders(self, folders: list[str]) -> None:
         for folder in folders:
             self.remove_folder(folder)
 
-    def remove_folder(self, folder):
+    def remove_folder(self, folder: str) -> None:
         if folder in self._folders:
             self._folders.remove(folder)
-            self.observer.unschedule(self._observers[folder])
+            self.observer.unschedule(self._scheduler[folder])
 
 
 copilot_ignore_observer = CopilotIgnoreObserver()

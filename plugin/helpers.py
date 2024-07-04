@@ -13,7 +13,9 @@ from wcmatch import glob
 from .constants import COPILOT_WINDOW_SETTINGS_PREFIX
 from .utils import (
     all_views,
+    all_windows,
     bytes_to_data_url,
+    drop_falsy,
     erase_copilot_setting,
     erase_copilot_view_setting,
     get_copilot_setting,
@@ -51,6 +53,7 @@ class ActivityIndicator:
 
 
 class GithubInfo:
+    # @todo if we want to cache avatar to filesystem, we probably only delete it when sign out
     avatar_bytes = b""
     avatar_data_url = ""
 
@@ -65,24 +68,24 @@ class GithubInfo:
 
 
 class CopilotIgnore:
-    def __init__(self, window: sublime.Window):
+    def __init__(self, window: sublime.Window) -> None:
         self.window = window
         self.patterns: dict[str, list[str]] = {}
         self.load_patterns()
 
     @classmethod
-    def cleanup(cls):
-        for window in sublime.windows():
+    def cleanup(cls) -> None:
+        for window in all_windows():
             erase_copilot_setting(window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns")
         for view in all_views():
             erase_copilot_view_setting(view, "is_copilot_ignored")
 
-    def unload_patterns(self):
+    def unload_patterns(self) -> None:
         self.patterns.clear()
         erase_copilot_setting(self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns")
 
-    def load_patterns(self):
-        self.patterns = {}
+    def load_patterns(self) -> None:
+        self.patterns.clear()
 
         # Load workspace patterns
         for folder in self.window.folders():
@@ -90,21 +93,22 @@ class CopilotIgnore:
 
         set_copilot_setting(self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns", self.patterns)
 
-    def read_ignore_patterns(self, filepath: str):
-        if os.path.exists(filepath):
-            with open(filepath) as file:
-                patterns = [line.strip() for line in file if line.strip()]
-            return patterns
+    def read_ignore_patterns(self, file_path: str) -> list[str]:
+        if os.path.isfile(file_path):
+            with open(file_path, encoding="utf-8") as f:
+                return list(drop_falsy(map(str.strip, f)))
         return []
 
-    def add_patterns_from_file(self, filepath: str, folder: str):
-        patterns = self.read_ignore_patterns(filepath)
-        if patterns:
+    def add_patterns_from_file(self, file_path: str, folder: str) -> None:
+        if patterns := self.read_ignore_patterns(file_path):
             self.patterns[folder] = patterns
 
     def matches_any_pattern(self, file_path: str) -> bool:
-        loaded_patterns = get_copilot_setting(
-            self.window, COPILOT_WINDOW_SETTINGS_PREFIX, "copilotignore.patterns", self.patterns
+        loaded_patterns: dict[str, list[str]] = get_copilot_setting(
+            self.window,
+            COPILOT_WINDOW_SETTINGS_PREFIX,
+            "copilotignore.patterns",
+            self.patterns,
         )
         for folder, patterns in loaded_patterns.items():
             if file_path.startswith(folder):
@@ -113,12 +117,7 @@ class CopilotIgnore:
                     return True
         return False
 
-    def trigger(self, view: sublime.View):
-        if not self.patterns:
-            return False
-
-        file = view.file_name()
-        if not file:
-            return False
-
-        return self.matches_any_pattern(file)
+    def trigger(self, view: sublime.View) -> bool:
+        if self.patterns and (file := view.file_name()):
+            return self.matches_any_pattern(file)
+        return False

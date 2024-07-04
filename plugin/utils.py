@@ -24,9 +24,7 @@ from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Call
 _T = TypeVar("_T")
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
 
-
-def all_windows() -> list[sublime.Window]:
-    return sublime.windows()
+all_windows = sublime.windows
 
 
 def all_views(
@@ -34,7 +32,7 @@ def all_views(
     *,
     include_transient: bool = False,
 ) -> Generator[sublime.View, None, None]:
-    windows = [window] if window else sublime.windows()
+    windows = [window] if window else all_windows()
     for window in windows:
         yield from window.views(include_transient=include_transient)
 
@@ -44,7 +42,7 @@ def all_sheets(
     *,
     include_transient: bool = False,
 ) -> Generator[sublime.Sheet, None, None]:
-    windows = [window] if window else sublime.windows()
+    windows = [window] if window else all_windows()
     for window in windows:
         if include_transient:
             yield from drop_falsy(map(window.transient_sheet_in_group, range(window.num_groups())))
