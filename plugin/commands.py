@@ -52,7 +52,6 @@ from .types import (
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import (
-    download_github_avatar_image,
     find_index_by_key_value,
     find_view_by_id,
     find_window_by_id,
@@ -592,17 +591,19 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
         session.send_request(Request(REQ_CHECK_STATUS, {"localChecksOnly": local_checks}), self._on_result_check_status)
 
     def _on_result_check_status(self, payload: CopilotPayloadSignInConfirm | CopilotPayloadSignOut) -> None:
-        avatar = ""
-        if (user := payload.get("user")) and isinstance(user, str):
-            download_github_avatar_image(user)
+        if not ((user := payload.get("user")) and isinstance(user, str)):
+            user = ""
+
+        CopilotPlugin.set_account_status(user=user)
+
         if payload["status"] == "OK":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=True, user=payload["user"], avatar=avatar)
-            message_dialog('Signed in and authorized with user "{}".', payload["user"])
+            CopilotPlugin.set_account_status(signed_in=True, authorized=True)
+            message_dialog(f'Signed in and authorized with user "{user}".')
         elif payload["status"] == "MaybeOk":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=True, user=payload["user"], avatar=avatar)
-            message_dialog('(localChecksOnly) Signed in and authorized with user "{}".', payload["user"])
+            CopilotPlugin.set_account_status(signed_in=True, authorized=True)
+            message_dialog(f'(localChecksOnly) Signed in and authorized with user "{user}".')
         elif payload["status"] == "NotAuthorized":
-            CopilotPlugin.set_account_status(signed_in=True, authorized=False, user=payload["user"], avatar=avatar)
+            CopilotPlugin.set_account_status(signed_in=True, authorized=False)
             message_dialog("Your GitHub account doesn't subscribe to Copilot.", is_error_=True)
         else:
             CopilotPlugin.set_account_status(signed_in=False, authorized=False)

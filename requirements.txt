@@ -8,12 +8,8 @@ markupsafe==2.1.5
     # via jinja2
 more-itertools==10.3.0
     # via -r requirements.in
-types-requests==2.32.0.20240622
-    # via -r requirements.in
 typing-extensions==4.12.2
     # via -r requirements.in
-urllib3==2.2.2
-    # via types-requests
 watchdog==4.0.1
     # via -r requirements.in
 wcmatch==8.5.2

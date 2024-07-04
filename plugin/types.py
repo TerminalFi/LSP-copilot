@@ -10,8 +10,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 class AccountStatus:
     has_signed_in: bool
     is_authorized: bool
-    user: str
-    avatar: str
+    user: str = ""
 
 
 # ---------------------------- #

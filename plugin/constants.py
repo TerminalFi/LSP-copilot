@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import sublime
+
 assert __package__
 
 PACKAGE_NAME = __package__.partition(".")[0]
@@ -9,9 +13,7 @@ PACKAGE_NAME = __package__.partition(".")[0]
 #  Github Avatar   #
 # ---------------- #
 
-DEFAULT_MIME_TYPE = "image/png"
-DEFAULT_EXTENSION = ".png"
-
+GITHUB_AVATAR_PATH = Path(sublime.cache_path()) / f"{PACKAGE_NAME}/avatar.png"
 
 # ---------------- #
 # Setting Prefixes #

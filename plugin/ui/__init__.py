@@ -6,6 +6,6 @@ from .panel_completion import ViewPanelCompletionManager
 
 __all__ = (
     "ViewCompletionManager",
-    "WindowConversationManager",
     "ViewPanelCompletionManager",
+    "WindowConversationManager",
 )

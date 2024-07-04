@@ -1,18 +1,20 @@
 from __future__ import annotations
 
+import base64
+import gzip
 import itertools
 import mimetypes
 import os
 import textwrap
 import threading
 import time
+import urllib.request
 from collections.abc import Callable, Generator, Iterable
-from functools import wraps
+from functools import lru_cache, wraps
 from itertools import takewhile
 from operator import itemgetter
 from typing import Any, TypeVar, Union, cast
 
-import requests
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
@@ -23,8 +25,7 @@ from wcmatch import glob
 from .constants import (
     COPILOT_VIEW_SETTINGS_PREFIX,
     COPILOT_WINDOW_SETTINGS_PREFIX,
-    DEFAULT_EXTENSION,
-    DEFAULT_MIME_TYPE,
+    GITHUB_AVATAR_PATH,
     PACKAGE_NAME,
 )
 from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
@@ -313,36 +314,42 @@ def find_index_by_key_value(items, key, value):
     return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
 
 
-def download_github_avatar_image(username: str) -> str:
-    url = f"https://api.github.com/users/{username}"
+def simple_urlopen(url: str, *, chunk_size: int = 512 * 1024) -> bytes:
+    with urllib.request.urlopen(url) as resp:
+        data = b""
+        while chunk := resp.read(chunk_size):
+            data += chunk
+        if resp.info().get("Content-Encoding") == "gzip":
+            data = gzip.decompress(data)
+    return data
 
+
+def cache_github_avatar(username: str, *, size: int = 128) -> None:
+    data = simple_urlopen(f"https://github.com/{username}.png?size={size}")
+    GITHUB_AVATAR_PATH.parent.mkdir(parents=True, exist_ok=True)
+    GITHUB_AVATAR_PATH.write_bytes(data)
+
+
+@lru_cache
+def get_cached_github_avatar() -> bytes:
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        avatar_url = data.get("avatar_url", "")
+        return GITHUB_AVATAR_PATH.read_bytes()
+    except Exception:
+        return b""
 
-        if not avatar_url:
-            return ""
 
-        image_response = requests.get(avatar_url)
-        image_response.raise_for_status()
+@lru_cache
+def get_cached_github_avatar_data_url() -> str:
+    data = get_cached_github_avatar()
+    mime_type = mimetypes.guess_type(GITHUB_AVATAR_PATH)[0] or "unknown"
+    return bytes_to_data_url(data, mime_type=mime_type)
 
-        mime_type = image_response.headers.get("Content-Type", DEFAULT_MIME_TYPE)
-        extension = mimetypes.guess_extension(mime_type) or DEFAULT_EXTENSION
 
-        cache_path = sublime.cache_path()
-        package_path = os.path.join(cache_path, PACKAGE_NAME)
-        os.makedirs(package_path, exist_ok=True)  # Ensure the directory exists
-        file_path = os.path.join(package_path, f"avatar{extension}")
-
-        with open(file_path, "wb") as file:
-            file.write(image_response.content)
-
-        return file_path
-
-    except requests.RequestException:
-        return ""  # Return an empty string if any request fails
+def bytes_to_data_url(data: bytes, *, mime_type: str) -> str:
+    if not data:
+        return ""
+    data_b64 = base64.b64encode(data).decode()
+    return f"data:{mime_type};base64,{data_b64}"
 
 
 class CopilotIgnore:

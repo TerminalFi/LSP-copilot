@@ -3,4 +3,3 @@ more-itertools>=10,<11
 typing-extensions>=4.12
 watchdog>=4,<5
 wcmatch>=8,<9
-types-requests>=2.32.0.20240622

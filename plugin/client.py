@@ -45,15 +45,14 @@ from .types import (
     NetworkProxy,
     T_Callable,
 )
-from .ui import ViewCompletionManager, ViewPanelCompletionManager
-from .ui.chat import WindowConversationManager
+from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import (
     ActivityIndicator,
     CopilotIgnore,
     all_views,
     all_windows,
+    cache_github_avatar,
     debounce,
-    download_github_avatar_image,
     get_session_setting,
     prepare_completion_request,
     preprocess_completions,
@@ -121,8 +120,6 @@ class CopilotPlugin(NpmClientHandler):
     _account_status = AccountStatus(
         has_signed_in=False,
         is_authorized=False,
-        user="",
-        avatar="",
     )
 
     _activity_indicator: ActivityIndicator | None = None
@@ -162,14 +159,11 @@ class CopilotPlugin(NpmClientHandler):
             self.server_version_gh = response.get("version", "")
 
         def _on_check_status(result: CopilotPayloadSignInConfirm, failed: bool) -> None:
-            avatar = ""
-            if user := result.get("user"):
-                download_github_avatar_image(user)
+            user = result.get("user")
             self.set_account_status(
                 signed_in=result["status"] in {"NotAuthorized", "OK"},
                 authorized=result["status"] == "OK",
-                user=result.get("user", None),
-                avatar=avatar,
+                user=user,
             )
 
         def _on_set_editor_info(result: str, failed: bool) -> None:
@@ -247,7 +241,6 @@ class CopilotPlugin(NpmClientHandler):
         signed_in: bool | None = None,
         authorized: bool | None = None,
         user: str | None = None,
-        avatar: str | None = None,
         quiet: bool = False,
     ) -> None:
         if signed_in is not None:
@@ -256,8 +249,7 @@ class CopilotPlugin(NpmClientHandler):
             cls._account_status.is_authorized = authorized
         if user is not None:
             cls._account_status.user = user
-        if avatar is not None:
-            cls._account_status.avatar = avatar
+            cache_github_avatar(user)
 
         if not quiet:
             if not cls._account_status.has_signed_in:
