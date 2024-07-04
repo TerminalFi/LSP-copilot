@@ -10,9 +10,9 @@
 		"res"
 	],
 	"settings": {
-		"completion_popup_css": "",
 		"auto_ask_completions": true,
 		"commit_completion_on_tab": true,
+		"completion_popup_css": "",
 		"completion_style": "popup",
 		"debug": false,
 		"hook_to_auto_complete_command": false,
