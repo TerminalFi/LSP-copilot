@@ -89,8 +89,15 @@ class GithubInfo:
             cls.clear_avatar()
             return
 
+        try:
+            data = simple_urlopen(f"https://github.com/{username}.png?size={size}")
+        except Exception as e:
+            log_error(f'Failed to fetch avatar for "{username}" because: {e}')
+            cls.clear_avatar()
+            return
+
         cls.AVATAR_PATH.parent.mkdir(parents=True, exist_ok=True)
-        cls.AVATAR_PATH.write_bytes(simple_urlopen(f"https://github.com/{username}.png?size={size}"))
+        cls.AVATAR_PATH.write_bytes(data)
         cls.load_avatar_cache()
 
     @classmethod
