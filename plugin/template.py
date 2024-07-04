@@ -26,12 +26,10 @@ def load_resource_template(template_path: str, *, keep_trailing_newlines: bool =
 def base64_resource_url(asset: str, is_sublime_cache: bool = False, *, mime_type: str | None = None) -> str:
     mime_type = mime_type or mimetypes.guess_type(asset)[0] or "unknown"
     if is_sublime_cache:
-        path = f"{sublime.cache_path()}/{PACKAGE_NAME}/{asset}"
-        with open(path, "rb") as file:
-            content = file.read()
+        path = f"Cache/{PACKAGE_NAME}/{asset}"
     else:
         path = f"Packages/{PACKAGE_NAME}/plugin/assets/{asset}"
-        content = sublime.load_binary_resource(path)
+    content = sublime.load_binary_resource(path)
     content_b64 = base64.b64encode(content).decode()
     return f"data:{mime_type};base64,{content_b64}"
 
