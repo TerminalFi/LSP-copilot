@@ -5,6 +5,7 @@ import os
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import sublime
@@ -103,7 +104,8 @@ class CopilotIgnore:
         if patterns := self.read_ignore_patterns(file_path):
             self.patterns[folder] = patterns
 
-    def matches_any_pattern(self, file_path: str) -> bool:
+    def matches_any_pattern(self, file_path: str | Path) -> bool:
+        file_path = Path(file_path)
         loaded_patterns: dict[str, list[str]] = get_copilot_setting(
             self.window,
             COPILOT_WINDOW_SETTINGS_PREFIX,
@@ -111,10 +113,12 @@ class CopilotIgnore:
             self.patterns,
         )
         for folder, patterns in loaded_patterns.items():
-            if file_path.startswith(folder):
-                relative_path = os.path.relpath(file_path, folder)
-                if glob.globmatch(relative_path, patterns, flags=glob.GLOBSTAR):
-                    return True
+            try:
+                relative_path = file_path.relative_to(folder).as_posix()
+            except ValueError:
+                continue
+            if glob.globmatch(relative_path, patterns, flags=glob.GLOBSTAR):
+                return True
         return False
 
     def trigger(self, view: sublime.View) -> bool:
