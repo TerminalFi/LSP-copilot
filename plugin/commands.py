@@ -593,7 +593,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
 
     def _on_result_check_status(self, payload: CopilotPayloadSignInConfirm | CopilotPayloadSignOut) -> None:
         avatar = ""
-        if user := payload.get("user"):
+        if (user := payload.get("user")) and isinstance(user, str):
             download_github_avatar_image(user)
         if payload["status"] == "OK":
             CopilotPlugin.set_account_status(signed_in=True, authorized=True, user=payload["user"], avatar=avatar)
