@@ -7,6 +7,13 @@ GitHub Copilot support for Sublime Text LSP plugin provided through [Copilot.vim
 This plugin uses [Copilot][] distribution which uses OpenAI Codex to suggest codes
 and entire functions in real-time right from your editor.
 
+## Features
+
+- [x] Inline completion popup.
+- [x] Inline completion phantom.
+- [x] Panel completion.
+- [x] Chat.
+
 ## Prerequisites
 
 * Public network connection.
@@ -43,6 +50,25 @@ Settings are provide in the `LSP-copilot.sublime-settings` file, accessible usin
 | telemetry                     | boolean | false   | Enables Copilot telemetry requests for `Accept` and `Reject` completions. |
 | proxy                         | string  |        | The HTTP proxy to use for Copilot requests. It's in the form of `username:password@host:port` or just `host:port`. |
 | completion_style              | string  | popup   | Completion style. `popup` is the default, `phantom` is experimental ([there are well-known issues](https://github.com/TheSecEng/LSP-copilot/issues)). |
+
+## Screenshots
+
+### Inline Completion Popup
+
+![Copilot](https://raw.githubusercontent.com/TheSecEng/LSP-copilot/master/docs/screenshot.png)
+
+### Inline Completion Phantom
+
+![Copilot](https://raw.githubusercontent.com/TheSecEng/LSP-copilot/master/docs/phantom.png)
+
+### Panel Completion
+
+![Copilot](https://raw.githubusercontent.com/TheSecEng/LSP-copilot/master/docs/panel.png)
+
+### Chat
+
+![Copilot](https://raw.githubusercontent.com/TheSecEng/LSP-copilot/master/docs/chat.png)
+
 
 ## FAQs
 
