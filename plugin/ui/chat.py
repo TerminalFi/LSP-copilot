@@ -266,7 +266,7 @@ class _ConversationEntry:
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
-                if "```" in reply:
+                if "```" in reply and kind == "report":
                     inside_code_block = True
                     code_block_index += 1
                     reply = process_code_block(reply, inside_code_block, code_block_index)
