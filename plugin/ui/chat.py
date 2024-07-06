@@ -19,7 +19,7 @@ class WindowConversationManager:
 
     @property
     def group_id(self) -> int:
-        """The ID of the group which is used to show panel completions."""
+        """The ID of the group which is used to show conversation panel."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_group_id", -1)
 
     @group_id.setter
@@ -28,7 +28,7 @@ class WindowConversationManager:
 
     @property
     def last_active_view_id(self) -> int:
-        """The ID of the group which is used to show panel completions."""
+        """The ID of the last active view that is not the conversation panel"""
         return get_copilot_setting(
             self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", -1
         )
@@ -48,7 +48,7 @@ class WindowConversationManager:
 
     @property
     def view_id(self) -> int:
-        """The ID of the sheet which is used to show panel completions."""
+        """The ID of the sheet which is used to show conversation panel."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_id", -1)
 
     @view_id.setter
@@ -66,7 +66,7 @@ class WindowConversationManager:
 
     @property
     def follow_up(self) -> str:
-        """Suggested title of the conversation"""
+        """Suggested follow up of the conversation provided by copilot."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", "")
 
     @follow_up.setter
@@ -75,7 +75,7 @@ class WindowConversationManager:
 
     @property
     def conversation_id(self) -> str:
-        """Whether the panel completions is visible."""
+        """The conversation uuid used to identify the conversation."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_id", "")
 
     @conversation_id.setter
@@ -84,7 +84,7 @@ class WindowConversationManager:
 
     @property
     def code_block_index(self) -> dict[str, str]:
-        """Whether the panel completions is visible."""
+        """The tracking of code blocks across the conversation. Used to support Copy and Insert code commands."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "code_block_index", {})
 
     @code_block_index.setter
