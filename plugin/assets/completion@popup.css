@@ -1,0 +1,67 @@
+html {
+  --copilot-accept-foreground: var(--foreground);
+  --copilot-accept-background: var(--background);
+  --copilot-accept-border: var(--greenish);
+  --copilot-reject-foreground: var(--foreground);
+  --copilot-reject-background: var(--background);
+  --copilot-reject-border: var(--yellowish);
+}
+
+.wrapper {
+  margin: 1rem 0.5rem 0 0.5rem;
+}
+
+.wrapper .header {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.wrapper a {
+  border-radius: 3px;
+  border-style: solid;
+  border-width: 1px;
+  display: inline;
+  padding: 5px;
+  text-decoration: none;
+}
+
+.wrapper a.accept {
+  background: var(--copilot-accept-background);
+  border-color: var(--copilot-accept-border);
+  color: var(--copilot-accept-foreground);
+}
+
+.wrapper a.accept i {
+  color: var(--copilot-accept-border);
+}
+
+.wrapper a.reject {
+  background: var(--copilot-reject-background);
+  border-color: var(--copilot-reject-border);
+  color: var(--copilot-reject-foreground);
+}
+
+.wrapper a.reject i {
+  color: var(--copilot-reject-border);
+}
+
+.wrapper a.prev {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.wrapper a.next {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.wrapper a.panel {
+  padding-left: 8px;
+  padding-right: 8px;
+}

@@ -29,10 +29,16 @@ def base64_resource_url(asset_path: str, *, mime_type: str | None = None) -> str
     return bytes_to_data_url(data, mime_type=mime_type)
 
 
+@lru_cache
+def load_resource_asset(asset_path: str) -> str:
+    return sublime.load_resource(f"Packages/{PACKAGE_NAME}/plugin/assets/{asset_path}")
+
+
 _JINJA_TEMPLATE_ENV = jinja2.Environment(
     extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
 )
 _JINJA_TEMPLATE_ENV.globals.update({
     # functions
     "base64_resource_url": base64_resource_url,
+    "load_resource_asset": load_resource_asset,
 })

@@ -33,7 +33,37 @@
                           "base_file": "${packages}/LSP-copilot/Default.sublime-keymap",
                           "user_file": "${packages}/User/Default (${platform}).sublime-keymap",
                           "default": "[\n\t$0\n]\n",
-                        }
+                        },
+                      },
+                      {
+                        "caption": "-",
+                      },
+                      {
+                        "caption": "Edit CSS: Popup Completion",
+                        "command": "copilot_prepare_and_edit_settings",
+                        "args": {
+                          "base_file": "${packages}/LSP-copilot/plugin/assets/completion@popup.css",
+                          "user_file": "${packages}/LSP-copilot/plugin/assets/completion@popup.custom.css",
+                          "default": "/* user override: popup completion CSS */\n",
+                        },
+                      },
+                      {
+                        "caption": "Edit CSS: Panel Completion",
+                        "command": "copilot_prepare_and_edit_settings",
+                        "args": {
+                          "base_file": "${packages}/LSP-copilot/plugin/assets/panel_completion.css",
+                          "user_file": "${packages}/LSP-copilot/plugin/assets/panel_completion.custom.css",
+                          "default": "/* user override: panel completion CSS */\n",
+                        },
+                      },
+                      {
+                        "caption": "Edit CSS: Chat Panel",
+                        "command": "copilot_prepare_and_edit_settings",
+                        "args": {
+                          "base_file": "${packages}/LSP-copilot/plugin/assets/chat_panel.css",
+                          "user_file": "${packages}/LSP-copilot/plugin/assets/chat_panel.custom.css",
+                          "default": "/* user override: chat panel CSS */\n",
+                        },
                       },
                     ],
                   },

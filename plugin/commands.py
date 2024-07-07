@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 import sublime
+import sublime_plugin
 from LSP.plugin import Request, Session
 from LSP.plugin.core.registry import LspTextCommand, LspWindowCommand
 from LSP.plugin.core.url import filename_to_uri
@@ -92,6 +93,12 @@ def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callabl
         return cast(T_Callable, wrapped)
 
     return decorator
+
+
+class CopilotPrepareAndEditSettingsCommand(sublime_plugin.ApplicationCommand):
+    def run(self, *, base_file: str, user_file: str, default: str = "") -> None:
+        Path(user_file).parent.mkdir(parents=True, exist_ok=True)
+        sublime.run_command("edit_settings", {"base_file": base_file, "user_file": user_file, "default": default})
 
 
 class BaseCopilotCommand(ABC):

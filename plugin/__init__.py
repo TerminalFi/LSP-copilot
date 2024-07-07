@@ -25,6 +25,7 @@ from .commands import (
     CopilotGetPanelCompletionsCommand,
     CopilotGetVersionCommand,
     CopilotNextCompletionCommand,
+    CopilotPrepareAndEditSettingsCommand,
     CopilotPreviousCompletionCommand,
     CopilotRejectCompletionCommand,
     CopilotSignInCommand,
@@ -68,6 +69,8 @@ __all__ = (
     "CopilotConversationRatingCommand",
     "CopilotConversationCopyCodeCommand",
     "CopilotConversationInsertCodeCommand",
+    # ST: helper commands
+    "CopilotPrepareAndEditSettingsCommand",
     # ST: event listeners
     "EventListener",
     "ViewEventListener",
