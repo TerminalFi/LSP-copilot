@@ -2,3 +2,5 @@
 
 mypy
 ruff>=0.5
+
+types-jmespath

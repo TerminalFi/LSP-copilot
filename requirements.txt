@@ -4,6 +4,8 @@ bracex==2.4
     # via wcmatch
 jinja2==3.1.4
     # via -r requirements.in
+jmespath==1.0.1
+    # via -r requirements.in
 markupsafe==2.1.5
     # via jinja2
 more-itertools==10.3.0
