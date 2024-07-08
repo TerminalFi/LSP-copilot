@@ -29,9 +29,12 @@ def base64_resource_url(asset_path: str, *, mime_type: str | None = None) -> str
     return bytes_to_data_url(data, mime_type=mime_type)
 
 
-@lru_cache
-def load_resource_asset(asset_path: str) -> str:
-    return sublime.load_resource(f"Packages/{PACKAGE_NAME}/plugin/assets/{asset_path}")
+def load_resource_asset(asset_path: str, *, use_cache: bool = True) -> str:
+    if not use_cache or asset_path not in _RESOURCE_ASSET_CACHES:
+        _RESOURCE_ASSET_CACHES[asset_path] = sublime.load_resource(
+            f"Packages/{PACKAGE_NAME}/plugin/assets/{asset_path}"
+        )
+    return _RESOURCE_ASSET_CACHES[asset_path]
 
 
 _JINJA_TEMPLATE_ENV = jinja2.Environment(
@@ -42,3 +45,5 @@ _JINJA_TEMPLATE_ENV.globals.update({
     "base64_resource_url": base64_resource_url,
     "load_resource_asset": load_resource_asset,
 })
+
+_RESOURCE_ASSET_CACHES: dict[str, str] = {}
