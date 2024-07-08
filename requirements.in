@@ -1,4 +1,5 @@
 Jinja2>=3,<4
+jmespath>=1,<2
 more-itertools>=10,<11
 typing-extensions>=4.12
 watchdog>=4,<5

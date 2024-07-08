@@ -1,59 +1,6 @@
 <style>
-  html {
-    --copilot-close-foreground: var(--foreground);
-    --copilot-close-background: var(--background);
-    --copilot-close-border: var(--foreground);
-    --copilot-accept-foreground: var(--foreground);
-    --copilot-accept-background: var(--background);
-    --copilot-accept-border: var(--greenish);
-  }
-
-  .wrapper {
-    margin: 1rem 0.5rem 0 0.5rem;
-  }
-
-  .wrapper .navbar {
-    text-align: left;
-  }
-
-  .wrapper .synthesis-info {
-    display: inline-block;
-    text-size: 1.2em;
-  }
-
-  .wrapper .header {
-    display: block;
-    margin-bottom: 1rem;
-  }
-
-  .wrapper a {
-    border-radius: 3px;
-    border-style: solid;
-    border-width: 1px;
-    display: inline;
-    padding: 5px;
-    text-decoration: none;
-  }
-
-  .wrapper a.close {
-    background: var(--copilot-close-background);
-    border-color: var(--copilot-close-border);
-    color: var(--copilot-close-foreground);
-  }
-
-  .wrapper a.close i {
-    color: var(--copilot-close-border);
-  }
-
-  .wrapper a.accept {
-    background: var(--copilot-accept-background);
-    border-color: var(--copilot-accept-border);
-    color: var(--copilot-accept-foreground);
-  }
-
-  .wrapper a.accept i {
-    color: var(--copilot-accept-border);
-  }
+{{ load_resource_asset('panel_completion.css') }}
+{{ load_resource_asset('panel_completion.custom.css', use_cache=False) }}
 </style>
 
 <div class="wrapper">

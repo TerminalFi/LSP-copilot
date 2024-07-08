@@ -13,6 +13,7 @@ from wcmatch import glob
 
 from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
 from .log import log_error
+from .settings import get_plugin_setting_dotted
 from .utils import (
     all_views,
     all_windows,
@@ -165,3 +166,7 @@ class CopilotIgnore:
         if self.patterns and (file := view.file_name()):
             return self.matches_any_pattern(file)
         return False
+
+
+def is_debug_mode() -> bool:
+    return bool(get_plugin_setting_dotted("settings.debug", False))

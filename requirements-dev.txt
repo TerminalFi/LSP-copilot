@@ -4,6 +4,8 @@ bracex==2.4
     # via wcmatch
 jinja2==3.1.4
     # via -r requirements.in
+jmespath==1.0.1
+    # via -r requirements.in
 markupsafe==2.1.5
     # via jinja2
 more-itertools==10.3.0
@@ -12,7 +14,9 @@ mypy==1.10.1
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via mypy
-ruff==0.5.0
+ruff==0.5.1
+    # via -r requirements-dev.in
+types-jmespath==1.0.2.20240106
     # via -r requirements-dev.in
 typing-extensions==4.12.2
     # via

@@ -33,7 +33,37 @@
                           "base_file": "${packages}/LSP-copilot/Default.sublime-keymap",
                           "user_file": "${packages}/User/Default (${platform}).sublime-keymap",
                           "default": "[\n\t$0\n]\n",
-                        }
+                        },
+                      },
+                      {
+                        "caption": "-",
+                      },
+                      {
+                        "caption": "Copilot: Edit CSS: Popup Completion",
+                        "command": "copilot_prepare_and_edit_settings",
+                        "args": {
+                          "base_file": "${packages}/LSP-copilot/plugin/assets/completion@popup.css",
+                          "user_file": "${packages}/LSP-copilot/plugin/assets/completion@popup.custom.css",
+                          "default": "/* User extra CSS rules: Popup Completion */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
+                        },
+                      },
+                      {
+                        "caption": "Copilot: Edit CSS: Panel Completion",
+                        "command": "copilot_prepare_and_edit_settings",
+                        "args": {
+                          "base_file": "${packages}/LSP-copilot/plugin/assets/panel_completion.css",
+                          "user_file": "${packages}/LSP-copilot/plugin/assets/panel_completion.custom.css",
+                          "default": "/* User extra CSS rules: Panel Completion */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
+                        },
+                      },
+                      {
+                        "caption": "Copilot: Edit CSS: Chat Panel",
+                        "command": "copilot_prepare_and_edit_settings",
+                        "args": {
+                          "base_file": "${packages}/LSP-copilot/plugin/assets/chat_panel.css",
+                          "user_file": "${packages}/LSP-copilot/plugin/assets/chat_panel.custom.css",
+                          "default": "/* User extra CSS rules: Chat Panel */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
+                        },
                       },
                     ],
                   },
