@@ -51,7 +51,7 @@
         "args": {
             "base_file": "${packages}/LSP-copilot/plugin/assets/completion@popup.css",
             "user_file": "${packages}/LSP-copilot/plugin/assets/completion@popup.custom.css",
-            "default": "/* user override: popup completion CSS */\n",
+            "default": "/* User extra CSS rules: Popup Completion */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
         },
     },
     {
@@ -60,7 +60,7 @@
         "args": {
             "base_file": "${packages}/LSP-copilot/plugin/assets/panel_completion.css",
             "user_file": "${packages}/LSP-copilot/plugin/assets/panel_completion.custom.css",
-            "default": "/* user override: panel completion CSS */\n",
+            "default": "/* User extra CSS rules: Panel Completion */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
         },
     },
     {
@@ -69,7 +69,7 @@
         "args": {
             "base_file": "${packages}/LSP-copilot/plugin/assets/chat_panel.css",
             "user_file": "${packages}/LSP-copilot/plugin/assets/chat_panel.custom.css",
-            "default": "/* user override: chat panel CSS */\n",
+            "default": "/* User extra CSS rules: Chat Panel */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
         },
     },
 ]
