@@ -97,7 +97,9 @@ def _provide_plugin_session(*, failed_return: Any = None) -> Callable[[T_Callabl
 
 class CopilotPrepareAndEditSettingsCommand(sublime_plugin.ApplicationCommand):
     def run(self, *, base_file: str, user_file: str, default: str = "") -> None:
-        Path(user_file).parent.mkdir(parents=True, exist_ok=True)
+        window = sublime.active_window()
+        user_file_resolved: str = sublime.expand_variables(user_file, window.extract_variables())  # type: ignore
+        Path(user_file_resolved).parent.mkdir(parents=True, exist_ok=True)
         sublime.run_command("edit_settings", {"base_file": base_file, "user_file": user_file, "default": default})
 
 
