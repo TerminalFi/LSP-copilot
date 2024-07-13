@@ -1,11 +1,11 @@
 <style>
-{{ load_resource_asset('chat_panel.css') }}
-{{ load_resource_asset('chat_panel.custom.css', use_cache=False) }}
+{{ include_asset('chat_panel.css') }}
+{{ include_asset('chat_panel.custom.css', use_cache=False) }}
 </style>
 
 <div class="navbar">
-  <a class="icon-link" title="Delete Conversation" href='{{ delete_url }}'><img class="icon" src="{{ base64_resource_url('trash.png') }}"></a>
-  <a class="close" title="Close Conversation" href='{{ close_url }}'><img class="icon" src="{{ base64_resource_url('close.png') }}"></a>
+  <a class="icon-link" title="Delete Conversation" href='{{ delete_url }}'><img class="icon" src="{{ asset_url('trash.png') }}"></a>
+  <a class="close" title="Close Conversation" href='{{ close_url }}'><img class="icon" src="{{ asset_url('close.png') }}"></a>
   <h3 class="suggested-title">
     Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
   </h3>
@@ -17,18 +17,18 @@
 
 <div class="header">
 {% if section.kind == "report" %}
-  <a class="rating" title="Thumbs Up" href='{{ section.thumbs_up_url }}'><img class="icon" src="{{ base64_resource_url('thumbs_up.png') }}"></a>
-  <a class="rating" title="Thumbs Down" href='{{ section.thumbs_down_url }}'><img class="icon" src="{{ base64_resource_url('thumbs_down.png') }}"></a>
+  <a class="rating" title="Thumbs Up" href='{{ section.thumbs_up_url }}'><img class="icon" src="{{ asset_url('thumbs_up.png') }}"></a>
+  <a class="rating" title="Thumbs Down" href='{{ section.thumbs_down_url }}'><img class="icon" src="{{ asset_url('thumbs_down.png') }}"></a>
 {% else %}
-  <a class="delete" title="Delete Turn" href='{{ section.turn_delete_url }}'><img class="icon delete-icon" src="{{ base64_resource_url('trash.png') }}"></a>
+  <a class="delete" title="Delete Turn" href='{{ section.turn_delete_url }}'><img class="icon delete-icon" src="{{ asset_url('trash.png') }}"></a>
 {% endif %}
 </div>
 
 <span class="kind {{ section.kind }}">
   {%- if section.kind == "report" -%}
-    <img class="icon" src="{{ base64_resource_url('github.png') }}"> Github Copilot
+    <img class="icon" src="{{ asset_url('github.png') }}"> Github Copilot
   {%- else -%}
-    {% if avatar_data_url %}<img class="icon" src="{{ avatar_data_url }}">{% endif %} {{ section.kind }}:
+    {% if avatar_img_src %}<img class="icon" src="{{ avatar_img_src }}">{% endif %} {{ section.kind }}:
   {%- endif -%}
 </span>
 

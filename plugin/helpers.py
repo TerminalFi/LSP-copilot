@@ -17,7 +17,6 @@ from .settings import get_plugin_setting_dotted
 from .utils import (
     all_views,
     all_windows,
-    bytes_to_data_url,
     drop_falsy,
     erase_copilot_setting,
     erase_copilot_view_setting,
@@ -57,28 +56,19 @@ class ActivityIndicator:
 
 class GithubInfo:
     AVATAR_PATH = Path(sublime.cache_path()) / f"{PACKAGE_NAME}/avatar.png"
-
-    avatar_bytes = b""
-    avatar_data_url = ""
+    AVATAR_RESOURCE_URL = f"res://Cache/{PACKAGE_NAME}/avatar.png"
 
     @classmethod
-    def load_avatar_cache(cls) -> bool:
-        """Loads the avatar from the cache directory. Returns successful or not."""
-        try:
-            cls.avatar_bytes = cls.AVATAR_PATH.read_bytes()
-            cls.avatar_data_url = bytes_to_data_url(cls.avatar_bytes, mime_type="image/png")
-        except FileNotFoundError:
-            return False
-        return True
+    def get_avatar_img_src(cls) -> str:
+        if cls.AVATAR_PATH.is_file():
+            return cls.AVATAR_RESOURCE_URL
+        return ""
 
     @classmethod
     def fetch_avatar(cls, username: str, *, size: int = 64) -> None:
         """If there is no cached avatar, fetches the avatar from GitHub and saves it to the cache."""
         if not username:
             log_error("No username provided for fetching avatar.")
-            return
-
-        if not cls.avatar_bytes and cls.load_avatar_cache():
             return
 
         cls.update_avatar(username, size=size)
@@ -99,13 +89,9 @@ class GithubInfo:
 
         cls.AVATAR_PATH.parent.mkdir(parents=True, exist_ok=True)
         cls.AVATAR_PATH.write_bytes(data)
-        cls.load_avatar_cache()
 
     @classmethod
     def clear_avatar(cls) -> None:
-        cls.avatar_bytes = b""
-        cls.avatar_data_url = ""
-
         cls.AVATAR_PATH.unlink(missing_ok=True)
 
 
