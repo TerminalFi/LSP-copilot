@@ -309,7 +309,7 @@ class CopilotConversationChatCommand(LspTextCommand):
                     "source": "panel",
                 },
             ),
-            manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x)),
+            lambda _: manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x)),
         )
         manager.is_waiting = True
         manager.update()

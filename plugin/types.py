@@ -153,6 +153,15 @@ class CopilotPayloadConversationEntry(TypedDict, total=True):
     hideText: bool
 
 
+class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):
+    """Our own transformation of `CopilotPayloadConversationEntry`."""
+
+    kind: str
+    turnId: str
+    messages: list[str]
+    codeBlocks: list[str]
+
+
 class CopilotPayloadConversationTemplate(TypedDict, total=True):
     id: str
     description: str
