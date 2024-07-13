@@ -7,7 +7,7 @@ import sublime
 
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
 from ..helpers import GithubInfo
-from ..template import base64_resource_url, load_resource_template
+from ..template import asset_url, load_resource_template
 from ..types import CopilotPayloadConversationEntry, StLayout
 from ..utils import find_view_by_id, find_window_by_id, get_copilot_setting, remove_prefix, set_copilot_setting
 
@@ -170,7 +170,7 @@ class _ConversationEntry:
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", keep_trailing_newlines=True).render(
-            avatar_data_url=GithubInfo.avatar_data_url,
+            avatar_img_src=GithubInfo.get_avatar_img_src(),
             suggested_title=self.conversation_manager.suggested_title,
             follow_up=self.conversation_manager.follow_up,
             follow_up_url=sublime.command_url(
@@ -229,10 +229,10 @@ class _ConversationEntry:
             reply = (
                 reply[:code_block_start]
                 + f"<a class='icon-link' href='{copy_command_url}'>"
-                + f"<img class='icon icon-link' src='{base64_resource_url('copy.png')}' /></a>"
+                + f"<img class='icon icon-link' src='{asset_url('copy.png')}' /></a>"
                 + "<span></span>"
                 + f" <a class='icon-link' href='{insert_command_url}'>"
-                + f"<img class='icon icon-link' src='{base64_resource_url('insert.png')}' /></a>"
+                + f"<img class='icon icon-link' src='{asset_url('insert.png')}' /></a>"
                 + "\n\n"
                 + code_block_lines[0]
             )

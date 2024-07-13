@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import gzip
 import os
 import textwrap
@@ -311,10 +310,3 @@ def simple_urlopen(url: str, *, chunk_size: int = 512 * 1024) -> bytes:
         if resp.info().get("Content-Encoding") == "gzip":
             data = gzip.decompress(data)
     return data
-
-
-def bytes_to_data_url(data: bytes, *, mime_type: str) -> str:
-    if not data:
-        return ""
-    data_b64 = base64.b64encode(data).decode()
-    return f"data:{mime_type};base64,{data_b64}"
