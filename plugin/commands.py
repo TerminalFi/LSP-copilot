@@ -430,12 +430,17 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
             return
 
         index = find_index_by_key_value(conversation_manager.conversation, "turnId", turn_id)
+        if index + 1 < len(conversation_manager.conversation):
+            retrieved_turn_id = conversation_manager.conversation[index + 1]["turnId"]
+        else:
+            return
+
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN_DELETE,
                 {
                     "conversationId": conversation_id,
-                    "turnId": conversation_manager.conversation[index + 1]["turnId"],
+                    "turnId": retrieved_turn_id,
                     "options": {},
                 },
             ),

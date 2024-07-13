@@ -149,7 +149,7 @@ class WindowConversationManager:
     def prompt(self, callback, initial_text: str = ""):
         self.window.show_input_panel("Copilot Chat", initial_text, callback, None, None)
 
-    def open(self, *, completion_target_count: int | None = None) -> None:
+    def open(self) -> None:
         _ConversationEntry(self.window).open()
 
     def update(self) -> None:
@@ -215,7 +215,7 @@ class _ConversationEntry:
         )
 
     def _synthesize(self) -> list[dict[str, Any]]:
-        def process_code_block(reply, inside_code_block, code_block_index):
+        def process_code_block(reply, code_block_index):
             code_block_start = reply.index("```")
             code_block_lines = reply[code_block_start:].splitlines(True)
             copy_command_url = sublime.command_url(
@@ -252,7 +252,7 @@ class _ConversationEntry:
                 if "```" in reply and not inside_code_block:
                     inside_code_block = True
                     code_block_index += 1
-                    reply = process_code_block(reply, inside_code_block, code_block_index)
+                    reply = process_code_block(reply, code_block_index)
                 elif inside_code_block:
                     if "```" in reply:
                         inside_code_block = False
@@ -269,7 +269,7 @@ class _ConversationEntry:
                 if "```" in reply and kind == "report":
                     inside_code_block = True
                     code_block_index += 1
-                    reply = process_code_block(reply, inside_code_block, code_block_index)
+                    reply = process_code_block(reply, code_block_index)
                 current_entry = {"kind": kind, "messages": [reply], "code_block": [], "turnId": turn_id}
 
         if current_entry:
