@@ -4,7 +4,6 @@ import functools
 import json
 import os
 import weakref
-from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
@@ -63,8 +62,8 @@ WindowId = int
 
 @dataclass
 class WindowAttr:
-    client_ref: weakref.ReferenceType[CopilotPlugin] | None = None
-    """The weak reference of the LSP client instance for the window."""
+    client: CopilotPlugin | None = None
+    """The LSP client instance for the window."""
 
 
 def _guard_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
@@ -112,7 +111,7 @@ class CopilotPlugin(NpmClientHandler):
     server_version_gh = ""
     """The version of the Github Copilot language server."""
 
-    window_attrs: defaultdict[WindowId, WindowAttr] = defaultdict(WindowAttr)
+    window_attrs: weakref.WeakKeyDictionary[sublime.Window, WindowAttr] = weakref.WeakKeyDictionary()
     """Per-window attributes. I.e., per-session attributes."""
 
     _account_status = AccountStatus(
@@ -124,8 +123,9 @@ class CopilotPlugin(NpmClientHandler):
 
     def __init__(self, session: weakref.ref[Session]) -> None:
         super().__init__(session)
+
         if sess := session():
-            self.window_attrs[sess.window.id()].client_ref = weakref.ref(self)
+            self.window_attrs[sess.window].client = self
 
         self._activity_indicator = ActivityIndicator(self.update_status_bar_text)
 
@@ -138,6 +138,20 @@ class CopilotPlugin(NpmClientHandler):
 
         for window in all_windows():
             WindowConversationManager(window).reset()
+
+    @classmethod
+    def can_start(
+        cls,
+        window: sublime.Window,
+        initiating_view: sublime.View,
+        workspace_folders: list[WorkspaceFolder],
+        configuration: ClientConfig,
+    ) -> str | None:
+        if message := super().can_start(window, initiating_view, workspace_folders, configuration):
+            return message
+
+        cls.window_attrs.setdefault(window, WindowAttr())
+        return None
 
     @classmethod
     def on_pre_start(
@@ -262,8 +276,8 @@ class CopilotPlugin(NpmClientHandler):
     def from_view(cls, view: sublime.View) -> CopilotPlugin | None:
         if (
             (window := view.window())
-            and (self_ref := cls.window_attrs[window.id()].client_ref)
-            and (self := self_ref())
+            and (window_attr := cls.window_attrs.get(window))
+            and (self := window_attr.client)
             and self.is_valid_for_view(view)
         ):
             return self
