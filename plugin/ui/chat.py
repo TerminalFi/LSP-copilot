@@ -71,7 +71,11 @@ class WindowConversationManager:
 
     @follow_up.setter
     def follow_up(self, value: str) -> None:
-        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", value)
+        # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/182
+        # Replaces ` with &#96; to avoid breaking the HTML
+        set_copilot_setting(
+            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", value.replace("`", "&#96;")
+        )
 
     @property
     def conversation_id(self) -> str:
@@ -273,6 +277,9 @@ class _ConversationEntry:
                 current_entry = {"kind": kind, "messages": [reply], "code_block": [], "turnId": turn_id}
 
         if current_entry:
+            # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/187
+            if inside_code_block:
+                current_entry["messages"].append("```")
             transformed_conversation.append(current_entry)
 
         return transformed_conversation
