@@ -274,7 +274,7 @@ class _ConversationEntry:
 
         if current_entry:
             # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/187
-            if inside_code_block:
+            if is_inside_code_block:
                 current_entry["messages"].append("```")
             transformed_conversation.append(current_entry)
 
