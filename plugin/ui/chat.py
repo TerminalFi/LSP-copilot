@@ -71,7 +71,11 @@ class WindowConversationManager:
 
     @follow_up.setter
     def follow_up(self, value: str) -> None:
-        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", value)
+        # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/182
+        # Replaces ` with &#96; to avoid breaking the HTML
+        set_copilot_setting(
+            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", value.replace("`", "&#96;")
+        )
 
     @property
     def conversation_id(self) -> str:
@@ -149,7 +153,7 @@ class WindowConversationManager:
     def prompt(self, callback: Callable[[str], None], initial_text: str = "") -> None:
         self.window.show_input_panel("Copilot Chat", initial_text, callback, None, None)
 
-    def open(self, *, completion_target_count: int | None = None) -> None:
+    def open(self) -> None:
         _ConversationEntry(self.window).open()
 
     def update(self) -> None:
@@ -211,7 +215,7 @@ class _ConversationEntry:
         )
 
     def _synthesize(self) -> list[CopilotPayloadConversationEntryTransformed]:
-        def process_code_block(reply: str, is_inside_code_block: bool, code_block_index: int) -> str:
+        def process_code_block(reply: str, code_block_index: int) -> str:
             code_block_start = reply.index("```")
             code_block_lines = reply[code_block_start:].splitlines(True)
             copy_command_url = sublime.command_url(
@@ -248,7 +252,7 @@ class _ConversationEntry:
                 if "```" in reply and not is_inside_code_block:
                     is_inside_code_block = True
                     code_block_index += 1
-                    reply = process_code_block(reply, is_inside_code_block, code_block_index)
+                    reply = process_code_block(reply, code_block_index)
                 elif is_inside_code_block:
                     if "```" in reply:
                         is_inside_code_block = False
@@ -265,10 +269,13 @@ class _ConversationEntry:
                 if "```" in reply and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1
-                    reply = process_code_block(reply, is_inside_code_block, code_block_index)
+                    reply = process_code_block(reply, code_block_index)
                 current_entry = {"kind": kind, "messages": [reply], "codeBlocks": [], "turnId": turn_id}
 
         if current_entry:
+            # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/187
+            if is_inside_code_block:
+                current_entry["messages"].append("```")
             transformed_conversation.append(current_entry)
 
         return transformed_conversation
