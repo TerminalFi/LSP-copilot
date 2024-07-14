@@ -432,11 +432,10 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
             return
 
         # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/181
-        index = find_index_by_key_value(conversation_manager.conversation, "turnId", turn_id)
-        if index + 1 < len(conversation_manager.conversation):
-            retrieved_turn_id = conversation_manager.conversation[index + 1]["turnId"]
-        else:
+        index = find_index_by_key_value(conversation_manager.conversation, "turnId", turn_id) + 1
+        if index >= len(conversation_manager.conversation):
             return
+        retrieved_turn_id = conversation_manager.conversation[index]["turnId"]
 
         session.send_request(
             Request(
