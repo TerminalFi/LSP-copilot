@@ -34,7 +34,7 @@ class WindowConversationManager:
         )
 
     @last_active_view_id.setter
-    def last_active_view_id(self, value: str) -> None:
+    def last_active_view_id(self, value: int) -> None:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", value)
 
     @property
