@@ -505,7 +505,7 @@ class CopilotConversationAgentsCommand(LspTextCommand):
         window = self.view.window()
         if not window:
             return
-        window.show_quick_panel([(item["id"], item["description"]) for item in payload], lambda _: None)
+        window.show_quick_panel([[item["slug"], item["description"]] for item in payload], lambda _: None)
 
 
 class CopilotConversationTemplatesCommand(LspTextCommand):

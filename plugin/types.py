@@ -170,7 +170,8 @@ class CopilotPayloadConversationTemplate(TypedDict, total=True):
 
 
 class CopilotRequestCoversationAgent(TypedDict, total=True):
-    id: str
+    slug: str
+    name: str
     description: str
 
 
