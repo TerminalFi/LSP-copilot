@@ -34,7 +34,7 @@ class WindowConversationManager:
         )
 
     @last_active_view_id.setter
-    def last_active_view_id(self, value: str) -> None:
+    def last_active_view_id(self, value: int) -> None:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", value)
 
     @property
@@ -179,7 +179,7 @@ class _ConversationEntry:
             follow_up=self.conversation_manager.follow_up,
             follow_up_url=sublime.command_url(
                 "copilot_conversation_chat_shim",
-                {"window_id": self.conversation_manager.window.id(), "follow_up": self.conversation_manager.follow_up},
+                {"window_id": self.conversation_manager.window.id(), "message": self.conversation_manager.follow_up},
             ),
             close_url=sublime.command_url(
                 "copilot_conversation_close",
