@@ -7,10 +7,10 @@ import weakref
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urlparse
 
+import jmespath
 import sublime
 from LSP.plugin import ClientConfig, DottedDict, Request, Session, WorkspaceFolder
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler, request_handler
@@ -104,8 +104,6 @@ class CopilotPlugin(NpmClientHandler):
         "language-server.js",
     )
 
-    server_package_json_path = os.path.join("node_modules", "copilot-node-server", "package.json")
-    """The path to the `package.json` file of the language server."""
     server_version = ""
     """The version of the [copilot.vim](https://github.com/github/copilot.vim) package."""
     server_version_gh = ""
@@ -140,6 +138,12 @@ class CopilotPlugin(NpmClientHandler):
             WindowConversationManager(window).reset()
 
     @classmethod
+    def setup(cls) -> None:
+        super().setup()
+
+        cls.server_version = cls.parse_server_version()
+
+    @classmethod
     def can_start(
         cls,
         window: sublime.Window,
@@ -151,19 +155,6 @@ class CopilotPlugin(NpmClientHandler):
             return message
 
         cls.window_attrs.setdefault(window, WindowAttr())
-        return None
-
-    @classmethod
-    def on_pre_start(
-        cls,
-        window: sublime.Window,
-        initiating_view: sublime.View,
-        workspace_folders: list[WorkspaceFolder],
-        configuration: ClientConfig,
-    ) -> str | None:
-        super().on_pre_start(window, initiating_view, workspace_folders, configuration)
-
-        cls.server_version = cls.parse_server_version()
         return None
 
     def on_ready(self, api: ApiWrapperInterface) -> None:
@@ -285,10 +276,8 @@ class CopilotPlugin(NpmClientHandler):
 
     @classmethod
     def parse_server_version(cls) -> str:
-        if server_dir := cls._server_directory_path():
-            with open(Path(server_dir) / cls.server_package_json_path, "rb") as f:
-                return json.load(f).get("version", "")
-        return ""
+        lock_file_content = sublime.load_resource(f"Packages/{PACKAGE_NAME}/language-server/package-lock.json")
+        return jmespath.search('dependencies."copilot-node-server".version', json.loads(lock_file_content)) or ""
 
     @classmethod
     def plugin_session(cls, view: sublime.View) -> tuple[None, None] | tuple[CopilotPlugin, Session | None]:
