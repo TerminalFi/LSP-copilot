@@ -274,6 +274,10 @@ class CopilotConversationChatCommand(LspTextCommand):
             manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x), initial_text=msg)
             return
 
+        if not (view := find_view_by_id(manager.last_active_view_id)):
+            return
+
+        is_template = False
         if msg in (
             "/fix",
             "/tests",
@@ -281,11 +285,11 @@ class CopilotConversationChatCommand(LspTextCommand):
             "/explain",
             "/simplify",
         ):
+            is_template = True
             msg = msg + "\n\n{{ sel[0] }}"
+
         template = load_string_template(msg)
         sel = []
-        if not (view := find_view_by_id(manager.last_active_view_id)):
-            return
         lang = get_view_language_id(view, view.sel()[0].begin())
         sel = [
             f"""\n```{lang}
@@ -293,11 +297,12 @@ class CopilotConversationChatCommand(LspTextCommand):
 ```\n"""
             for region in view.sel()
         ]
+
         msg = template.render({"sel": sel})
         manager.append_conversation_entry({
             "kind": plugin.get_account_status().user or "user",
             "conversationId": manager.conversation_id,
-            "reply": msg,
+            "reply": msg if not is_template else msg.split()[0],
             "turnId": str(uuid.uuid4()),
             "annotations": [],
             "hideText": False,
@@ -352,9 +357,6 @@ class CopilotConversationRatingCommand(LspTextCommand):
                 {
                     "turnId": turn_id,
                     "rating": rating,
-                    # doc: H2.Type.Optional(Z0),
-                    # options: H2.Type.Optional(Mn),
-                    # source: H2.Type.Optional(sd),
                 },
             ),
             self._on_result_coversation_rating,
@@ -530,8 +532,14 @@ class CopilotConversationTemplatesCommand(LspTextCommand):
         if not window:
             return
         window.show_quick_panel(
-            [(item["id"], item["description"], ", ".join(item["scopes"])) for item in payload], lambda _: None
+            [[item["id"], item["description"], ", ".join(item["scopes"])] for item in payload],
+            lambda index: self._on_selected(index, payload),
         )
+
+    def _on_selected(self, index: int, items: list[CopilotPayloadConversationTemplate]) -> None:
+        if index == -1:
+            return
+        self.view.run_command("copilot_conversation_chat", {"message": f'/{items[index]["id"]}'})
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
