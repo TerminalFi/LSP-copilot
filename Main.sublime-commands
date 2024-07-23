@@ -4,6 +4,55 @@
         "command": "copilot_conversation_chat"
     },
     {
+        "caption": "Copilot: Explain",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/explain {{ sel[0] }}"
+        }
+    },
+    {
+        "caption": "Copilot: Generate Tests",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/tests {{ sel[0] }}"
+        }
+    },
+    {
+        "caption": "Copilot: Generate Docs",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/doc {{ sel[0] }}"
+        }
+    },
+    {
+        "caption": "Copilot: Fix This",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/fix {{ sel[0] }}"
+        }
+    },
+    {
+        "caption": "Copilot: Simplify This",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/simplify {{ sel[0] }}"
+        }
+    },
+    {
+        "caption": "Copilot: Feedback",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/feedback"
+        }
+    },
+    {
+        "caption": "Copilot: Help",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/help"
+        }
+    },
+    {
         "caption": "Copilot: Destroy Conversation",
         "command": "copilot_conversation_destroy"
     },

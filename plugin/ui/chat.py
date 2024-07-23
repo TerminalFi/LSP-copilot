@@ -179,7 +179,7 @@ class _ConversationEntry:
             follow_up=self.conversation_manager.follow_up,
             follow_up_url=sublime.command_url(
                 "copilot_conversation_chat_shim",
-                {"window_id": self.conversation_manager.window.id(), "follow_up": self.conversation_manager.follow_up},
+                {"window_id": self.conversation_manager.window.id(), "message": self.conversation_manager.follow_up},
             ),
             close_url=sublime.command_url(
                 "copilot_conversation_close",

@@ -199,7 +199,7 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
 
 
 class CopilotConversationChatShimCommand(LspWindowCommand):
-    def run(self, window_id: int, follow_up: str = "") -> None:
+    def run(self, window_id: int, message: str = "") -> None:
         if not (window := find_window_by_id(window_id)):
             return
 
@@ -207,25 +207,27 @@ class CopilotConversationChatShimCommand(LspWindowCommand):
         if not (view := find_view_by_id(conversation_manager.last_active_view_id)):
             return
 
-        view.run_command("copilot_conversation_chat", {"follow_up": follow_up})
+        view.run_command("copilot_conversation_chat", {"message": message})
 
 
 class CopilotConversationChatCommand(LspTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, follow_up: str = "") -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str = "") -> None:
         if not (window := self.view.window()):
             return
+
         manager = WindowConversationManager(window)
         if manager.conversation_id:
             manager.open()
-            manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x), initial_text=follow_up)
+            manager.prompt(callback=lambda msg: self._on_prompt(plugin, session, msg), initial_text=message)
             return
+
         session.send_request(
             Request(
                 REQ_CONVERSATION_PRECONDITIONS,
                 {},
             ),
-            lambda x: self._on_result_conversation_preconditions(plugin, session, x),
+            lambda msg: self._on_result_conversation_preconditions(plugin, session, msg),
         )
 
     def _on_result_conversation_preconditions(self, plugin: CopilotPlugin, session: Session, payload) -> None:
@@ -248,7 +250,7 @@ class CopilotConversationChatCommand(LspTextCommand):
                     # "workspaceFolder": Ji.Type.Optional(Ji.Type.String()),
                 },
             ),
-            lambda x: self._on_result_conversation_create(plugin, session, x),
+            lambda msg: self._on_result_conversation_create(plugin, session, msg),
         )
 
     def _on_result_conversation_create(self, plugin: CopilotPlugin, session: Session, payload) -> None:
@@ -272,6 +274,14 @@ class CopilotConversationChatCommand(LspTextCommand):
             manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x), initial_text=msg)
             return
 
+        if msg in (
+            "/fix",
+            "/tests",
+            "/doc",
+            "/explain",
+            "/simplify",
+        ):
+            msg = msg + "\n\n{{ sel[0] }}"
         template = load_string_template(msg)
         sel = []
         if not (view := find_view_by_id(manager.last_active_view_id)):
