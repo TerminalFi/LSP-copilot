@@ -229,18 +229,34 @@ class CopilotConversationChatCommand(LspTextCommand):
                 REQ_CONVERSATION_PRECONDITIONS,
                 {},
             ),
-            lambda msg: self._on_result_conversation_preconditions(plugin, session, msg),
+            lambda response: self._on_result_conversation_preconditions(plugin, session, response, message),
         )
 
-    def _on_result_conversation_preconditions(self, plugin: CopilotPlugin, session: Session, payload) -> None:
+    def _on_result_conversation_preconditions(
+        self, plugin: CopilotPlugin, session: Session, payload, initial_message: str
+    ) -> None:
         if not (window := self.view.window()):
             return
 
+        wcm = WindowConversationManager(window)
+        if not (view := find_view_by_id(wcm.last_active_view_id)):
+            return
+
+        is_template, msg = preprocess_chat_message(view, initial_message)
+        if msg != "":
+            wcm.append_conversation_entry({
+                "kind": plugin.get_account_status().user or "user",
+                "conversationId": wcm.conversation_id,
+                "reply": msg.split()[0] if is_template else msg,
+                "turnId": str(uuid.uuid4()),
+                "annotations": [],
+                "hideText": False,
+            })
         session.send_request(
             Request(
                 REQ_CONVERSATION_CREATE,
                 {
-                    "turns": [{"request": ""}],
+                    "turns": [{"request": msg}],
                     "capabilities": {
                         "allSkills": True,
                         "skills": [],
@@ -252,6 +268,8 @@ class CopilotConversationChatCommand(LspTextCommand):
             ),
             lambda msg: self._on_result_conversation_create(plugin, session, msg),
         )
+        wcm.is_waiting = True
+        wcm.update()
 
     def _on_result_conversation_create(self, plugin: CopilotPlugin, session: Session, payload) -> None:
         if not (window := self.view.window()):
@@ -274,15 +292,7 @@ class CopilotConversationChatCommand(LspTextCommand):
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
 
-        is_template = msg in CopilotConversationTemplates
-        if is_template:
-            msg += " {{ sel[0] }}"
-
-        template = load_string_template(msg)
-        lang = get_view_language_id(view, view.sel()[0].begin())
-        sel = [f"\n```{lang}\n{view.substr(region)}\n```\n" for region in view.sel()]
-
-        msg = template.render({"sel": sel})
+        is_template, msg = preprocess_chat_message(view, msg)
         wcm.append_conversation_entry({
             "kind": plugin.get_account_status().user or "user",
             "conversationId": wcm.conversation_id,
@@ -759,3 +769,20 @@ class CopilotSignOutCommand(CopilotTextCommand):
             message_dialog("Sign out OK. Bye!")
 
         GithubInfo.clear_avatar()
+
+
+# This is not in utils.py because it caused a circular import issue.
+# Still trying to figure best path forward
+
+
+def preprocess_chat_message(view: sublime.View, message: str) -> tuple[bool, str]:
+    is_template = message in CopilotConversationTemplates
+    if is_template:
+        message += " {{ sel[0] }}"
+
+    template = load_string_template(message)
+    lang = get_view_language_id(view, view.sel()[0].begin())
+    sel = [f"\n```{lang}\n{view.substr(region)}\n```\n" for region in view.sel()]
+
+    message = template.render({"sel": sel})
+    return is_template, message

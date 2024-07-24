@@ -321,21 +321,21 @@ class CopilotPlugin(NpmClientHandler):
                     if not (window := WindowConversationManager.find_window_by_token_id(token)):
                         return
 
-                    conversation_manager = WindowConversationManager(window)
+                    wcm = WindowConversationManager(window)
                     if params.get("kind", None) == "end":
-                        conversation_manager.is_waiting = False
+                        wcm.is_waiting = False
 
                     if suggest_title := params.get("suggestedTitle", None):
-                        conversation_manager.suggested_title = suggest_title
+                        wcm.suggested_title = suggest_title
 
                     if params.get("reply", None):
-                        conversation_manager.append_conversation_entry(params)
+                        wcm.append_conversation_entry(params)
 
                     if followup := params.get("followUp", None):
                         message = followup.get("message", "")
-                        conversation_manager.follow_up = message
+                        wcm.follow_up = message
 
-                    conversation_manager.update()
+                    wcm.update()
 
     @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
@@ -352,18 +352,18 @@ class CopilotPlugin(NpmClientHandler):
 
         preprocess_panel_completions(view, [payload])
 
-        completion_manager = ViewPanelCompletionManager(view)
-        completion_manager.append_completion(payload)
-        completion_manager.update()
+        vcm = ViewPanelCompletionManager(view)
+        vcm.append_completion(payload)
+        vcm.update()
 
     @notification_handler(NTFY_PANEL_SOLUTION_DONE)
     def _handle_panel_solution_done_notification(self, payload) -> None:
         if not (view := ViewPanelCompletionManager.find_view_by_panel_id(payload["panelId"])):
             return
 
-        completion_manager = ViewPanelCompletionManager(view)
-        completion_manager.is_waiting = False
-        completion_manager.update()
+        vcm = ViewPanelCompletionManager(view)
+        vcm.is_waiting = False
+        vcm.update()
 
     @notification_handler(NTFY_STATUS_NOTIFICATION)
     def _handle_status_notification_notification(self, payload: CopilotPayloadStatusNotification) -> None:
@@ -384,8 +384,8 @@ class CopilotPlugin(NpmClientHandler):
         self._request_completions(view, REQ_GET_COMPLETIONS_CYCLING)
 
     def _request_completions(self, view: sublime.View, request: str, *, no_callback: bool = False) -> None:
-        completion_manager = ViewCompletionManager(view)
-        completion_manager.hide()
+        vcm = ViewCompletionManager(view)
+        vcm.hide()
 
         if not (
             (session := self.weaksession())
@@ -401,7 +401,7 @@ class CopilotPlugin(NpmClientHandler):
         if no_callback:
             callback = lambda _: None  # noqa: E731
         else:
-            completion_manager.is_waiting = True
+            vcm.is_waiting = True
             if self._activity_indicator:
                 self._activity_indicator.start()
             callback = functools.partial(self._on_get_completions, view, region=sel[0].to_tuple())
@@ -414,8 +414,8 @@ class CopilotPlugin(NpmClientHandler):
         payload: CopilotPayloadCompletions,
         region: tuple[int, int],
     ) -> None:
-        completion_manager = ViewCompletionManager(view)
-        completion_manager.is_waiting = False
+        vcm = ViewCompletionManager(view)
+        vcm.is_waiting = False
         if self._activity_indicator:
             self._activity_indicator.stop()
 
@@ -434,4 +434,4 @@ class CopilotPlugin(NpmClientHandler):
             return
 
         preprocess_completions(view, completions)
-        completion_manager.show(completions, 0, get_session_setting(session, "completion_style"))
+        vcm.show(completions, 0, get_session_setting(session, "completion_style"))
