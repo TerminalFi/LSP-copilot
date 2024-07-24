@@ -288,7 +288,9 @@ class CopilotConversationChatCommand(LspTextCommand):
             "kind": plugin.get_account_status().user or "user",
             "conversationId": manager.conversation_id,
             "reply": msg.split()[0] if is_template else msg,
-            "turnId": str(uuid.uuid4())
+            "turnId": str(uuid.uuid4()),
+            "annotations": [],
+            "hideText": False,
         })
 
         if not (request := prepare_completion_request(view)):
@@ -311,6 +313,7 @@ class CopilotConversationChatCommand(LspTextCommand):
         )
         manager.is_waiting = True
         manager.update()
+
 
 class CopilotConversationCloseCommand(CopilotWindowCommand):
     def run(self, window_id: int | None = None) -> None:

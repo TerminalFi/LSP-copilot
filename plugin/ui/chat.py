@@ -29,13 +29,11 @@ class WindowConversationManager:
     @property
     def last_active_view_id(self) -> int:
         """The ID of the last active view that is not the conversation panel"""
-        return get_copilot_setting(
-            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", -1
-        )
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "last_active_view_id", -1)
 
     @last_active_view_id.setter
     def last_active_view_id(self, value: int) -> None:
-        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "last_active_view_id", value)
 
     @property
     def original_layout(self) -> StLayout | None:

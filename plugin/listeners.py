@@ -13,7 +13,7 @@ from watchdog.observers.api import ObservedWatch
 from .client import CopilotPlugin
 from .decorators import _must_be_active_view
 from .helpers import CopilotIgnore
-from .ui import ViewCompletionManager, ViewPanelCompletionManager
+from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import all_windows, get_copilot_view_setting, get_session_setting, set_copilot_view_setting
 
 
@@ -60,6 +60,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
 
     def on_activated_async(self) -> None:
         _, session = CopilotPlugin.plugin_session(self.view)
+
         if (session and CopilotPlugin.should_ignore(self.view)) or (
             not session and not CopilotPlugin.should_ignore(self.view)
         ):
@@ -67,6 +68,9 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             prev_setting = self.view.settings().get("lsp_uri")
             self.view.settings().set("lsp_uri", "")
             sublime.set_timeout_async(lambda: self.view.settings().set("lsp_uri", prev_setting), 5)
+
+        if session and not CopilotPlugin.should_ignore(self.view):
+            WindowConversationManager(self.view.window()).last_active_view_id = self.view.id()
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()
