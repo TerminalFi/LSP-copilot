@@ -166,26 +166,27 @@ class WindowConversationManager:
 class _ConversationEntry:
     def __init__(self, window: sublime.Window) -> None:
         self.window = window
-        self.conversation_manager = WindowConversationManager(window)
+        self.wcm = WindowConversationManager(window)
 
     @property
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", keep_trailing_newline=True).render(
+            is_waiting=self.wcm.is_waiting,
             avatar_img_src=GithubInfo.get_avatar_img_src(),
-            suggested_title=self.conversation_manager.suggested_title,
-            follow_up=self.conversation_manager.follow_up,
+            suggested_title=self.wcm.suggested_title,
+            follow_up=self.wcm.follow_up,
             follow_up_url=sublime.command_url(
                 "copilot_conversation_chat_shim",
-                {"window_id": self.conversation_manager.window.id(), "message": self.conversation_manager.follow_up},
+                {"window_id": self.wcm.window.id(), "message": self.wcm.follow_up},
             ),
             close_url=sublime.command_url(
                 "copilot_conversation_close",
-                {"window_id": self.conversation_manager.window.id()},
+                {"window_id": self.wcm.window.id()},
             ),
             delete_url=sublime.command_url(
                 "copilot_conversation_destroy_shim",
-                {"conversation_id": self.conversation_manager.conversation_id},
+                {"conversation_id": self.wcm.conversation_id},
             ),
             sections=[
                 {
@@ -194,8 +195,8 @@ class _ConversationEntry:
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
                         {
-                            "conversation_id": self.conversation_manager.conversation_id,
-                            "window_id": self.conversation_manager.window.id(),
+                            "conversation_id": self.wcm.conversation_id,
+                            "window_id": self.wcm.window.id(),
                             "turn_id": entry["turnId"],
                         },
                     ),
@@ -218,11 +219,11 @@ class _ConversationEntry:
             code_block_lines = reply[code_block_start:].splitlines(True)
             copy_command_url = sublime.command_url(
                 "copilot_conversation_copy_code",
-                {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
+                {"window_id": self.wcm.window.id(), "code_block_index": code_block_index},
             )
             insert_command_url = sublime.command_url(
                 "copilot_conversation_insert_code_shim",
-                {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
+                {"window_id": self.wcm.window.id(), "code_block_index": code_block_index},
             )
             return (
                 # @todo is it possible to build HTML purely inside the jinja template file?
@@ -241,7 +242,7 @@ class _ConversationEntry:
         is_inside_code_block = False
         code_block_index = -1
 
-        for entry in self.conversation_manager.conversation:
+        for entry in self.wcm.conversation:
             kind = entry["kind"]
             reply = entry["reply"]
             turn_id = entry["turnId"]
@@ -254,9 +255,7 @@ class _ConversationEntry:
                 elif is_inside_code_block:
                     if reply.startswith("```"):
                         is_inside_code_block = False
-                        self.conversation_manager.insert_code_block_index(
-                            code_block_index, "".join(current_entry["codeBlocks"])
-                        )
+                        self.wcm.insert_code_block_index(code_block_index, "".join(current_entry["codeBlocks"]))
                         current_entry["codeBlocks"] = []
                     else:
                         current_entry["codeBlocks"].append(reply)
@@ -288,26 +287,26 @@ class _ConversationEntry:
         self.window.focus_view(self.window.active_view())  # type: ignore
 
     def update(self) -> None:
-        if not (sheet := self.window.transient_sheet_in_group(self.conversation_manager.group_id)):
+        if not (sheet := self.window.transient_sheet_in_group(self.wcm.group_id)):
             return
 
         mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True, wrapper_class="wrapper")
 
     def close(self) -> None:
-        if not (sheet := self.window.transient_sheet_in_group(self.conversation_manager.group_id)):
+        if not (sheet := self.window.transient_sheet_in_group(self.wcm.group_id)):
             return
 
         sheet.close()
-        self.conversation_manager.is_visible = False
-        if self.conversation_manager.original_layout:
-            self.window.set_layout(self.conversation_manager.original_layout)  # type: ignore
-            self.conversation_manager.original_layout = None
+        self.wcm.is_visible = False
+        if self.wcm.original_layout:
+            self.window.set_layout(self.wcm.original_layout)  # type: ignore
+            self.wcm.original_layout = None
 
         if view := self.window.active_view():
             self.window.focus_view(view)
 
     def _open_in_group(self, window: sublime.Window, group_id: int) -> None:
-        self.conversation_manager.group_id = group_id
+        self.wcm.group_id = group_id
 
         window.focus_group(group_id)
         sheet = mdpopups.new_html_sheet(
@@ -318,10 +317,10 @@ class _ConversationEntry:
             flags=sublime.TRANSIENT,
             wrapper_class="wrapper",
         )
-        self.conversation_manager.view_id = sheet.id()
+        self.wcm.view_id = sheet.id()
 
     def _open_in_side_by_side(self, window: sublime.Window) -> None:
-        self.conversation_manager.original_layout = window.layout()  # type: ignore
+        self.wcm.original_layout = window.layout()  # type: ignore
         window.set_layout({
             "cols": [0.0, 0.5, 1.0],
             "rows": [0.0, 1.0],

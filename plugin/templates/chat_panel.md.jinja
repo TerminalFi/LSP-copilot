@@ -7,7 +7,7 @@
   <a class="icon-link" title="Delete Conversation" href='{{ delete_url }}'><img class="icon" src="{{ asset_url('trash.png') }}"></a>
   <a class="close" title="Close Conversation" href='{{ close_url }}'><img class="icon" src="{{ asset_url('close.png') }}"></a>
   <h3 class="suggested-title">
-    Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
+    {% if is_waiting %} ⌛ {% endif %}Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
   </h3>
 </div>
 
