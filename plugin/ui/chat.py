@@ -248,17 +248,16 @@ class _ConversationEntry:
             turn_id = entry["turnId"]
 
             if current_entry and current_entry["kind"] == kind:
-                if reply.startswith("```") and not is_inside_code_block:
-                    is_inside_code_block = True
-                    code_block_index += 1
-                    reply = process_code_block(reply, code_block_index)
-                elif is_inside_code_block:
-                    if reply.startswith("```"):
-                        is_inside_code_block = False
+                if reply.startswith("```"):
+                    is_inside_code_block = not is_inside_code_block
+                    if is_inside_code_block:
+                        code_block_index += 1
+                        reply = process_code_block(reply, code_block_index)
+                    else:
                         self.wcm.insert_code_block_index(code_block_index, "".join(current_entry["codeBlocks"]))
                         current_entry["codeBlocks"] = []
-                    else:
-                        current_entry["codeBlocks"].append(reply)
+                else:
+                    current_entry["codeBlocks"].append(reply)
                 current_entry["messages"].append(reply)
             else:
                 if current_entry:
