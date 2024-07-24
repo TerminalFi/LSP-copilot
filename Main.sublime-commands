@@ -7,35 +7,35 @@
         "caption": "Copilot: Explain",
         "command": "copilot_conversation_chat",
         "args": {
-            "message": "/explain {{ sel[0] }}"
+            "message": "/explain"
         }
     },
     {
         "caption": "Copilot: Generate Tests",
         "command": "copilot_conversation_chat",
         "args": {
-            "message": "/tests {{ sel[0] }}"
+            "message": "/tests"
         }
     },
     {
         "caption": "Copilot: Generate Docs",
         "command": "copilot_conversation_chat",
         "args": {
-            "message": "/doc {{ sel[0] }}"
+            "message": "/doc"
         }
     },
     {
         "caption": "Copilot: Fix This",
         "command": "copilot_conversation_chat",
         "args": {
-            "message": "/fix {{ sel[0] }}"
+            "message": "/fix"
         }
     },
     {
         "caption": "Copilot: Simplify This",
         "command": "copilot_conversation_chat",
         "args": {
-            "message": "/simplify {{ sel[0] }}"
+            "message": "/simplify"
         }
     },
     {
