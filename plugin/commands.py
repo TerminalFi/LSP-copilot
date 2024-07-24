@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import uuid
 from abc import ABC
 from collections.abc import Callable
 from functools import partial, wraps
@@ -40,6 +41,7 @@ from .decorators import _must_be_active_view
 from .helpers import GithubInfo
 from .template import load_string_template
 from .types import (
+    CopilotConversationTemplates,
     CopilotPayloadConversationTemplate,
     CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,
@@ -233,6 +235,7 @@ class CopilotConversationChatCommand(LspTextCommand):
     def _on_result_conversation_preconditions(self, plugin: CopilotPlugin, session: Session, payload) -> None:
         if not (window := self.view.window()):
             return
+
         session.send_request(
             Request(
                 REQ_CONVERSATION_CREATE,
@@ -253,9 +256,8 @@ class CopilotConversationChatCommand(LspTextCommand):
     def _on_result_conversation_create(self, plugin: CopilotPlugin, session: Session, payload) -> None:
         if not (window := self.view.window()):
             return
+
         wcm = WindowConversationManager(window)
-        if self.view.name() != "Copilot Chat":
-            wcm.last_active_view_id = self.view.id()
         wcm.conversation_id = payload["conversationId"]
         wcm.open()
         wcm.prompt(callback=lambda msg: self._on_prompt(plugin, session, msg))
@@ -263,8 +265,6 @@ class CopilotConversationChatCommand(LspTextCommand):
     def _on_prompt(self, plugin: CopilotPlugin, session: Session, msg: str):
         if not (window := self.view.window()):
             return
-
-        import uuid
 
         wcm = WindowConversationManager(window)
         if wcm.is_waiting:
@@ -274,10 +274,9 @@ class CopilotConversationChatCommand(LspTextCommand):
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
 
-        template_commands = ("/fix", "/tests", "/doc", "/explain", "/simplify")
-        is_template = msg in template_commands
+        is_template = msg in CopilotConversationTemplates
         if is_template:
-            msg += "\n\n {{ sel[0] }}"
+            msg += " {{ sel[0] }}"
 
         template = load_string_template(msg)
         lang = get_view_language_id(view, view.sel()[0].begin())
@@ -478,19 +477,29 @@ class CopilotConversationCopyCodeCommand(LspWindowCommand):
         sublime.set_clipboard(code)
 
 
-class CopilotConversationInsertCodeCommand(LspWindowCommand):
+class CopilotConversationInsertCodeShimCommand(LspWindowCommand):
     def run(self, window_id: int, code_block_index: int) -> None:
         if not (window := find_window_by_id(window_id)):
             return
 
         wcm = WindowConversationManager(window)
-        if not (code := wcm.code_block_index.get(str(code_block_index), None)):
-            return
-
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
 
-        view.run_command("append", {"characters": code})
+        if not (code := wcm.code_block_index.get(str(code_block_index), None)):
+            return
+
+        view.run_command("copilot_conversation_insert_code", {"characters": code})
+
+
+class CopilotConversationInsertCodeCommand(LspTextCommand):
+    def run(self, edit: sublime.Edit, characters: str) -> None:
+        if len(self.view.sel()) > 1:
+            return
+
+        begin = self.view.sel()[0].begin()
+        self.view.erase(edit, self.view.sel()[0])
+        self.view.insert(edit, begin, characters)
 
 
 class CopilotConversationAgentsCommand(LspTextCommand):

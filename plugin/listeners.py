@@ -70,7 +70,8 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
             sublime.set_timeout_async(lambda: self.view.settings().set("lsp_uri", prev_setting), 5)
 
         if session and not CopilotPlugin.should_ignore(self.view):
-            WindowConversationManager(self.view.window()).last_active_view_id = self.view.id()
+            if (window := self.view.window()) and self.view.name() != "Copilot Chat":
+                WindowConversationManager(window).last_active_view_id = self.view.id()
 
     def on_deactivated_async(self) -> None:
         ViewCompletionManager(self.view).hide()
@@ -150,9 +151,9 @@ class EventListener(sublime_plugin.EventListener):
 
         # if the user tries to close panel completion via Ctrl+W
         if isinstance(sheet, sublime.HtmlSheet) and command_name in {"close", "close_file"}:
-            completion_manager = ViewPanelCompletionManager.from_sheet_id(sheet.id())
-            if completion_manager:
-                completion_manager.close()
+            vcm = ViewPanelCompletionManager.from_sheet_id(sheet.id())
+            if vcm:
+                vcm.close()
                 return "noop", None
 
         return None

@@ -221,7 +221,7 @@ class _ConversationEntry:
                 {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
             )
             insert_command_url = sublime.command_url(
-                "copilot_conversation_insert_code",
+                "copilot_conversation_insert_code_shim",
                 {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
             )
             return (
