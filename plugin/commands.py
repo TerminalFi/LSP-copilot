@@ -244,6 +244,7 @@ class CopilotConversationChatCommand(LspTextCommand):
                     },
                     "workDoneToken": f"copilot_chat://{window.id()}",
                     "computeSuggestions": True,
+                    "source": "panel",
                 },
             ),
             lambda msg: self._on_result_conversation_create(plugin, session, msg),
@@ -257,7 +258,7 @@ class CopilotConversationChatCommand(LspTextCommand):
             manager.last_active_view_id = self.view.id()
         manager.conversation_id = payload["conversationId"]
         manager.open()
-        manager.prompt(callback=lambda x: self._on_prompt(plugin, session, x))
+        manager.prompt(callback=lambda msg: self._on_prompt(plugin, session, msg))
 
     def _on_prompt(self, plugin: CopilotPlugin, session: Session, msg: str):
         if not (window := self.view.window()):
@@ -273,35 +274,21 @@ class CopilotConversationChatCommand(LspTextCommand):
         if not (view := find_view_by_id(manager.last_active_view_id)):
             return
 
-        is_template = False
-        if msg in (
-            "/fix",
-            "/tests",
-            "/doc",
-            "/explain",
-            "/simplify",
-        ):
-            is_template = True
-            msg = msg + "\n\n{{ sel[0] }}"
+        template_commands = ("/fix", "/tests", "/doc", "/explain", "/simplify")
+        is_template = msg in template_commands
+        if is_template:
+            msg += "\n\n {{ sel[0] }}"
 
         template = load_string_template(msg)
-        sel = []
         lang = get_view_language_id(view, view.sel()[0].begin())
-        sel = [
-            f"""\n```{lang}
-{view.substr(region)}
-```\n"""
-            for region in view.sel()
-        ]
+        sel = [f"\n```{lang}\n{view.substr(region)}\n```\n" for region in view.sel()]
 
         msg = template.render({"sel": sel})
         manager.append_conversation_entry({
             "kind": plugin.get_account_status().user or "user",
             "conversationId": manager.conversation_id,
-            "reply": msg if not is_template else msg.split()[0],
-            "turnId": str(uuid.uuid4()),
-            "annotations": [],
-            "hideText": False,
+            "reply": msg.split()[0] if is_template else msg,
+            "turnId": str(uuid.uuid4())
         })
 
         if not (request := prepare_completion_request(view)):
@@ -324,7 +311,6 @@ class CopilotConversationChatCommand(LspTextCommand):
         )
         manager.is_waiting = True
         manager.update()
-
 
 class CopilotConversationCloseCommand(CopilotWindowCommand):
     def run(self, window_id: int | None = None) -> None:

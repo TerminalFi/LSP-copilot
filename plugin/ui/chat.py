@@ -249,12 +249,12 @@ class _ConversationEntry:
             turn_id = entry["turnId"]
 
             if current_entry and current_entry["kind"] == kind:
-                if "```" in reply and not is_inside_code_block:
+                if reply.startswith("```") and not is_inside_code_block:
                     is_inside_code_block = True
                     code_block_index += 1
                     reply = process_code_block(reply, code_block_index)
                 elif is_inside_code_block:
-                    if "```" in reply:
+                    if reply.startswith("```"):
                         is_inside_code_block = False
                         self.conversation_manager.insert_code_block_index(
                             code_block_index, "".join(current_entry["codeBlocks"])
@@ -266,7 +266,7 @@ class _ConversationEntry:
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
-                if "```" in reply and kind == "report":
+                if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1
                     reply = process_code_block(reply, code_block_index)
