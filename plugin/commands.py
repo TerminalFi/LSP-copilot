@@ -259,7 +259,8 @@ class CopilotConversationChatCommand(LspTextCommand):
                     "turns": [{"request": msg}],
                     "capabilities": {
                         "allSkills": True,
-                        "skills": [],
+                        "skills": [
+                        ],
                     },
                     "workDoneToken": f"copilot_chat://{window.id()}",
                     "computeSuggestions": True,
@@ -396,6 +397,8 @@ class CopilotConversationDestroyCommand(LspTextCommand):
         if payload != "OK":
             status_message("Failed to destroy conversation.")
             return
+
+        status_message("Destroyed conversation.")
         wcm = WindowConversationManager(window)
         wcm.close()
         wcm.reset()
@@ -406,7 +409,6 @@ class CopilotConversationDestroyCommand(LspTextCommand):
         return super().is_enabled() and bool(WindowConversationManager(window).conversation_id)
 
 
-# Should be passed the window_id
 class CopilotConversationTurnDeleteShimCommand(LspWindowCommand):
     def run(self, window_id: int, conversation_id: str, turn_id: str) -> None:
         wcm = WindowConversationManager(self.window)
@@ -418,7 +420,6 @@ class CopilotConversationTurnDeleteShimCommand(LspWindowCommand):
         )
 
 
-# Should be passed the window id and then remove all turns with turn_id from historu and then reload
 class CopilotConversationTurnDeleteCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(
@@ -563,10 +564,8 @@ class CopilotAcceptCompletionCommand(CopilotTextCommand):
         self.view.insert(edit, source_line_region.begin(), completion["text"])
         self.view.show(self.view.sel(), show_surrounds=False, animate=self.view.settings().get("animation_enabled"))
 
-        # notify the current completion as accepted
         self._record_telemetry(session, REQ_NOTIFY_ACCEPTED, {"uuid": completion["uuid"]})
 
-        # notify all other completions as rejected
         other_uuids = [completion["uuid"] for completion in vcm.completions]
         other_uuids.remove(completion["uuid"])
         if other_uuids:
@@ -579,7 +578,6 @@ class CopilotRejectCompletionCommand(CopilotTextCommand):
         vcm = ViewCompletionManager(self.view)
         vcm.hide()
 
-        # notify all completions as rejected
         self._record_telemetry(
             session,
             REQ_NOTIFY_REJECTED,
