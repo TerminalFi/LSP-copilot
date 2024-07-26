@@ -179,6 +179,7 @@ class _ConversationEntry:
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", keep_trailing_newline=True).render(
+            window_id=self.wcm.window.id(),
             is_waiting=self.wcm.is_waiting,
             avatar_img_src=GithubInfo.get_avatar_img_src(),
             suggested_title=preprocess_message_for_html(self.wcm.suggested_title),
@@ -200,19 +201,7 @@ class _ConversationEntry:
                     "kind": entry["kind"],
                     "message": "".join(entry["messages"]),
                     "contains_code": entry["containsCode"],
-                    "code_block_index": entry["codeBlockIndex"],
-                    "copy_command_url": ""
-                    if not entry["containsCode"]
-                    else sublime.command_url(
-                        "copilot_conversation_copy_code",
-                        {"window_id": self.wcm.window.id(), "code_block_index": entry["codeBlockIndex"]},
-                    ),
-                    "insert_command_url": ""
-                    if not entry["containsCode"]
-                    else sublime.command_url(
-                        "copilot_conversation_insert_code",
-                        {"window_id": self.wcm.window.id(), "code_block_index": entry["codeBlockIndex"]},
-                    ),
+                    "code_block_indices": entry["codeBlockIndices"],
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
                         {
@@ -253,32 +242,33 @@ class _ConversationEntry:
                     is_inside_code_block = not is_inside_code_block
                     if is_inside_code_block:
                         code_block_index += 1
-                        current_entry["containsCode"] = True
-                        current_entry["codeBlockIndex"] = code_block_index
+                        current_entry["containsCode"] = is_inside_code_block
+                        current_entry["codeBlockIndices"].append(code_block_index)
                         reply = inject_code_block_commands(reply, code_block_index)
                     else:
                         self.wcm.insert_code_block_index(code_block_index, "".join(current_entry["codeBlocks"]))
                         current_entry["codeBlocks"] = []
-                else:
+                elif is_inside_code_block:
                     current_entry["codeBlocks"].append(reply)
                 current_entry["messages"].append(reply)
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
-
                 current_entry = {
                     "kind": kind,
                     "messages": [reply],
                     "containsCode": False,
-                    "codeBlockIndex": -1,
+                    "codeBlockIndices": [],
                     "codeBlocks": [],
                     "turnId": turn_id,
                 }
                 if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1
-                    current_entry["containsCode"] = True
+                    current_entry["containsCode"] = is_inside_code_block
+                    current_entry["codeBlockIndices"].append(code_block_index)
                     reply = inject_code_block_commands(reply, code_block_index)
+                    current_entry["messages"] = [reply]
 
         if current_entry:
             # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/187

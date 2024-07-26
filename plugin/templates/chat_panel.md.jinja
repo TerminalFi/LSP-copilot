@@ -32,15 +32,23 @@
   {%- endif -%}
 </span>
 
-{%  if section.contains_code %}
-{{ section.message | replace(
-    "CODE_BLOCK_COMMANDS_" ~ section.code_block_index|string,
-    "<a class='icon-link' href='" ~ section.copy_command_url ~ "'>" ~
-    "<img class='icon icon-link' src='" ~ asset_url('copy.png') ~ "' /></a>" ~
-    "<span></span>" ~
-    " <a class='icon-link' href='" ~ section.insert_command_url ~ "'>" ~
-    "<img class='icon icon-link' src='" ~ asset_url('insert.png') ~ "' /></a>\n\n"
-) | safe }}
+{% if section.contains_code %}
+{% set replacements = [] %}
+{% for index in section.code_block_indices %}
+  {% do replacements.append(
+      (
+          "CODE_BLOCK_COMMANDS_" ~ index|string,
+          (
+              "<a class='icon-link' href='" ~ command_url('copilot_conversation_copy_code', window_id, index) ~ "'>" ~
+              "<img class='icon icon-link' src='" ~ asset_url('copy.png') ~ "' /></a>" ~
+              "<span></span>" ~
+              " <a class='icon-link' href='" ~ command_url('copilot_conversation_insert_code_shim', window_id, index) ~ "'>" ~
+              "<img class='icon icon-link' src='" ~ asset_url('insert.png') ~ "' /></a>\n\n"
+          ) | safe
+      )
+) %}
+{% endfor %}
+{{ section.message | multi_replace(replacements) | safe }}
 {% else %}
 
 {{ section.message }}

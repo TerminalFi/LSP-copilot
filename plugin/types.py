@@ -161,7 +161,7 @@ class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):
     messages: list[str]
     containsCode: bool
     codeBlocks: list[str]
-    codeBlockIndex: int
+    codeBlockIndices: list[int]
 
 
 class CopilotPayloadConversationTemplate(TypedDict, total=True):
