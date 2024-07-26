@@ -7,7 +7,7 @@ import sublime
 
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
 from ..helpers import GithubInfo
-from ..template import asset_url, load_resource_template
+from ..template import load_resource_template
 from ..types import CopilotPayloadConversationEntry, CopilotPayloadConversationEntryTransformed, StLayout
 from ..utils import (
     find_view_by_id,
@@ -199,6 +199,20 @@ class _ConversationEntry:
                 {
                     "kind": entry["kind"],
                     "message": "".join(entry["messages"]),
+                    "contains_code": entry["containsCode"],
+                    "code_block_index": entry["codeBlockIndex"],
+                    "copy_command_url": ""
+                    if not entry["containsCode"]
+                    else sublime.command_url(
+                        "copilot_conversation_copy_code",
+                        {"window_id": self.wcm.window.id(), "code_block_index": entry["codeBlockIndex"]},
+                    ),
+                    "insert_command_url": ""
+                    if not entry["containsCode"]
+                    else sublime.command_url(
+                        "copilot_conversation_insert_code",
+                        {"window_id": self.wcm.window.id(), "code_block_index": entry["codeBlockIndex"]},
+                    ),
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
                         {
@@ -222,23 +236,7 @@ class _ConversationEntry:
 
     def _synthesize(self) -> list[CopilotPayloadConversationEntryTransformed]:
         def inject_code_block_commands(reply: str, code_block_index: int) -> str:
-            copy_command_url = sublime.command_url(
-                "copilot_conversation_copy_code",
-                {"window_id": self.wcm.window.id(), "code_block_index": code_block_index},
-            )
-            insert_command_url = sublime.command_url(
-                "copilot_conversation_insert_code_shim",
-                {"window_id": self.wcm.window.id(), "code_block_index": code_block_index},
-            )
-            return (
-                f"<a class='icon-link' href='{copy_command_url}'>"
-                + f"<img class='icon icon-link' src='{asset_url('copy.png')}' /></a>"
-                + "<span></span>"
-                + f" <a class='icon-link' href='{insert_command_url}'>"
-                + f"<img class='icon icon-link' src='{asset_url('insert.png')}' /></a>"
-                + "\n\n"
-                + reply
-            )
+            return f"CODE_BLOCK_COMMANDS_{code_block_index}\n\n" + reply
 
         transformed_conversation: list[CopilotPayloadConversationEntryTransformed] = []
         current_entry: CopilotPayloadConversationEntryTransformed | None = None
@@ -255,6 +253,8 @@ class _ConversationEntry:
                     is_inside_code_block = not is_inside_code_block
                     if is_inside_code_block:
                         code_block_index += 1
+                        current_entry["containsCode"] = True
+                        current_entry["codeBlockIndex"] = code_block_index
                         reply = inject_code_block_commands(reply, code_block_index)
                     else:
                         self.wcm.insert_code_block_index(code_block_index, "".join(current_entry["codeBlocks"]))
@@ -265,11 +265,20 @@ class _ConversationEntry:
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
+
+                current_entry = {
+                    "kind": kind,
+                    "messages": [reply],
+                    "containsCode": False,
+                    "codeBlockIndex": -1,
+                    "codeBlocks": [],
+                    "turnId": turn_id,
+                }
                 if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1
+                    current_entry["containsCode"] = True
                     reply = inject_code_block_commands(reply, code_block_index)
-                current_entry = {"kind": kind, "messages": [reply], "codeBlocks": [], "turnId": turn_id}
 
         if current_entry:
             # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/187

@@ -32,8 +32,20 @@
   {%- endif -%}
 </span>
 
+{%  if section.contains_code %}
+{{ section.message | replace(
+    "CODE_BLOCK_COMMANDS_" ~ section.code_block_index|string,
+    "<a class='icon-link' href='" ~ section.copy_command_url ~ "'>" ~
+    "<img class='icon icon-link' src='" ~ asset_url('copy.png') ~ "' /></a>" ~
+    "<span></span>" ~
+    " <a class='icon-link' href='" ~ section.insert_command_url ~ "'>" ~
+    "<img class='icon icon-link' src='" ~ asset_url('insert.png') ~ "' /></a>\n\n"
+) | safe }}
+{% else %}
+
 {{ section.message }}
 
+{% endif %}
 ---
 
 {% endfor %}
