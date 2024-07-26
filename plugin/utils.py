@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import os
+import re
 import textwrap
 import threading
 import urllib.request
@@ -218,6 +219,29 @@ def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
             "version": view.change_count(),
         }
     }
+
+
+def preprocess_message_for_html(message: str) -> str:
+    new_lines = []
+    inside_code_block = False
+    inline_code_pattern = re.compile(r"`([^`]*)`")
+    for line in message.split("\n"):
+        if line.strip().startswith("```"):
+            inside_code_block = not inside_code_block
+            new_lines.append(line)
+            continue
+        if not inside_code_block:
+            escaped_line = ""
+            start = 0
+            for match in inline_code_pattern.finditer(line):
+                escaped_line += re.sub(r"<(.*?)>", r"&lt;\1&gt;", line[start : match.start()])
+                escaped_line += match.group(0)
+                start = match.end()
+            escaped_line += re.sub(r"<(.*?)>", r"&lt;\1&gt;", line[start:])
+            new_lines.append(escaped_line)
+        else:
+            new_lines.append(line)
+    return "\n".join(new_lines)
 
 
 def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadCompletion]) -> None:

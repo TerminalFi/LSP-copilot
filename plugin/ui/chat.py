@@ -9,7 +9,14 @@ from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
 from ..helpers import GithubInfo
 from ..template import asset_url, load_resource_template
 from ..types import CopilotPayloadConversationEntry, CopilotPayloadConversationEntryTransformed, StLayout
-from ..utils import find_view_by_id, find_window_by_id, get_copilot_setting, remove_prefix, set_copilot_setting
+from ..utils import (
+    find_view_by_id,
+    find_window_by_id,
+    get_copilot_setting,
+    preprocess_message_for_html,
+    remove_prefix,
+    set_copilot_setting,
+)
 
 
 class WindowConversationManager:
@@ -174,8 +181,8 @@ class _ConversationEntry:
         return load_resource_template("chat_panel.md.jinja", keep_trailing_newline=True).render(
             is_waiting=self.wcm.is_waiting,
             avatar_img_src=GithubInfo.get_avatar_img_src(),
-            suggested_title=self.wcm.suggested_title,
-            follow_up=self.wcm.follow_up,
+            suggested_title=preprocess_message_for_html(self.wcm.suggested_title),
+            follow_up=preprocess_message_for_html(self.wcm.follow_up),
             follow_up_url=sublime.command_url(
                 "copilot_conversation_chat_shim",
                 {"window_id": self.wcm.window.id(), "message": self.wcm.follow_up},
@@ -214,9 +221,7 @@ class _ConversationEntry:
         )
 
     def _synthesize(self) -> list[CopilotPayloadConversationEntryTransformed]:
-        def process_code_block(reply: str, code_block_index: int) -> str:
-            code_block_start = reply.index("```")
-            code_block_lines = reply[code_block_start:].splitlines(True)
+        def inject_code_block_commands(reply: str, code_block_index: int) -> str:
             copy_command_url = sublime.command_url(
                 "copilot_conversation_copy_code",
                 {"window_id": self.wcm.window.id(), "code_block_index": code_block_index},
@@ -226,15 +231,13 @@ class _ConversationEntry:
                 {"window_id": self.wcm.window.id(), "code_block_index": code_block_index},
             )
             return (
-                # @todo is it possible to build HTML purely inside the jinja template file?
-                reply[:code_block_start]
-                + f"<a class='icon-link' href='{copy_command_url}'>"
+                f"<a class='icon-link' href='{copy_command_url}'>"
                 + f"<img class='icon icon-link' src='{asset_url('copy.png')}' /></a>"
                 + "<span></span>"
                 + f" <a class='icon-link' href='{insert_command_url}'>"
                 + f"<img class='icon icon-link' src='{asset_url('insert.png')}' /></a>"
                 + "\n\n"
-                + code_block_lines[0]
+                + reply
             )
 
         transformed_conversation: list[CopilotPayloadConversationEntryTransformed] = []
@@ -243,16 +246,16 @@ class _ConversationEntry:
         code_block_index = -1
 
         for entry in self.wcm.conversation:
-            kind = entry["kind"]
-            reply = entry["reply"]
-            turn_id = entry["turnId"]
+            kind: str = entry["kind"]
+            reply: str = entry["reply"]
+            turn_id: str = entry["turnId"]
 
             if current_entry and current_entry["kind"] == kind:
                 if reply.startswith("```"):
                     is_inside_code_block = not is_inside_code_block
                     if is_inside_code_block:
                         code_block_index += 1
-                        reply = process_code_block(reply, code_block_index)
+                        reply = inject_code_block_commands(reply, code_block_index)
                     else:
                         self.wcm.insert_code_block_index(code_block_index, "".join(current_entry["codeBlocks"]))
                         current_entry["codeBlocks"] = []
@@ -265,7 +268,7 @@ class _ConversationEntry:
                 if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1
-                    reply = process_code_block(reply, code_block_index)
+                    reply = inject_code_block_commands(reply, code_block_index)
                 current_entry = {"kind": kind, "messages": [reply], "codeBlocks": [], "turnId": turn_id}
 
         if current_entry:

@@ -64,6 +64,7 @@ from .utils import (
     message_dialog,
     ok_cancel_dialog,
     prepare_completion_request,
+    preprocess_message_for_html,
     status_message,
 )
 
@@ -247,7 +248,7 @@ class CopilotConversationChatCommand(LspTextCommand):
             wcm.append_conversation_entry({
                 "kind": plugin.get_account_status().user or "user",
                 "conversationId": wcm.conversation_id,
-                "reply": msg.split()[0] if is_template else msg,
+                "reply": msg.split()[0] if is_template else preprocess_message_for_html(msg),
                 "turnId": str(uuid.uuid4()),
                 "annotations": [],
                 "hideText": False,
@@ -259,8 +260,7 @@ class CopilotConversationChatCommand(LspTextCommand):
                     "turns": [{"request": msg}],
                     "capabilities": {
                         "allSkills": True,
-                        "skills": [
-                        ],
+                        "skills": [],
                     },
                     "workDoneToken": f"copilot_chat://{window.id()}",
                     "computeSuggestions": True,
@@ -297,7 +297,7 @@ class CopilotConversationChatCommand(LspTextCommand):
         wcm.append_conversation_entry({
             "kind": plugin.get_account_status().user or "user",
             "conversationId": wcm.conversation_id,
-            "reply": msg.split()[0] if is_template else msg,
+            "reply": msg.split()[0] if is_template else preprocess_message_for_html(msg),
             "turnId": str(uuid.uuid4()),
             "annotations": [],
             "hideText": False,
