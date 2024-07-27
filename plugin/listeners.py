@@ -66,13 +66,13 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_activated_async(self) -> None:
         _, session = CopilotPlugin.plugin_session(self.view)
 
-#        if (session and CopilotPlugin.should_ignore(self.view)) or (
-#            not session and not CopilotPlugin.should_ignore(self.view)
-#        ):
-            # Hacky way to trigger adding and removing views from session
-#           prev_setting = self.view.settings().get("lsp_uri")
-#           self.view.settings().set("lsp_uri", "")
-#           sublime.set_timeout_async(lambda: self.view.settings().set("lsp_uri", prev_setting), 5)
+        #        if (session and CopilotPlugin.should_ignore(self.view)) or (
+        #            not session and not CopilotPlugin.should_ignore(self.view)
+        #        ):
+        # Hacky way to trigger adding and removing views from session
+        #           prev_setting = self.view.settings().get("lsp_uri")
+        #           self.view.settings().set("lsp_uri", "")
+        #           sublime.set_timeout_async(lambda: self.view.settings().set("lsp_uri", prev_setting), 5)
 
         if session and not CopilotPlugin.should_ignore(self.view):
             if (window := self.view.window()) and self.view.name() != "Copilot Chat":
