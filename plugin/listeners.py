@@ -14,12 +14,7 @@ from .client import CopilotPlugin
 from .decorators import _must_be_active_view
 from .helpers import CopilotIgnore
 from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
-from .utils import (
-    all_windows,
-    get_copilot_view_setting,
-    get_session_setting,
-    set_copilot_view_setting,
-)
+from .utils import all_windows, get_copilot_view_setting, get_session_setting, set_copilot_view_setting
 
 
 class ViewEventListener(sublime_plugin.ViewEventListener):
@@ -155,11 +150,13 @@ class EventListener(sublime_plugin.EventListener):
         sheet = window.active_sheet()
 
         # if the user tries to close panel completion via Ctrl+W
-        if isinstance(sheet, sublime.HtmlSheet) and command_name in {"close", "close_file"}:
-            vcm = ViewPanelCompletionManager.from_sheet_id(sheet.id())
-            if vcm:
-                vcm.close()
-                return "noop", None
+        if (
+            isinstance(sheet, sublime.HtmlSheet)
+            and command_name in {"close", "close_file"}
+            and (vcm := ViewPanelCompletionManager.from_sheet_id(sheet.id()))
+        ):
+            vcm.close()
+            return "noop", None
 
         return None
 

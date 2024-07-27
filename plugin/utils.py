@@ -222,11 +222,11 @@ def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
 
 
 def preprocess_message_for_html(message: str) -> str:
-    new_lines = []
+    new_lines: list[str] = []
     inside_code_block = False
     inline_code_pattern = re.compile(r"`([^`]*)`")
     for line in message.split("\n"):
-        if line.strip().startswith("```"):
+        if line.lstrip().startswith("```"):
             inside_code_block = not inside_code_block
             new_lines.append(line)
             continue

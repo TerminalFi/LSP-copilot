@@ -159,7 +159,6 @@ class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):
     kind: str
     turnId: str
     messages: list[str]
-    containsCode: bool
     codeBlocks: list[str]
     codeBlockIndices: list[int]
 

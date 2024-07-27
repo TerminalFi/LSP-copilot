@@ -141,11 +141,15 @@ class WindowConversationManager:
             view.close()
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
+        # @todo why we don't just `self.conversation.append(entry)`?
+        # If someone remember why, please just replace this comment with the reason.
         conversation_history = self.conversation
         conversation_history.append(entry)
         self.conversation = conversation_history
 
     def insert_code_block_index(self, index: int, code_block: str) -> None:
+        # @todo why we don't just `self.code_block_index[str(index)] = code_block`?
+        # If someone remember why, please just replace this comment with the reason.
         code_block_index = self.code_block_index
         code_block_index[str(index)] = code_block
         self.code_block_index = code_block_index
@@ -200,7 +204,6 @@ class _ConversationEntry:
                 {
                     "kind": entry["kind"],
                     "message": "".join(entry["messages"]),
-                    "contains_code": entry["containsCode"],
                     "code_block_indices": entry["codeBlockIndices"],
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
@@ -225,7 +228,7 @@ class _ConversationEntry:
 
     def _synthesize(self) -> list[CopilotPayloadConversationEntryTransformed]:
         def inject_code_block_commands(reply: str, code_block_index: int) -> str:
-            return f"CODE_BLOCK_COMMANDS_{code_block_index}\n\n" + reply
+            return f"CODE_BLOCK_COMMANDS_{code_block_index}\n\n{reply}"
 
         transformed_conversation: list[CopilotPayloadConversationEntryTransformed] = []
         current_entry: CopilotPayloadConversationEntryTransformed | None = None
@@ -233,16 +236,15 @@ class _ConversationEntry:
         code_block_index = -1
 
         for entry in self.wcm.conversation:
-            kind: str = entry["kind"]
-            reply: str = entry["reply"]
-            turn_id: str = entry["turnId"]
+            kind = entry["kind"]
+            reply = entry["reply"]
+            turn_id = entry["turnId"]
 
             if current_entry and current_entry["kind"] == kind:
                 if reply.startswith("```"):
                     is_inside_code_block = not is_inside_code_block
                     if is_inside_code_block:
                         code_block_index += 1
-                        current_entry["containsCode"] = is_inside_code_block
                         current_entry["codeBlockIndices"].append(code_block_index)
                         reply = inject_code_block_commands(reply, code_block_index)
                     else:
@@ -257,7 +259,6 @@ class _ConversationEntry:
                 current_entry = {
                     "kind": kind,
                     "messages": [reply],
-                    "containsCode": False,
                     "codeBlockIndices": [],
                     "codeBlocks": [],
                     "turnId": turn_id,
@@ -265,7 +266,6 @@ class _ConversationEntry:
                 if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1
-                    current_entry["containsCode"] = is_inside_code_block
                     current_entry["codeBlockIndices"].append(code_block_index)
                     reply = inject_code_block_commands(reply, code_block_index)
                     current_entry["messages"] = [reply]
