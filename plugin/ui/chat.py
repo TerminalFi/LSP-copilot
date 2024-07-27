@@ -6,8 +6,8 @@ import mdpopups
 import sublime
 
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
-from ..helpers import GithubInfo
-from ..template import asset_url, load_resource_template
+from ..helpers import GithubInfo, preprocess_message_for_html
+from ..template import load_resource_template
 from ..types import CopilotPayloadConversationEntry, CopilotPayloadConversationEntryTransformed, StLayout
 from ..utils import find_view_by_id, find_window_by_id, get_copilot_setting, remove_prefix, set_copilot_setting
 
@@ -29,13 +29,11 @@ class WindowConversationManager:
     @property
     def last_active_view_id(self) -> int:
         """The ID of the last active view that is not the conversation panel"""
-        return get_copilot_setting(
-            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", -1
-        )
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "last_active_view_id", -1)
 
     @last_active_view_id.setter
     def last_active_view_id(self, value: int) -> None:
-        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_last_active_view_id", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "last_active_view_id", value)
 
     @property
     def original_layout(self) -> StLayout | None:
@@ -136,11 +134,15 @@ class WindowConversationManager:
             view.close()
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
+        # @todo why we don't just `self.conversation.append(entry)`?
+        # If someone remember why, please just replace this comment with the reason.
         conversation_history = self.conversation
         conversation_history.append(entry)
         self.conversation = conversation_history
 
     def insert_code_block_index(self, index: int, code_block: str) -> None:
+        # @todo why we don't just `self.code_block_index[str(index)] = code_block`?
+        # If someone remember why, please just replace this comment with the reason.
         code_block_index = self.code_block_index
         code_block_index[str(index)] = code_block
         self.code_block_index = code_block_index
@@ -168,36 +170,39 @@ class WindowConversationManager:
 class _ConversationEntry:
     def __init__(self, window: sublime.Window) -> None:
         self.window = window
-        self.conversation_manager = WindowConversationManager(window)
+        self.wcm = WindowConversationManager(window)
 
     @property
     def completion_content(self) -> str:
         conversations_entries = self._synthesize()
         return load_resource_template("chat_panel.md.jinja", keep_trailing_newline=True).render(
+            window_id=self.wcm.window.id(),
+            is_waiting=self.wcm.is_waiting,
             avatar_img_src=GithubInfo.get_avatar_img_src(),
-            suggested_title=self.conversation_manager.suggested_title,
-            follow_up=self.conversation_manager.follow_up,
+            suggested_title=preprocess_message_for_html(self.wcm.suggested_title),
+            follow_up=preprocess_message_for_html(self.wcm.follow_up),
             follow_up_url=sublime.command_url(
                 "copilot_conversation_chat_shim",
-                {"window_id": self.conversation_manager.window.id(), "message": self.conversation_manager.follow_up},
+                {"window_id": self.wcm.window.id(), "message": self.wcm.follow_up},
             ),
             close_url=sublime.command_url(
                 "copilot_conversation_close",
-                {"window_id": self.conversation_manager.window.id()},
+                {"window_id": self.wcm.window.id()},
             ),
             delete_url=sublime.command_url(
                 "copilot_conversation_destroy_shim",
-                {"conversation_id": self.conversation_manager.conversation_id},
+                {"conversation_id": self.wcm.conversation_id},
             ),
             sections=[
                 {
                     "kind": entry["kind"],
                     "message": "".join(entry["messages"]),
+                    "code_block_indices": entry["codeBlockIndices"],
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
                         {
-                            "conversation_id": self.conversation_manager.conversation_id,
-                            "window_id": self.conversation_manager.window.id(),
+                            "conversation_id": self.wcm.conversation_id,
+                            "window_id": self.wcm.window.id(),
                             "turn_id": entry["turnId"],
                         },
                     ),
@@ -207,7 +212,7 @@ class _ConversationEntry:
                     ),
                     "thumbs_down_url": sublime.command_url(
                         "copilot_conversation_rating_shim",
-                        {"turn_id": entry["turnId"], "rating": 0},
+                        {"turn_id": entry["turnId"], "rating": -1},
                     ),
                 }
                 for entry in conversations_entries
@@ -215,62 +220,48 @@ class _ConversationEntry:
         )
 
     def _synthesize(self) -> list[CopilotPayloadConversationEntryTransformed]:
-        def process_code_block(reply: str, code_block_index: int) -> str:
-            code_block_start = reply.index("```")
-            code_block_lines = reply[code_block_start:].splitlines(True)
-            copy_command_url = sublime.command_url(
-                "copilot_conversation_copy_code",
-                {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
-            )
-            insert_command_url = sublime.command_url(
-                "copilot_conversation_insert_code",
-                {"window_id": self.conversation_manager.window.id(), "code_block_index": code_block_index},
-            )
-            return (
-                # @todo is it possible to build HTML purely inside the jinja template file?
-                reply[:code_block_start]
-                + f"<a class='icon-link' href='{copy_command_url}'>"
-                + f"<img class='icon icon-link' src='{asset_url('copy.png')}' /></a>"
-                + "<span></span>"
-                + f" <a class='icon-link' href='{insert_command_url}'>"
-                + f"<img class='icon icon-link' src='{asset_url('insert.png')}' /></a>"
-                + "\n\n"
-                + code_block_lines[0]
-            )
+        def inject_code_block_commands(reply: str, code_block_index: int) -> str:
+            return f"CODE_BLOCK_COMMANDS_{code_block_index}\n\n{reply}"
 
         transformed_conversation: list[CopilotPayloadConversationEntryTransformed] = []
         current_entry: CopilotPayloadConversationEntryTransformed | None = None
         is_inside_code_block = False
         code_block_index = -1
 
-        for entry in self.conversation_manager.conversation:
+        for entry in self.wcm.conversation:
             kind = entry["kind"]
             reply = entry["reply"]
             turn_id = entry["turnId"]
 
             if current_entry and current_entry["kind"] == kind:
-                if "```" in reply and not is_inside_code_block:
-                    is_inside_code_block = True
-                    code_block_index += 1
-                    reply = process_code_block(reply, code_block_index)
-                elif is_inside_code_block:
-                    if "```" in reply:
-                        is_inside_code_block = False
-                        self.conversation_manager.insert_code_block_index(
-                            code_block_index, "".join(current_entry["codeBlocks"])
-                        )
-                        current_entry["codeBlocks"] = []
+                if reply.startswith("```"):
+                    is_inside_code_block = not is_inside_code_block
+                    if is_inside_code_block:
+                        code_block_index += 1
+                        current_entry["codeBlockIndices"].append(code_block_index)
+                        reply = inject_code_block_commands(reply, code_block_index)
                     else:
-                        current_entry["codeBlocks"].append(reply)
+                        self.wcm.insert_code_block_index(code_block_index, "".join(current_entry["codeBlocks"]))
+                        current_entry["codeBlocks"] = []
+                elif is_inside_code_block:
+                    current_entry["codeBlocks"].append(reply)
                 current_entry["messages"].append(reply)
             else:
                 if current_entry:
                     transformed_conversation.append(current_entry)
-                if "```" in reply and kind == "report":
+                current_entry = {
+                    "kind": kind,
+                    "messages": [reply],
+                    "codeBlockIndices": [],
+                    "codeBlocks": [],
+                    "turnId": turn_id,
+                }
+                if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1
-                    reply = process_code_block(reply, code_block_index)
-                current_entry = {"kind": kind, "messages": [reply], "codeBlocks": [], "turnId": turn_id}
+                    current_entry["codeBlockIndices"].append(code_block_index)
+                    reply = inject_code_block_commands(reply, code_block_index)
+                    current_entry["messages"] = [reply]
 
         if current_entry:
             # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/187
@@ -290,26 +281,26 @@ class _ConversationEntry:
         self.window.focus_view(self.window.active_view())  # type: ignore
 
     def update(self) -> None:
-        if not (sheet := self.window.transient_sheet_in_group(self.conversation_manager.group_id)):
+        if not (sheet := self.window.transient_sheet_in_group(self.wcm.group_id)):
             return
 
         mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True, wrapper_class="wrapper")
 
     def close(self) -> None:
-        if not (sheet := self.window.transient_sheet_in_group(self.conversation_manager.group_id)):
+        if not (sheet := self.window.transient_sheet_in_group(self.wcm.group_id)):
             return
 
         sheet.close()
-        self.conversation_manager.is_visible = False
-        if self.conversation_manager.original_layout:
-            self.window.set_layout(self.conversation_manager.original_layout)  # type: ignore
-            self.conversation_manager.original_layout = None
+        self.wcm.is_visible = False
+        if self.wcm.original_layout:
+            self.window.set_layout(self.wcm.original_layout)  # type: ignore
+            self.wcm.original_layout = None
 
         if view := self.window.active_view():
             self.window.focus_view(view)
 
     def _open_in_group(self, window: sublime.Window, group_id: int) -> None:
-        self.conversation_manager.group_id = group_id
+        self.wcm.group_id = group_id
 
         window.focus_group(group_id)
         sheet = mdpopups.new_html_sheet(
@@ -320,10 +311,10 @@ class _ConversationEntry:
             flags=sublime.TRANSIENT,
             wrapper_class="wrapper",
         )
-        self.conversation_manager.view_id = sheet.id()
+        self.wcm.view_id = sheet.id()
 
     def _open_in_side_by_side(self, window: sublime.Window) -> None:
-        self.conversation_manager.original_layout = window.layout()  # type: ignore
+        self.wcm.original_layout = window.layout()  # type: ignore
         window.set_layout({
             "cols": [0.0, 0.5, 1.0],
             "rows": [0.0, 1.0],

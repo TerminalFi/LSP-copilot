@@ -17,6 +17,7 @@ from .commands import (
     CopilotConversationDestroyCommand,
     CopilotConversationDestroyShimCommand,
     CopilotConversationInsertCodeCommand,
+    CopilotConversationInsertCodeShimCommand,
     CopilotConversationRatingCommand,
     CopilotConversationRatingShimCommand,
     CopilotConversationTemplatesCommand,
@@ -68,6 +69,7 @@ __all__ = (
     "CopilotConversationRatingShimCommand",
     "CopilotConversationRatingCommand",
     "CopilotConversationCopyCodeCommand",
+    "CopilotConversationInsertCodeShimCommand",
     "CopilotConversationInsertCodeCommand",
     # ST: helper commands
     "CopilotPrepareAndEditSettingsCommand",

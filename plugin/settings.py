@@ -18,9 +18,9 @@ def get_plugin_settings() -> sublime.Settings:
     return sublime.load_settings(f"{PACKAGE_NAME}.sublime-settings")
 
 
-def get_plugin_setting(key: str, default: Any) -> Any:
+def get_plugin_setting(key: str, default: Any = None) -> Any:
     return get_plugin_settings().get(key, default)
 
 
-def get_plugin_setting_dotted(dotted: str, default: Any) -> Any:
+def get_plugin_setting_dotted(dotted: str, default: Any = None) -> Any:
     return _compile_jmespath_expression(dotted).search(get_plugin_settings()) or default

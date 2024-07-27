@@ -8,17 +8,15 @@ import urllib.request
 from collections.abc import Callable, Generator, Iterable
 from functools import wraps
 from itertools import takewhile
-from operator import itemgetter
 from typing import Any, TypeVar, Union, cast
 
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.url import filename_to_uri
-from more_itertools import duplicates_everseen, first_true
+from more_itertools import first_true
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
-from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
+from .types import T_Callable
 
 _T = TypeVar("_T")
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
@@ -194,60 +192,6 @@ def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
     return sublime.ok_cancel_dialog(f"[{PACKAGE_NAME}] {msg_.format(*args, **kwargs)}")
 
 
-def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
-    if not view:
-        return None
-    if len(sel := view.sel()) != 1:
-        return None
-
-    file_path = view.file_name() or f"buffer:{view.buffer().id()}"
-    row, col = view.rowcol(sel[0].begin())
-    return {
-        "doc": {
-            "source": view.substr(sublime.Region(0, view.size())),
-            "tabSize": view.settings().get("tab_size"),
-            "indentSize": 1,  # there is no such concept in ST
-            "insertSpaces": view.settings().get("translate_tabs_to_spaces"),
-            "path": file_path,
-            "uri": file_path if file_path.startswith("buffer:") else file_path and filename_to_uri(file_path),
-            "relativePath": get_project_relative_path(file_path),
-            "languageId": get_view_language_id(view),
-            "position": {"line": row, "character": col},
-            # Buffer Version. Generally this is handled by LSP, but we need to handle it here
-            # Will need to test getting the version from LSP
-            "version": view.change_count(),
-        }
-    }
-
-
-def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadCompletion]) -> None:
-    """Preprocess the `completions` from "getCompletions" request."""
-    # in-place de-duplication
-    duplicate_indexes = list(
-        map(
-            itemgetter(0),  # the index from enumerate
-            duplicates_everseen(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
-        )
-    )
-    # delete from the end to avoid changing the index during iteration
-    for index in reversed(duplicate_indexes):
-        del completions[index]
-
-    # inject extra information for convenience
-    for completion in completions:
-        completion["point"] = view.text_point(
-            completion["position"]["line"],
-            completion["position"]["character"],
-        )
-        _generate_completion_region(view, completion)
-
-
-def preprocess_panel_completions(view: sublime.View, completions: list[CopilotPayloadPanelSolution]) -> None:
-    """Preprocess the `completions` from "getCompletionsCycling" request."""
-    for completion in completions:
-        _generate_completion_region(view, completion)
-
-
 def reformat(text: str) -> str:
     """Remove common indentations and then trim."""
     return textwrap.dedent(text).strip()
@@ -282,27 +226,25 @@ def status_message(msg_: str, *args, icon_: str | None = "✈", console_: bool =
         print(full_msg)
 
 
-def _generate_completion_region(
-    view: sublime.View,
-    completion: CopilotPayloadCompletion | CopilotPayloadPanelSolution,
-) -> None:
-    completion["region"] = (
-        view.text_point(
-            completion["range"]["start"]["line"],
-            completion["range"]["start"]["character"],
-        ),
-        view.text_point(
-            completion["range"]["end"]["line"],
-            completion["range"]["end"]["character"],
-        ),
-    )
-
-
 def find_index_by_key_value(items, key, value):
     return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
 
 
 def simple_urlopen(url: str, *, chunk_size: int = 512 * 1024) -> bytes:
+    """
+    Opens a URL and reads the data in chunks, optionally decompressing gzip-encoded content.
+
+    This function opens a connection to the specified URL and reads the response data in chunks
+    of a specified size. If the response is gzip-encoded, it decompresses the data before returning it.
+
+    Args:
+        url (str): The URL to open.
+        chunk_size (int, optional): The size of each chunk to read. Defaults to 512KB.
+
+    Returns:
+        bytes: The raw bytes of the data read from the URL. If the content was gzip-encoded,
+               it is decompressed before being returned.
+    """
     with urllib.request.urlopen(url) as resp:
         data = b""
         while chunk := resp.read(chunk_size):

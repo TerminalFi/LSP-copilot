@@ -160,6 +160,7 @@ class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):
     turnId: str
     messages: list[str]
     codeBlocks: list[str]
+    codeBlockIndices: list[int]
 
 
 class CopilotPayloadConversationTemplate(TypedDict, total=True):
@@ -181,3 +182,6 @@ class CopilotPayloadConversationContext(TypedDict, total=True):
     turnId: str
     """E.g., `"09ac7601-6c28-4617-b3e4-13f5ff8502b7"`."""
     skillId: Literal["current-editor", "project-labels", "recent-files"]  # not the complet list yet
+
+
+CopilotConversationTemplates = {"/fix", "/tests", "/doc", "/explain", "/simplify"}

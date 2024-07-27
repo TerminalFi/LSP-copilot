@@ -7,7 +7,7 @@
   <a class="icon-link" title="Delete Conversation" href='{{ delete_url }}'><img class="icon" src="{{ asset_url('trash.png') }}"></a>
   <a class="close" title="Close Conversation" href='{{ close_url }}'><img class="icon" src="{{ asset_url('close.png') }}"></a>
   <h3 class="suggested-title">
-    Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
+    {% if is_waiting %} ⌛ {% endif %}Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
   </h3>
 </div>
 
@@ -32,7 +32,22 @@
   {%- endif -%}
 </span>
 
-{{ section.message }}
+{% set code_block_replacements = [] %}
+{% for index in section.code_block_indices %}
+  {% do code_block_replacements.append(
+    (
+      "CODE_BLOCK_COMMANDS_" ~ index|string,
+      (
+        "<a class='icon-link' href='" ~ command_url('copilot_conversation_copy_code', window_id, index) ~ "'>" ~
+        "<img class='icon icon-link' src='" ~ asset_url('copy.png') ~ "' /></a>" ~
+        "<span></span>" ~
+        " <a class='icon-link' href='" ~ command_url('copilot_conversation_insert_code_shim', window_id, index) ~ "'>" ~
+        "<img class='icon icon-link' src='" ~ asset_url('insert.png') ~ "' /></a>\n\n"
+      ) | safe,
+    )
+) %}
+{% endfor %}
+{{ section.message | multi_replace(code_block_replacements) | safe }}
 
 ---
 
