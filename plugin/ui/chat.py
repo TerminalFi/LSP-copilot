@@ -212,7 +212,7 @@ class _ConversationEntry:
                     ),
                     "thumbs_down_url": sublime.command_url(
                         "copilot_conversation_rating_shim",
-                        {"turn_id": entry["turnId"], "rating": 0},
+                        {"turn_id": entry["turnId"], "rating": -1},
                     ),
                 }
                 for entry in conversations_entries
