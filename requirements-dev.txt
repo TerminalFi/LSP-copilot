@@ -14,7 +14,7 @@ mypy==1.11.0
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via mypy
-ruff==0.5.3
+ruff==0.5.5
     # via -r requirements-dev.in
 types-jmespath==1.0.2.20240106
     # via -r requirements-dev.in
