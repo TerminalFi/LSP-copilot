@@ -2,18 +2,23 @@ from __future__ import annotations
 
 import itertools
 import os
+import re
 import threading
 import time
 from collections.abc import Callable
+from operator import itemgetter
 from pathlib import Path
 from typing import Any
 
 import sublime
+from LSP.plugin.core.url import filename_to_uri
+from more_itertools import duplicates_everseen
 from wcmatch import glob
 
 from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
 from .log import log_error
 from .settings import get_plugin_setting_dotted
+from .types import CopilotConversationTemplates, CopilotPayloadCompletion, CopilotPayloadPanelSolution
 from .utils import (
     all_views,
     all_windows,
@@ -21,6 +26,8 @@ from .utils import (
     erase_copilot_setting,
     erase_copilot_view_setting,
     get_copilot_setting,
+    get_project_relative_path,
+    get_view_language_id,
     set_copilot_setting,
     simple_urlopen,
 )
@@ -152,6 +159,114 @@ class CopilotIgnore:
         if self.patterns and (file := view.file_name()):
             return self.matches_any_pattern(file)
         return False
+
+
+def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
+    if not view:
+        return None
+    if len(sel := view.sel()) != 1:
+        return None
+
+    file_path = view.file_name() or f"buffer:{view.buffer().id()}"
+    row, col = view.rowcol(sel[0].begin())
+    return {
+        "doc": {
+            "source": view.substr(sublime.Region(0, view.size())),
+            "tabSize": view.settings().get("tab_size"),
+            "indentSize": 1,  # there is no such concept in ST
+            "insertSpaces": view.settings().get("translate_tabs_to_spaces"),
+            "path": file_path,
+            "uri": file_path if file_path.startswith("buffer:") else file_path and filename_to_uri(file_path),
+            "relativePath": get_project_relative_path(file_path),
+            "languageId": get_view_language_id(view),
+            "position": {"line": row, "character": col},
+            # Buffer Version. Generally this is handled by LSP, but we need to handle it here
+            # Will need to test getting the version from LSP
+            "version": view.change_count(),
+        }
+    }
+
+
+def preprocess_message_for_html(message: str) -> str:
+    new_lines: list[str] = []
+    inside_code_block = False
+    inline_code_pattern = re.compile(r"`([^`]*)`")
+    for line in message.split("\n"):
+        if line.lstrip().startswith("```"):
+            inside_code_block = not inside_code_block
+            new_lines.append(line)
+            continue
+        if not inside_code_block:
+            escaped_line = ""
+            start = 0
+            for match in inline_code_pattern.finditer(line):
+                escaped_line += re.sub(r"<(.*?)>", r"&lt;\1&gt;", line[start : match.start()])
+                escaped_line += match.group(0)
+                start = match.end()
+            escaped_line += re.sub(r"<(.*?)>", r"&lt;\1&gt;", line[start:])
+            new_lines.append(escaped_line)
+        else:
+            new_lines.append(line)
+    return "\n".join(new_lines)
+
+
+def preprocess_chat_message(view: sublime.View, message: str) -> tuple[bool, str]:
+    from .template import load_string_template
+
+    is_template = message in CopilotConversationTemplates
+    if is_template:
+        message += " {{ sel[0] }}"
+
+    template = load_string_template(message)
+    lang = get_view_language_id(view, view.sel()[0].begin())
+    sel = [f"\n```{lang}\n{view.substr(region)}\n```\n" for region in view.sel()]
+
+    message = template.render({"sel": sel})
+    return is_template, message
+
+
+def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadCompletion]) -> None:
+    """Preprocess the `completions` from "getCompletions" request."""
+    # in-place de-duplication
+    duplicate_indexes = list(
+        map(
+            itemgetter(0),  # the index from enumerate
+            duplicates_everseen(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
+        )
+    )
+    # delete from the end to avoid changing the index during iteration
+    for index in reversed(duplicate_indexes):
+        del completions[index]
+
+    # inject extra information for convenience
+    for completion in completions:
+        completion["point"] = view.text_point(
+            completion["position"]["line"],
+            completion["position"]["character"],
+        )
+        _generate_completion_region(view, completion)
+
+
+def preprocess_panel_completions(view: sublime.View, completions: list[CopilotPayloadPanelSolution]) -> None:
+    """Preprocess the `completions` from "getCompletionsCycling" request."""
+    for completion in completions:
+        _generate_completion_region(view, completion)
+
+
+def _generate_completion_region(
+    view: sublime.View,
+    completion: CopilotPayloadCompletion | CopilotPayloadPanelSolution,
+) -> None:
+    completion["region"] = (
+        view.text_point(
+            completion["range"]["start"]["line"],
+            completion["range"]["start"]["character"],
+        ),
+        view.text_point(
+            completion["range"]["end"]["line"],
+            completion["range"]["end"]["character"],
+        ),
+    )
 
 
 def is_debug_mode() -> bool:

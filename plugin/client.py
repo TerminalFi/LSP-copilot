@@ -29,7 +29,14 @@ from .constants import (
     REQ_GET_VERSION,
     REQ_SET_EDITOR_INFO,
 )
-from .helpers import ActivityIndicator, CopilotIgnore, GithubInfo
+from .helpers import (
+    ActivityIndicator,
+    CopilotIgnore,
+    GithubInfo,
+    prepare_completion_request,
+    preprocess_completions,
+    preprocess_panel_completions,
+)
 from .log import log_warning
 from .template import load_string_template
 from .types import (
@@ -51,9 +58,6 @@ from .utils import (
     all_windows,
     debounce,
     get_session_setting,
-    prepare_completion_request,
-    preprocess_completions,
-    preprocess_panel_completions,
     status_message,
 )
 

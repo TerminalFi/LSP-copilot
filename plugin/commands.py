@@ -38,10 +38,13 @@ from .constants import (
     REQ_SIGN_OUT,
 )
 from .decorators import _must_be_active_view
-from .helpers import GithubInfo
-from .template import load_string_template
+from .helpers import (
+    GithubInfo,
+    prepare_completion_request,
+    preprocess_chat_message,
+    preprocess_message_for_html,
+)
 from .types import (
-    CopilotConversationTemplates,
     CopilotPayloadConversationTemplate,
     CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,
@@ -60,11 +63,8 @@ from .utils import (
     find_view_by_id,
     find_window_by_id,
     get_session_setting,
-    get_view_language_id,
     message_dialog,
     ok_cancel_dialog,
-    prepare_completion_request,
-    preprocess_message_for_html,
     status_message,
 )
 
@@ -244,7 +244,7 @@ class CopilotConversationChatCommand(LspTextCommand):
             return
 
         is_template, msg = preprocess_chat_message(view, initial_message)
-        if msg != "":
+        if msg:
             wcm.append_conversation_entry({
                 "kind": plugin.get_account_status().user or "user",
                 "conversationId": wcm.conversation_id,
@@ -767,20 +767,3 @@ class CopilotSignOutCommand(CopilotTextCommand):
             message_dialog("Sign out OK. Bye!")
 
         GithubInfo.clear_avatar()
-
-
-# This is not in utils.py because it caused a circular import issue.
-# Still trying to figure best path forward
-
-
-def preprocess_chat_message(view: sublime.View, message: str) -> tuple[bool, str]:
-    is_template = message in CopilotConversationTemplates
-    if is_template:
-        message += " {{ sel[0] }}"
-
-    template = load_string_template(message)
-    lang = get_view_language_id(view, view.sel()[0].begin())
-    sel = [f"\n```{lang}\n{view.substr(region)}\n```\n" for region in view.sel()]
-
-    message = template.render({"sel": sel})
-    return is_template, message

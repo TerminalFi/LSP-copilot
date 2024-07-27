@@ -6,17 +6,10 @@ import mdpopups
 import sublime
 
 from ..constants import COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX
-from ..helpers import GithubInfo
+from ..helpers import GithubInfo, preprocess_message_for_html
 from ..template import load_resource_template
 from ..types import CopilotPayloadConversationEntry, CopilotPayloadConversationEntryTransformed, StLayout
-from ..utils import (
-    find_view_by_id,
-    find_window_by_id,
-    get_copilot_setting,
-    preprocess_message_for_html,
-    remove_prefix,
-    set_copilot_setting,
-)
+from ..utils import find_view_by_id, find_window_by_id, get_copilot_setting, remove_prefix, set_copilot_setting
 
 
 class WindowConversationManager:
