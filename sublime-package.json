@@ -43,6 +43,30 @@
                       "markdownDescription": "Enables `debug` mode fo the LSP-copilot. Enabling all commands regardless of status requirements.",
                       "type": "boolean"
                     },
+                    "authProvider": {
+                      "default": "github",
+                      "markdownDescription": "The GitHub identity to use for Copilot",
+                      "type": "string",
+                      "enumDescriptions": [
+                        "GitHub.com",
+                        "GitHub Enterprise"
+                      ],
+                      "enum": [
+                        "github",
+                        "github-enterprise"
+                      ],
+                    },
+                    "github-enterprise": {
+                      "type": "object",
+                      "markdownDescription": "The configuration for Github Enterprise.",
+                      "properties": {
+                        "url": {
+                          "default": "",
+                          "description": "The URL of the GitHub Enterprise instance.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "hook_to_auto_complete_command": {
                       "default": false,
                       "markdownDescription": "Ask the server for completions when the `auto_complete` command is called.",
