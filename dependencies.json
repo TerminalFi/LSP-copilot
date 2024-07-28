@@ -1,11 +1,15 @@
 {
     "*": {
         "*": [
+            "bracex",
             "Jinja2",
+            "jmespath",
             "lsp_utils",
             "markupsafe",
             "more-itertools",
-            "sublime_lib"
+            "sublime_lib",
+            "watchdog",
+            "wcmatch"
         ]
     }
 }

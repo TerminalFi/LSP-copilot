@@ -1,0 +1,30 @@
+<style>
+{{ include_asset('completion@popup.css') }}
+{{ include_asset('completion@popup.custom.css', use_cache=False) }}
+</style>
+
+<div class="wrapper">
+
+<div class="header">
+  <a class="accept" title="Accept Completion" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>
+  <a class="reject" title="Reject Completion" href="subl:copilot_reject_completion"><i>×</i> Reject</a>
+  {% if count > 1 %}
+    <a
+      class="prev"
+      title="Previous Completion"
+      href="subl:copilot_previous_completion"
+    >◀</a><a
+      class="next"
+      title="Next Completion"
+      href="subl:copilot_next_completion"
+    >▶</a>
+    ({{ index + 1 }} of {{ count }})
+  {% endif %}
+  <a class="panel" href="subl:copilot_get_panel_completions" title="Open Panel Completions">☰</a>
+</div>
+
+``````{{ lang }}
+{{ code }}
+``````
+
+</div>

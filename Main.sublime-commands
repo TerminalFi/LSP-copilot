@@ -1,5 +1,72 @@
 [
     {
+        "caption": "Copilot: Chat",
+        "command": "copilot_conversation_chat"
+    },
+    {
+        "caption": "Copilot: Explain",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/explain"
+        }
+    },
+    {
+        "caption": "Copilot: Generate Tests",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/tests"
+        }
+    },
+    {
+        "caption": "Copilot: Generate Docs",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/doc"
+        }
+    },
+    {
+        "caption": "Copilot: Fix This",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/fix"
+        }
+    },
+    {
+        "caption": "Copilot: Simplify This",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/simplify"
+        }
+    },
+    {
+        "caption": "Copilot: Feedback",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/feedback"
+        }
+    },
+    {
+        "caption": "Copilot: Help",
+        "command": "copilot_conversation_chat",
+        "args": {
+            "message": "/help"
+        }
+    },
+    {
+        "caption": "Copilot: Destroy Conversation",
+        "command": "copilot_conversation_destroy"
+    },
+    {
+        // Debug Command
+        "caption": "Copilot: Conversation Agents",
+        "command": "copilot_conversation_agents",
+    },
+    {
+        // Debug Command
+        "caption": "Copilot: Conversation Templates",
+        "command": "copilot_conversation_templates",
+    },
+    {
         "caption": "Copilot: Check Status",
         "command": "copilot_check_status"
     },
@@ -26,5 +93,32 @@
     {
         "caption": "Copilot: Sign Out",
         "command": "copilot_sign_out"
-    }
+    },
+    {
+        "caption": "Copilot: Edit CSS: Popup Completion",
+        "command": "copilot_prepare_and_edit_settings",
+        "args": {
+            "base_file": "${packages}/LSP-copilot/plugin/assets/completion@popup.css",
+            "user_file": "${packages}/LSP-copilot/plugin/assets/completion@popup.custom.css",
+            "default": "/* User extra CSS rules: Popup Completion */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
+        },
+    },
+    {
+        "caption": "Copilot: Edit CSS: Panel Completion",
+        "command": "copilot_prepare_and_edit_settings",
+        "args": {
+            "base_file": "${packages}/LSP-copilot/plugin/assets/panel_completion.css",
+            "user_file": "${packages}/LSP-copilot/plugin/assets/panel_completion.custom.css",
+            "default": "/* User extra CSS rules: Panel Completion */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
+        },
+    },
+    {
+        "caption": "Copilot: Edit CSS: Chat Panel",
+        "command": "copilot_prepare_and_edit_settings",
+        "args": {
+            "base_file": "${packages}/LSP-copilot/plugin/assets/chat_panel.css",
+            "user_file": "${packages}/LSP-copilot/plugin/assets/chat_panel.custom.css",
+            "default": "/* User extra CSS rules: Chat Panel */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
+        },
+    },
 ]

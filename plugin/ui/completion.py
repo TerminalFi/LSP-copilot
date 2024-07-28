@@ -9,6 +9,7 @@ import mdpopups
 import sublime
 from more_itertools import first_true
 
+from ..template import load_resource_template
 from ..types import CopilotPayloadCompletion
 from ..utils import (
     clamp,
@@ -16,7 +17,6 @@ from ..utils import (
     get_copilot_view_setting,
     get_view_language_id,
     is_active_view,
-    reformat,
     set_copilot_view_setting,
 )
 
@@ -95,8 +95,10 @@ class ViewCompletionManager:
 
     @property
     def completion_style_type(self) -> type[_BaseCompletion]:
-        completion_cls = first_true(_BaseCompletion.__subclasses__(), pred=lambda t: t.name == self.completion_style)
-        if completion_cls:
+        if completion_cls := first_true(
+            _BaseCompletion.__subclasses__(),
+            pred=lambda t: t.name == self.completion_style,
+        ):
             return completion_cls
         raise RuntimeError(f"Unknown completion style type: {self.completion_style}")
 
@@ -214,114 +216,15 @@ class _BaseCompletion(ABC):
 class _PopupCompletion(_BaseCompletion):
     name = "popup"
 
-    CSS_CLASS_NAME = "copilot-completion-popup"
-    CSS = f"""
-        html {{
-            --copilot-accept-foreground: var(--foreground);
-            --copilot-accept-background: var(--background);
-            --copilot-accept-border: var(--greenish);
-            --copilot-reject-foreground: var(--foreground);
-            --copilot-reject-background: var(--background);
-            --copilot-reject-border: var(--yellowish);
-        }}
-
-        .{CSS_CLASS_NAME} {{
-            margin: 1rem 0.5rem 0 0.5rem;
-        }}
-
-        .{CSS_CLASS_NAME} .header {{
-            display: block;
-            margin-bottom: 1rem;
-        }}
-
-        .{CSS_CLASS_NAME} a {{
-            border-radius: 3px;
-            border-style: solid;
-            border-width: 1px;
-            display: inline;
-            padding: 5px;
-            text-decoration: none;
-        }}
-
-        .{CSS_CLASS_NAME} a.accept {{
-            background: var(--copilot-accept-background);
-            border-color: var(--copilot-accept-border);
-            color: var(--copilot-accept-foreground);
-        }}
-
-        .{CSS_CLASS_NAME} a.accept i {{
-            color: var(--copilot-accept-border);
-        }}
-
-        .{CSS_CLASS_NAME} a.reject {{
-            background: var(--copilot-reject-background);
-            border-color: var(--copilot-reject-border);
-            color: var(--copilot-reject-foreground);
-        }}
-
-        .{CSS_CLASS_NAME} a.reject i {{
-            color: var(--copilot-reject-border);
-        }}
-
-        .{CSS_CLASS_NAME} a.prev {{
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-            border-right-width: 0;
-            padding-left: 8px;
-            padding-right: 8px;
-        }}
-
-        .{CSS_CLASS_NAME} a.next {{
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-            border-left-width: 0;
-            padding-left: 8px;
-            padding-right: 8px;
-        }}
-
-        .{CSS_CLASS_NAME} a.panel {{
-            padding-left: 8px;
-            padding-right: 8px;
-        }}
-    """
-    # We use many backticks to denote a fenced code block because if we are writing in Markdown,
-    # Copilot may suggest 3 backticks for a fenced code block and that can break our templating.
-    COMPLETION_TEMPLATE = reformat("""
-        <div class="header">{header_items}</div>
-        ``````{lang}
-        {code}
-        ``````
-    """)
-
     @property
     def popup_content(self) -> str:
-        return self.COMPLETION_TEMPLATE.format(
-            header_items=" &nbsp;".join(self.popup_header_items),
-            lang=get_view_language_id(self.view, self.completion["point"]),
+        return load_resource_template("completion@popup.md.jinja").render(
             code=self.popup_code,
+            completion=self.completion,
+            count=self.count,
+            index=self.index,
+            lang=get_view_language_id(self.view, self.completion["point"]),
         )
-
-    @property
-    def popup_header_items(self) -> list[str]:
-        header_items = [
-            '<a class="accept" title="Accept Completion" href="subl:copilot_accept_completion"><i>✓</i> Accept</a>',
-            '<a class="reject" title="Reject Completion" href="subl:copilot_reject_completion"><i>×</i> Reject</a>',
-        ]
-        if self.count > 1:
-            header_items.append(
-                '<a class="prev" title="Previous Completion" href="subl:copilot_previous_completion">◀</a>'
-                + '<a class="next" title="Next Completion" href="subl:copilot_next_completion">▶</a>'
-            )
-            header_items.append(
-                "({completion_index_1} of {completions_cnt})".format(  # noqa: UP032
-                    completion_index_1=self.index + 1,  # 1-based index
-                    completions_cnt=self.count,
-                )
-            )
-        header_items.append(
-            '<a class="panel" href="subl:copilot_get_panel_completions" title="Open Panel Completions">☰</a>'
-        )
-        return header_items
 
     @property
     def popup_code(self) -> str:
@@ -336,15 +239,13 @@ class _PopupCompletion(_BaseCompletion):
             view=self.view,
             content=self.popup_content,
             md=True,
-            css=self.CSS,
             layout=sublime.LAYOUT_INLINE,
             flags=sublime.COOPERATE_WITH_AUTO_COMPLETE,
             max_width=640,
-            wrapper_class=self.CSS_CLASS_NAME,
         )
 
-    @staticmethod
-    def hide(view: sublime.View) -> None:
+    @classmethod
+    def hide(cls, view: sublime.View) -> None:
         mdpopups.hide_popup(view)
 
 
@@ -433,7 +334,6 @@ class _PhantomCompletion(_BaseCompletion):
         first_line, *rest_lines = self.completion["displayText"].splitlines()
 
         assert self._phantom_set
-        self._phantom_set.update([])
         self._phantom_set.update([
             self._build_phantom(first_line, self.completion["point"] + 1, self.completion["point"]),
             # an empty phantom is required to prevent the cursor from jumping, even if there is only one line
@@ -446,4 +346,4 @@ class _PhantomCompletion(_BaseCompletion):
 
     @classmethod
     def close(cls, view: sublime.View) -> None:
-        del _view_to_phantom_set[view.id()]
+        _view_to_phantom_set.pop(view.id(), None)

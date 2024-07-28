@@ -1,25 +1,27 @@
 from __future__ import annotations
 
+import gzip
 import os
 import textwrap
 import threading
+import urllib.request
 from collections.abc import Callable, Generator, Iterable
 from functools import wraps
 from itertools import takewhile
-from operator import itemgetter
 from typing import Any, TypeVar, Union, cast
 
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from LSP.plugin.core.url import filename_to_uri
-from more_itertools import first_true, unique_everseen
+from more_itertools import first_true
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
-from .types import CopilotPayloadCompletion, CopilotPayloadPanelSolution, T_Callable
+from .types import T_Callable
 
 _T = TypeVar("_T")
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
+
+all_windows = sublime.windows
 
 
 def all_views(
@@ -27,7 +29,7 @@ def all_views(
     *,
     include_transient: bool = False,
 ) -> Generator[sublime.View, None, None]:
-    windows = [window] if window else sublime.windows()
+    windows = [window] if window else all_windows()
     for window in windows:
         yield from window.views(include_transient=include_transient)
 
@@ -37,7 +39,7 @@ def all_sheets(
     *,
     include_transient: bool = False,
 ) -> Generator[sublime.Sheet, None, None]:
-    windows = [window] if window else sublime.windows()
+    windows = [window] if window else all_windows()
     for window in windows:
         if include_transient:
             yield from drop_falsy(map(window.transient_sheet_in_group, range(window.num_groups())))
@@ -95,6 +97,10 @@ def find_view_by_id(id: int) -> sublime.View | None:
     return first_true(all_views(include_transient=True), pred=lambda view: view.id() == id)
 
 
+def find_window_by_id(id: int) -> sublime.Window | None:
+    return first_true(all_windows(), pred=lambda window: window.id() == id)
+
+
 def is_active_view(obj: Any) -> bool:
     return bool(obj and obj == sublime.active_window().active_view())
 
@@ -105,16 +111,28 @@ def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -
     return code
 
 
+def get_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+    return instance.settings().get(f"{prefix}.{key}", default)
+
+
+def set_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+    instance.settings().set(f"{prefix}.{key}", default)
+
+
+def erase_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str) -> Any:
+    instance.settings().erase(f"{prefix}.{key}")
+
+
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
-    return view.settings().get(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}", default)
+    return get_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key, default)
 
 
 def set_copilot_view_setting(view: sublime.View, key: str, value: Any) -> None:
-    view.settings().set(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}", value)
+    set_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key, value)
 
 
 def erase_copilot_view_setting(view: sublime.View, key: str) -> None:
-    view.settings().erase(f"{COPILOT_VIEW_SETTINGS_PREFIX}.{key}")
+    erase_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key)
 
 
 def get_project_relative_path(path: str) -> str:
@@ -174,58 +192,6 @@ def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
     return sublime.ok_cancel_dialog(f"[{PACKAGE_NAME}] {msg_.format(*args, **kwargs)}")
 
 
-def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
-    if len(sel := view.sel()) != 1:
-        return None
-
-    file_path = view.file_name() or ""
-    row, col = view.rowcol(sel[0].begin())
-    return {
-        "doc": {
-            "source": view.substr(sublime.Region(0, view.size())),
-            "tabSize": view.settings().get("tab_size"),
-            "indentSize": 1,  # there is no such concept in ST
-            "insertSpaces": view.settings().get("translate_tabs_to_spaces"),
-            "path": file_path,
-            "uri": file_path and filename_to_uri(file_path),
-            "relativePath": get_project_relative_path(file_path),
-            "languageId": get_view_language_id(view),
-            "position": {"line": row, "character": col},
-            # Buffer Version. Generally this is handled by LSP, but we need to handle it here
-            # Will need to test getting the version from LSP
-            "version": view.change_count(),
-        }
-    }
-
-
-def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadCompletion]) -> None:
-    """Preprocess the `completions` from "getCompletions" request."""
-    # in-place de-duplication
-    unique_indexes: set[int] = set(
-        map(
-            itemgetter(0),
-            unique_everseen(enumerate(completions), key=lambda pair: pair[1]["displayText"]),
-        )
-    )
-    for index in range(len(completions) - 1, -1, -1):
-        if index not in unique_indexes:
-            del completions[index]
-
-    # inject extra information for convenience
-    for completion in completions:
-        completion["point"] = view.text_point(
-            completion["position"]["line"],
-            completion["position"]["character"],
-        )
-        _generate_completion_region(view, completion)
-
-
-def preprocess_panel_completions(view: sublime.View, completions: list[CopilotPayloadPanelSolution]) -> None:
-    """Preprocess the `completions` from "getCompletionsCycling" request."""
-    for completion in completions:
-        _generate_completion_region(view, completion)
-
-
 def reformat(text: str) -> str:
     """Remove common indentations and then trim."""
     return textwrap.dedent(text).strip()
@@ -260,17 +226,29 @@ def status_message(msg_: str, *args, icon_: str | None = "✈", console_: bool =
         print(full_msg)
 
 
-def _generate_completion_region(
-    view: sublime.View,
-    completion: CopilotPayloadCompletion | CopilotPayloadPanelSolution,
-) -> None:
-    completion["region"] = (
-        view.text_point(
-            completion["range"]["start"]["line"],
-            completion["range"]["start"]["character"],
-        ),
-        view.text_point(
-            completion["range"]["end"]["line"],
-            completion["range"]["end"]["character"],
-        ),
-    )
+def find_index_by_key_value(items, key, value):
+    return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
+
+
+def simple_urlopen(url: str, *, chunk_size: int = 512 * 1024) -> bytes:
+    """
+    Opens a URL and reads the data in chunks, optionally decompressing gzip-encoded content.
+
+    This function opens a connection to the specified URL and reads the response data in chunks
+    of a specified size. If the response is gzip-encoded, it decompresses the data before returning it.
+
+    Args:
+        url (str): The URL to open.
+        chunk_size (int, optional): The size of each chunk to read. Defaults to 512KB.
+
+    Returns:
+        bytes: The raw bytes of the data read from the URL. If the content was gzip-encoded,
+               it is decompressed before being returned.
+    """
+    with urllib.request.urlopen(url) as resp:
+        data = b""
+        while chunk := resp.read(chunk_size):
+            data += chunk
+        if resp.info().get("Content-Encoding") == "gzip":
+            data = gzip.decompress(data)
+    return data

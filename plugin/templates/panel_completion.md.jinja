@@ -1,0 +1,31 @@
+<style>
+{{ include_asset('panel_completion.css') }}
+{{ include_asset('panel_completion.custom.css', use_cache=False) }}
+</style>
+
+<div class="wrapper">
+
+<div class="navbar">
+  <a class="close" title="Close Completion Panel" href='{{ close_url }}'><i>×</i> Close</a>&nbsp;
+  <h4 class="synthesis-info">
+    {% if is_waiting %}
+      ⌛ Synthesizing {{ sections|length }} unique solutions out of {{ total_solutions }}...
+    {% else %}
+      Synthesized {{ sections|length }} unique solutions out of {{ total_solutions }}. (Done)
+    {% endif %}
+  </h4>
+</div>
+
+{% for section in sections %}
+  <hr>
+  <div class="header">
+    <a class="accept" title="Accept Completion" href='{{ section.accept_url }}'><i>✓</i> Accept</a>
+  </div>
+
+``````{{ section.lang }}
+{{ section.code }}
+``````
+
+{% endfor %}
+
+</div>

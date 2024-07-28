@@ -1,0 +1,58 @@
+<style>
+{{ include_asset('chat_panel.css') }}
+{{ include_asset('chat_panel.custom.css', use_cache=False) }}
+</style>
+
+<div class="navbar">
+  <a class="icon-link" title="Delete Conversation" href='{{ delete_url }}'><img class="icon" src="{{ asset_url('trash.png') }}"></a>
+  <a class="close" title="Close Conversation" href='{{ close_url }}'><img class="icon" src="{{ asset_url('close.png') }}"></a>
+  <h3 class="suggested-title">
+    {% if is_waiting %} ⌛ {% endif %}Copilot Chat {% if suggested_title %}| {{ suggested_title }}{% endif %}
+  </h3>
+</div>
+
+---
+
+{% for section in sections %}
+
+<div class="header">
+{% if section.kind == "report" %}
+  <a class="rating" title="Thumbs Up" href='{{ section.thumbs_up_url }}'><img class="icon" src="{{ asset_url('thumbs_up.png') }}"></a>
+  <a class="rating" title="Thumbs Down" href='{{ section.thumbs_down_url }}'><img class="icon" src="{{ asset_url('thumbs_down.png') }}"></a>
+{% else %}
+  <a class="delete" title="Delete Turn" href='{{ section.turn_delete_url }}'><img class="icon delete-icon" src="{{ asset_url('trash.png') }}"></a>
+{% endif %}
+</div>
+
+<span class="kind {{ section.kind }}">
+  {%- if section.kind == "report" -%}
+    <img class="icon" src="{{ asset_url('github.png') }}"> Github Copilot
+  {%- else -%}
+    {% if avatar_img_src %}<img class="icon" src="{{ avatar_img_src }}">{% endif %} {{ section.kind }}
+  {%- endif -%}
+</span>
+
+{% set code_block_replacements = [] %}
+{% for index in section.code_block_indices %}
+  {% do code_block_replacements.append(
+    (
+      "CODE_BLOCK_COMMANDS_" ~ index|string,
+      (
+        "<a class='icon-link' href='" ~ command_url('copilot_conversation_copy_code', window_id, index) ~ "'>" ~
+        "<img class='icon icon-link' src='" ~ asset_url('copy.png') ~ "' /></a>" ~
+        "<span></span>" ~
+        " <a class='icon-link' href='" ~ command_url('copilot_conversation_insert_code_shim', window_id, index) ~ "'>" ~
+        "<img class='icon icon-link' src='" ~ asset_url('insert.png') ~ "' /></a>\n\n"
+      ) | safe,
+    )
+) %}
+{% endfor %}
+{{ section.message | multi_replace(code_block_replacements) | safe }}
+
+---
+
+{% endfor %}
+
+{% if follow_up %}
+Follow up: <a class="icon-link follow-up" href='{{ follow_up_url }}'>{{ follow_up }}</a>
+{% endif %}

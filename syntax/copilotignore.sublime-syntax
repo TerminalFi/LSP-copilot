@@ -1,0 +1,20 @@
+%YAML 1.2
+---
+name: Copilot Ignore
+scope: text.copilotignore
+version: 2
+hidden: true
+hidden_file_extensions:
+  - .copilotignore
+
+contexts:
+  main:
+    - include: Git Common.sublime-syntax#comments
+    - match: '(?=\S)'
+      push: [pattern-content, Git Common.sublime-syntax#fnmatch-start]
+
+  pattern-content:
+    - meta_scope: string.unquoted.copilotignore entity.name.pattern.copilotignore
+    - match: $
+      pop: 1
+    - include: Git Common.sublime-syntax#fnmatch-unquoted-body
