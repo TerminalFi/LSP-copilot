@@ -58,6 +58,7 @@
                     },
                     "github-enterprise": {
                       "type": "object",
+                      "markdownDescription": "The configuration for Github Enterprise.",
                       "properties": {
                         "url": {
                           "default": "",
