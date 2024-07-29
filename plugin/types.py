@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Literal, Tuple, TypedDict, TypeVar
 
+from LSP.plugin.core.typing import StrEnum
+
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
@@ -144,6 +146,14 @@ class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
 # --------------------- #
 
 
+class CopilotConversationTemplates(StrEnum):
+    FIX = "/fix"
+    TESTS = "/tests"
+    DOC = "/doc"
+    EXPLAIN = "/explain"
+    SIMPLIFY = "/simplify"
+
+
 class CopilotPayloadConversationEntry(TypedDict, total=True):
     kind: str
     conversationId: str
@@ -182,9 +192,6 @@ class CopilotPayloadConversationContext(TypedDict, total=True):
     turnId: str
     """E.g., `"09ac7601-6c28-4617-b3e4-13f5ff8502b7"`."""
     skillId: Literal["current-editor", "project-labels", "recent-files"]  # not the complet list yet
-
-
-CopilotConversationTemplates = {"/fix", "/tests", "/doc", "/explain", "/simplify"}
 
 
 class CopilotUserDefinedPromptTemplates(TypedDict, total=True):

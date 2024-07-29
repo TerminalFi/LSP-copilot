@@ -12,7 +12,7 @@ from typing import Any
 
 import sublime
 from LSP.plugin.core.url import filename_to_uri
-from more_itertools import duplicates_everseen
+from more_itertools import duplicates_everseen, first_true
 from wcmatch import glob
 
 from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
@@ -28,6 +28,7 @@ from .utils import (
     all_views,
     all_windows,
     drop_falsy,
+    enum_has_value,
     erase_copilot_setting,
     erase_copilot_view_setting,
     get_copilot_setting,
@@ -216,18 +217,20 @@ def preprocess_message_for_html(message: str) -> str:
 
 
 def preprocess_chat_message(
-    view: sublime.View, message: str, templates: list[CopilotUserDefinedPromptTemplates] = []
+    view: sublime.View,
+    message: str,
+    templates: list[CopilotUserDefinedPromptTemplates] = [],
 ) -> tuple[bool, str]:
     from .template import load_string_template
-    
+
     is_template = False
     user_templates = [f'/{template["id"]}' for template in templates]
-    if message in CopilotConversationTemplates:
+
+    if enum_has_value(CopilotConversationTemplates, message):
         is_template = True
         message += " {{ sel[0] }}"
     elif message in user_templates:
-        user_template = next(filter(lambda t: f"/{t['id']}" == message, templates), None)
-        if user_template:
+        if user_template := first_true(templates, pred=lambda t: f"/{t['id']}" == message):
             is_template = True
             message = "{} {}".format(message, "\n".join(user_template["prompt"]))
 
@@ -235,8 +238,7 @@ def preprocess_chat_message(
     lang = get_view_language_id(view, view.sel()[0].begin())
     sel = [f"\n```{lang}\n{view.substr(region)}\n```\n" for region in view.sel()]
 
-    message = template.render({"sel": sel})
-    return is_template, message
+    return is_template, template.render({"sel": sel})
 
 
 def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadCompletion]) -> None:

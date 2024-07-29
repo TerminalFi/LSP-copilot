@@ -6,6 +6,7 @@ import textwrap
 import threading
 import urllib.request
 from collections.abc import Callable, Generator, Iterable
+from enum import EnumMeta
 from functools import wraps
 from itertools import takewhile
 from typing import Any, TypeVar, Union, cast
@@ -87,6 +88,15 @@ def debounce(time_s: float = 0.3) -> Callable[[T_Callable], T_Callable]:
 def drop_falsy(iterable: Iterable[_T | None]) -> Generator[_T, None, None]:
     """Drops falsy values from the iterable."""
     yield from filter(None, iterable)
+
+
+def enum_has_value(enum_cls: EnumMeta, value: Any) -> bool:
+    """Check if the `enum_cls` class contains the `value`."""
+    try:
+        enum_cls(value)
+    except ValueError:
+        return False
+    return True
 
 
 def find_sheet_by_id(id: int) -> sublime.Sheet | None:
