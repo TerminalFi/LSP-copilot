@@ -224,15 +224,13 @@ def preprocess_chat_message(
     from .template import load_string_template
 
     is_template = False
-    user_templates = [f'/{template["id"]}' for template in templates]
 
     if enum_has_value(CopilotConversationTemplates, message):
         is_template = True
         message += " {{ sel[0] }}"
-    elif message in user_templates:
-        if user_template := first_true(templates, pred=lambda t: f"/{t['id']}" == message):
-            is_template = True
-            message = "{} {}".format(message, "\n".join(user_template["prompt"]))
+    elif user_template := first_true(templates, pred=lambda t: f"/{t['id']}" == message):
+        is_template = True
+        message = "{} {}".format(message, "\n".join(user_template["prompt"]))
 
     template = load_string_template(message)
     lang = get_view_language_id(view, view.sel()[0].begin())
