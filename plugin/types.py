@@ -190,6 +190,13 @@ class CopilotPayloadConversationPreconditions(TypedDict, total=True):
     pass
 
 
+class CopilotPayloadConversationCreate(TypedDict, total=True):
+    conversationId: str
+    """E.g., `"15d1791c-42f4-490c-9f79-0b79c4142d17"`."""
+    turnId: str
+    """E.g., `"a4a3785f-808f-41cc-8037-cd6707ffe584"`."""
+
+
 class CopilotPayloadConversationContext(TypedDict, total=True):
     conversationId: str
     """E.g., `"e3b0d5e3-0c3b-4292-a5ea-15d6003e7c45"`."""

@@ -45,6 +45,7 @@ from .helpers import (
     preprocess_message_for_html,
 )
 from .types import (
+    CopilotPayloadConversationCreate,
     CopilotPayloadConversationPreconditions,
     CopilotPayloadConversationTemplate,
     CopilotPayloadFileStatus,
@@ -279,7 +280,12 @@ class CopilotConversationChatCommand(LspTextCommand):
         wcm.is_waiting = True
         wcm.update()
 
-    def _on_result_conversation_create(self, plugin: CopilotPlugin, session: Session, payload) -> None:
+    def _on_result_conversation_create(
+        self,
+        plugin: CopilotPlugin,
+        session: Session,
+        payload: CopilotPayloadConversationCreate,
+    ) -> None:
         if not (window := self.view.window()):
             return
 
@@ -398,7 +404,7 @@ class CopilotConversationDestroyCommand(LspTextCommand):
             self._on_result_coversation_destroy,
         )
 
-    def _on_result_coversation_destroy(self, payload) -> None:
+    def _on_result_coversation_destroy(self, payload: str) -> None:
         if not (window := self.view.window()):
             return
         if payload != "OK":
@@ -463,7 +469,13 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
             lambda x: self._on_result_coversation_turn_delete(window_id, conversation_id, turn_id, x),
         )
 
-    def _on_result_coversation_turn_delete(self, window_id: int, conversation_id: str, turn_id: str, payload) -> None:
+    def _on_result_coversation_turn_delete(
+        self,
+        window_id: int,
+        conversation_id: str,
+        turn_id: str,
+        payload: str,
+    ) -> None:
         if payload != "OK":
             status_message("Failed to delete turn.")
             return
