@@ -5,10 +5,9 @@ import os
 import re
 import threading
 import time
-from collections.abc import Callable
 from operator import itemgetter
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Sequence
 
 import sublime
 from LSP.plugin.core.url import filename_to_uri
@@ -219,28 +218,24 @@ def preprocess_message_for_html(message: str) -> str:
 def preprocess_chat_message(
     view: sublime.View,
     message: str,
-    templates: list[CopilotUserDefinedPromptTemplates] = [],
+    templates: Sequence[CopilotUserDefinedPromptTemplates] | None = None,
 ) -> tuple[bool, str]:
     from .template import load_string_template
 
-    is_template = False
+    templates = templates or []
     user_template = first_true(templates, pred=lambda t: f"/{t['id']}" == message)
+    is_template = False
 
-    # if the user redefines a built-in template such as "fix", prefer using user's
-    if user_template:
+    if user_template or enum_has_value(CopilotConversationTemplates, message):
         is_template = True
         message += "\n\n{{ user_prompt }}\n\n{{ code }}"
-    elif enum_has_value(CopilotConversationTemplates, message):
-        is_template = True
-        message += "\n\n{{ code }}"
 
     region = view.sel()[0]
     lang = get_view_language_id(view, region.begin())
-    code = f"\n```{lang}\n{view.substr(region)}\n```\n"
 
     template = load_string_template(message)
     message = template.render(
-        code=code,
+        code=f"\n```{lang}\n{view.substr(region)}\n```\n",
         user_prompt="\n".join(user_template["prompt"]) if user_template else "",
     )
 
@@ -269,7 +264,7 @@ def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadC
         _generate_completion_region(view, completion)
 
 
-def preprocess_panel_completions(view: sublime.View, completions: list[CopilotPayloadPanelSolution]) -> None:
+def preprocess_panel_completions(view: sublime.View, completions: Sequence[CopilotPayloadPanelSolution]) -> None:
     """Preprocess the `completions` from "getCompletionsCycling" request."""
     for completion in completions:
         _generate_completion_region(view, completion)
