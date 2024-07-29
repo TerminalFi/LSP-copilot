@@ -55,6 +55,7 @@ from .types import (
     CopilotPayloadSignInInitiate,
     CopilotPayloadSignOut,
     CopilotRequestCoversationAgent,
+    CopilotUserDefinedPromptTemplates,
     T_Callable,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
@@ -529,16 +530,27 @@ class CopilotConversationAgentsCommand(LspTextCommand):
 class CopilotConversationTemplatesCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        user_defined_templates = session.config.settings.get("prompts") or {}
         session.send_request(
-            Request(REQ_CONVERSATION_TEMPLATES, {"options": {}}), self._on_result_conversation_templates
+            Request(REQ_CONVERSATION_TEMPLATES, {"options": {}}),
+            lambda payload: self._on_result_conversation_templates(user_defined_templates, payload),
         )
 
-    def _on_result_conversation_templates(self, payload: list[CopilotPayloadConversationTemplate]) -> None:
+    def _on_result_conversation_templates(
+        self,
+        user_defined_templates: dict[CopilotUserDefinedPromptTemplates],
+        payload: list[CopilotPayloadConversationTemplate],
+    ) -> None:
         if not (window := self.view.window()):
             return
+
+        prompts = [[item["id"], item["description"], ", ".join(item["scopes"])] for item in payload] + [
+            [user_defined_templates[template]["id"], user_defined_templates[template]["description"], "chat-panel"]
+            for template in user_defined_templates.keys()
+        ]
         window.show_quick_panel(
-            [[item["id"], item["description"], ", ".join(item["scopes"])] for item in payload],
-            lambda index: self._on_selected(index, payload),
+            prompts,
+            lambda index: self._on_selected(index, prompts),
         )
 
     def _on_selected(self, index: int, items: list[CopilotPayloadConversationTemplate]) -> None:

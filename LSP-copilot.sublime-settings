@@ -23,7 +23,8 @@
 		"status_text": "{% if is_copilot_ignored %}{{ is_copilot_ignored }}{% elif is_waiting %}{{ is_waiting }}{% elif server_version %}v{{ server_version }}{% endif %}",
 		"prompts": {
 			"/review": {
-				"title": "Review",
+				"id": "review",
+				"description": "Review code and provide feedback.",
 				"prompt": [
 					"Review the provided code and provide feedback.",
 					"Feedback should first reply back with the line or lines of code, followed by the feedback about the code.",
