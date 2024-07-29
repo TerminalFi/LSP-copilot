@@ -244,7 +244,7 @@ class CopilotConversationChatCommand(LspTextCommand):
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
 
-        user_prompts = session.config.settings.get("prompts") or []
+        user_prompts: list[CopilotUserDefinedPromptTemplates] = session.config.settings.get("prompts") or []
         is_template, msg = preprocess_chat_message(view, initial_message, user_prompts)
         if msg:
             wcm.append_conversation_entry({
@@ -294,7 +294,7 @@ class CopilotConversationChatCommand(LspTextCommand):
 
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
-        user_prompts = session.config.settings.get("prompts") or []
+        user_prompts: list[CopilotUserDefinedPromptTemplates] = session.config.settings.get("prompts") or []
         is_template, msg = preprocess_chat_message(view, msg, user_prompts)
         wcm.append_conversation_entry({
             "kind": plugin.get_account_status().user or "user",
@@ -530,21 +530,21 @@ class CopilotConversationAgentsCommand(LspTextCommand):
 class CopilotConversationTemplatesCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        user_defined_templates = session.config.settings.get("prompts") or []
+        user_prompts: list[CopilotUserDefinedPromptTemplates] = session.config.settings.get("prompts") or []
         session.send_request(
             Request(REQ_CONVERSATION_TEMPLATES, {"options": {}}),
-            lambda payload: self._on_result_conversation_templates(user_defined_templates, payload),
+            lambda payload: self._on_result_conversation_templates(user_prompts, payload),
         )
 
     def _on_result_conversation_templates(
         self,
-        user_defined_templates: list[CopilotUserDefinedPromptTemplates],
+        user_prompts: list[CopilotUserDefinedPromptTemplates],
         payload: list[CopilotPayloadConversationTemplate],
     ) -> None:
         if not (window := self.view.window()):
             return
 
-        templates = payload + user_defined_templates
+        templates = payload + user_prompts
         prompts = [
             [item["id"], item["description"], ", ".join(item["scopes"]) if item.get("scopes", None) else "chat-panel"]
             for item in templates
@@ -555,7 +555,9 @@ class CopilotConversationTemplatesCommand(LspTextCommand):
         )
 
     def _on_selected(
-        self, index: int, items: list[CopilotPayloadConversationTemplate | CopilotUserDefinedPromptTemplates]
+        self,
+        index: int,
+        items: list[CopilotPayloadConversationTemplate | CopilotUserDefinedPromptTemplates],
     ) -> None:
         if index == -1:
             return
