@@ -216,16 +216,18 @@ def preprocess_message_for_html(message: str) -> str:
 
 
 def preprocess_chat_message(
-    view: sublime.View, message: str, templates: dict[str, CopilotUserDefinedPromptTemplates] = {}
+    view: sublime.View, message: str, templates: list[CopilotUserDefinedPromptTemplates] = []
 ) -> tuple[bool, str]:
     from .template import load_string_template
 
+    user_templates = [f'/{template["id"]}' for template in templates]
     if message in CopilotConversationTemplates:
         is_template = True
         message += " {{ sel[0] }}"
-    elif message in templates:
+    elif message in user_templates:
         is_template = True
-        message = "{} {}".format(message, "\n".join(templates[message]["prompt"]))
+        template = next(filter(lambda t: f"/{t['id']}" == message, templates), None)
+        message = "{} {}".format(message, "\n".join(template["prompt"]))
     else:
         is_template = False
 

@@ -21,8 +21,8 @@
 		// The (Jinja2) template of the status bar text which is inside the parentheses `(...)`.
 		// See https://jinja.palletsprojects.com/templates/
 		"status_text": "{% if is_copilot_ignored %}{{ is_copilot_ignored }}{% elif is_waiting %}{{ is_waiting }}{% elif server_version %}v{{ server_version }}{% endif %}",
-		"prompts": {
-			"/review": {
+		"prompts": [
+			{
 				"id": "review",
 				"description": "Review code and provide feedback.",
 				"prompt": [
@@ -39,7 +39,7 @@
 					"{{sel[0]}}",
 				]
 			}
-		}
+		]
 	},
 	// ST4 configuration
 	"selector": "source | text | embedding"

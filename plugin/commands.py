@@ -538,22 +538,25 @@ class CopilotConversationTemplatesCommand(LspTextCommand):
 
     def _on_result_conversation_templates(
         self,
-        user_defined_templates: dict[str, CopilotUserDefinedPromptTemplates],
+        user_defined_templates: list[CopilotUserDefinedPromptTemplates],
         payload: list[CopilotPayloadConversationTemplate],
     ) -> None:
         if not (window := self.view.window()):
             return
 
-        prompts = [[item["id"], item["description"], ", ".join(item["scopes"])] for item in payload] + [
-            [user_defined_templates[template]["id"], user_defined_templates[template]["description"], "chat-panel"]
-            for template in user_defined_templates.keys()
+        templates = payload + user_defined_templates
+        prompts = [
+            [item["id"], item["description"], ", ".join(item["scopes"]) if item.get("scopes", None) else "chat-panel"]
+            for item in templates
         ]
         window.show_quick_panel(
             prompts,
-            lambda index: self._on_selected(index, prompts),
+            lambda index: self._on_selected(index, templates),
         )
 
-    def _on_selected(self, index: int, items: list[CopilotPayloadConversationTemplate]) -> None:
+    def _on_selected(
+        self, index: int, items: list[CopilotPayloadConversationTemplate | CopilotUserDefinedPromptTemplates]
+    ) -> None:
         if index == -1:
             return
         self.view.run_command("copilot_conversation_chat", {"message": f'/{items[index]["id"]}'})
