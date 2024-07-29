@@ -224,20 +224,27 @@ def preprocess_chat_message(
     from .template import load_string_template
 
     is_template = False
+    user_template = first_true(templates, pred=lambda t: f"/{t['id']}" == message)
 
-    if enum_has_value(CopilotConversationTemplates, message):
+    # if the user redefines a built-in template such as "fix", prefer using user's
+    if user_template:
         is_template = True
-        message += " {{ code }}"
-    elif user_template := first_true(templates, pred=lambda t: f"/{t['id']}" == message):
+        message += "\n\n{{ user_prompt }}\n\n{{ code }}"
+    elif enum_has_value(CopilotConversationTemplates, message):
         is_template = True
-        message = "{} {}\n\n{}".format(message, "\n".join(user_template["prompt"]), "{{ code }}")
+        message += "\n\n{{ code }}"
 
     region = view.sel()[0]
     lang = get_view_language_id(view, region.begin())
     code = f"\n```{lang}\n{view.substr(region)}\n```\n"
 
     template = load_string_template(message)
-    return is_template, template.render({"code": code})
+    message = template.render(
+        code=code,
+        user_prompt="\n".join(user_template["prompt"]) if user_template else "",
+    )
+
+    return is_template, message
 
 
 def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadCompletion]) -> None:
