@@ -18,7 +18,12 @@ from wcmatch import glob
 from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
 from .log import log_error
 from .settings import get_plugin_setting_dotted
-from .types import CopilotConversationTemplates, CopilotPayloadCompletion, CopilotPayloadPanelSolution
+from .types import (
+    CopilotConversationTemplates,
+    CopilotPayloadCompletion,
+    CopilotPayloadPanelSolution,
+    CopilotUserDefinedPromptTemplates,
+)
 from .utils import (
     all_views,
     all_windows,
@@ -210,12 +215,19 @@ def preprocess_message_for_html(message: str) -> str:
     return "\n".join(new_lines)
 
 
-def preprocess_chat_message(view: sublime.View, message: str) -> tuple[bool, str]:
+def preprocess_chat_message(
+    view: sublime.View, message: str, templates: dict[CopilotUserDefinedPromptTemplates] = {}
+) -> tuple[bool, str]:
     from .template import load_string_template
 
-    is_template = message in CopilotConversationTemplates
-    if is_template:
+    if message in CopilotConversationTemplates:
+        is_template = True
         message += " {{ sel[0] }}"
+    elif message in templates:
+        is_template = True
+        message = "{} {}".format(message, "\n".join(templates[message]["prompt"]))
+    else:
+        is_template = False
 
     template = load_string_template(message)
     lang = get_view_language_id(view, view.sel()[0].begin())

@@ -21,6 +21,24 @@
 		// The (Jinja2) template of the status bar text which is inside the parentheses `(...)`.
 		// See https://jinja.palletsprojects.com/templates/
 		"status_text": "{% if is_copilot_ignored %}{{ is_copilot_ignored }}{% elif is_waiting %}{{ is_waiting }}{% elif server_version %}v{{ server_version }}{% endif %}",
+		"prompts": {
+			"/review": {
+				"title": "Review",
+				"prompt": [
+					"Review the provided code and provide feedback.",
+					"Feedback should first reply back with the line or lines of code, followed by the feedback about the code.",
+					"Do not invent new problems.",
+					"The feedback should be constructive and aim to improve the code quality.",
+					"If there are no issues detected, reply that the code looks good and no changes are necessary.",
+					"Group related feedback into a single comment if possible.",
+					"Present each comment with a brief description of the issue and a suggestion for improvement.",
+					"Use the format `Comment #: [description] [suggestion]` for each comment, # representing the number of comments.",
+					"At last provide a summary of the overall code quality and any general suggestions for improvement.",
+					"",
+					"{{sel[0]}}",
+				]
+			}
+		}
 	},
 	// ST4 configuration
 	"selector": "source | text | embedding"

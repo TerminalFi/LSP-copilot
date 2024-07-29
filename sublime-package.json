@@ -19,6 +19,19 @@
                   "additionalProperties": false,
                   "type": "object",
                   "properties": {
+                    "authProvider": {
+                      "default": "github",
+                      "markdownDescription": "The GitHub identity to use for Copilot",
+                      "type": "string",
+                      "enumDescriptions": [
+                        "GitHub.com",
+                        "GitHub Enterprise"
+                      ],
+                      "enum": [
+                        "github",
+                        "github-enterprise"
+                      ],
+                    },
                     "auto_ask_completions": {
                       "default": true,
                       "description": "Auto ask the server for completions. Otherwise, you have to trigger it manually.",
@@ -43,19 +56,6 @@
                       "markdownDescription": "Enables `debug` mode fo the LSP-copilot. Enabling all commands regardless of status requirements.",
                       "type": "boolean"
                     },
-                    "authProvider": {
-                      "default": "github",
-                      "markdownDescription": "The GitHub identity to use for Copilot",
-                      "type": "string",
-                      "enumDescriptions": [
-                        "GitHub.com",
-                        "GitHub Enterprise"
-                      ],
-                      "enum": [
-                        "github",
-                        "github-enterprise"
-                      ],
-                    },
                     "github-enterprise": {
                       "type": "object",
                       "markdownDescription": "The configuration for Github Enterprise.",
@@ -77,20 +77,38 @@
                       "description": "Enables local checks. This feature is not fully understood yet.",
                       "type": "boolean"
                     },
+                    "prompts": {
+                      "default": true,
+                      "markdownDescription": "Enables custom user prompts for Copilot completions.",
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "markdownDescription": "Title of the prompt.",
+                          "type": "string"
+                        },
+                        "prompt": {
+                          "markdownDescription": "The prompt message.",
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
                     "proxy": {
                       "default": "",
                       "markdownDescription": "The HTTP proxy to use for Copilot requests. It's in the form of `username:password@host:port` or just `host:port`.",
+                      "type": "string"
+                    },
+                    "status_text": {
+                      "default": "{% if server_version %}v{{ server_version }}{% endif %}",
+                      "markdownDescription": "The (Jinja2) template of the status bar text which is inside the parentheses `(...)`. See https://jinja.palletsprojects.com/templates/",
                       "type": "string"
                     },
                     "telemetry": {
                       "default": false,
                       "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` completions.",
                       "type": "boolean"
-                    },
-                    "status_text": {
-                      "default": "{% if server_version %}v{{ server_version }}{% endif %}",
-                      "markdownDescription": "The (Jinja2) template of the status bar text which is inside the parentheses `(...)`. See https://jinja.palletsprojects.com/templates/",
-                      "type": "string"
                     }
                   }
                 }

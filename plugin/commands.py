@@ -243,7 +243,8 @@ class CopilotConversationChatCommand(LspTextCommand):
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
 
-        is_template, msg = preprocess_chat_message(view, initial_message)
+        user_prompts = session.config.settings.get("prompts") or {}
+        is_template, msg = preprocess_chat_message(view, initial_message, user_prompts)
         if msg:
             wcm.append_conversation_entry({
                 "kind": plugin.get_account_status().user or "user",
@@ -292,8 +293,8 @@ class CopilotConversationChatCommand(LspTextCommand):
 
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
-
-        is_template, msg = preprocess_chat_message(view, msg)
+        user_prompts = session.config.settings.get("prompts") or {}
+        is_template, msg = preprocess_chat_message(view, msg, user_prompts)
         wcm.append_conversation_entry({
             "kind": plugin.get_account_status().user or "user",
             "conversationId": wcm.conversation_id,
