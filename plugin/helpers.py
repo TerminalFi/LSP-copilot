@@ -225,9 +225,10 @@ def preprocess_chat_message(
         is_template = True
         message += " {{ sel[0] }}"
     elif message in user_templates:
-        is_template = True
-        template = next(filter(lambda t: f"/{t['id']}" == message, templates), None)
-        message = "{} {}".format(message, "\n".join(template["prompt"]))
+        user_template = next(filter(lambda t: f"/{t['id']}" == message, templates), None)
+        if user_template:
+            is_template = True
+            message = "{} {}".format(message, "\n".join(user_template["prompt"]))
     else:
         is_template = False
 

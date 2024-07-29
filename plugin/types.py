@@ -191,3 +191,4 @@ class CopilotUserDefinedPromptTemplates(TypedDict, total=True):
     id: str
     description: str
     prompt: list[str]
+    scopes: list[str]
