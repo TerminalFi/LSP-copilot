@@ -188,5 +188,6 @@ CopilotConversationTemplates = {"/fix", "/tests", "/doc", "/explain", "/simplify
 
 
 class CopilotUserDefinedPromptTemplates(TypedDict, total=True):
-    title: str
+    id: str
+    description: str
     prompt: list[str]
