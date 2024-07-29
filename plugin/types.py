@@ -186,6 +186,10 @@ class CopilotRequestCoversationAgent(TypedDict, total=True):
     description: str
 
 
+class CopilotPayloadConversationPreconditions(TypedDict, total=True):
+    pass
+
+
 class CopilotPayloadConversationContext(TypedDict, total=True):
     conversationId: str
     """E.g., `"e3b0d5e3-0c3b-4292-a5ea-15d6003e7c45"`."""

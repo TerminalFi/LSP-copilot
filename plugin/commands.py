@@ -45,6 +45,7 @@ from .helpers import (
     preprocess_message_for_html,
 )
 from .types import (
+    CopilotPayloadConversationPreconditions,
     CopilotPayloadConversationTemplate,
     CopilotPayloadFileStatus,
     CopilotPayloadGetVersion,
@@ -235,7 +236,11 @@ class CopilotConversationChatCommand(LspTextCommand):
         )
 
     def _on_result_conversation_preconditions(
-        self, plugin: CopilotPlugin, session: Session, payload, initial_message: str
+        self,
+        plugin: CopilotPlugin,
+        session: Session,
+        payload: CopilotPayloadConversationPreconditions,
+        initial_message: str,
     ) -> None:
         if not (window := self.view.window()):
             return
