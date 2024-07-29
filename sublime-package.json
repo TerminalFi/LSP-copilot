@@ -80,17 +80,24 @@
                     "prompts": {
                       "default": true,
                       "markdownDescription": "Enables custom user prompts for Copilot completions.",
-                      "type": "object",
-                      "properties": {
-                        "title": {
-                          "markdownDescription": "Title of the prompt.",
-                          "type": "string"
-                        },
-                        "prompt": {
-                          "markdownDescription": "The prompt message.",
-                          "type": "array",
-                          "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "markdownDescription": "The ID of the prompt that acts as the trigger. `/` is automatically assumed and shouldn't be included.",
                             "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "The description of the prompt.",
+                            "type": "string"
+                          },
+                          "prompt": {
+                            "markdownDescription": "The prompt message.",
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
                           }
                         }
                       }
