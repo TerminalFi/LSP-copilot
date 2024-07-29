@@ -219,7 +219,8 @@ def preprocess_chat_message(
     view: sublime.View, message: str, templates: list[CopilotUserDefinedPromptTemplates] = []
 ) -> tuple[bool, str]:
     from .template import load_string_template
-
+    
+    is_template = False
     user_templates = [f'/{template["id"]}' for template in templates]
     if message in CopilotConversationTemplates:
         is_template = True
@@ -229,8 +230,6 @@ def preprocess_chat_message(
         if user_template:
             is_template = True
             message = "{} {}".format(message, "\n".join(user_template["prompt"]))
-    else:
-        is_template = False
 
     template = load_string_template(message)
     lang = get_view_language_id(view, view.sel()[0].begin())
