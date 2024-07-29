@@ -538,7 +538,7 @@ class CopilotConversationTemplatesCommand(LspTextCommand):
 
     def _on_result_conversation_templates(
         self,
-        user_defined_templates: dict[CopilotUserDefinedPromptTemplates],
+        user_defined_templates: dict[str, CopilotUserDefinedPromptTemplates],
         payload: list[CopilotPayloadConversationTemplate],
     ) -> None:
         if not (window := self.view.window()):

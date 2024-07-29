@@ -216,7 +216,7 @@ def preprocess_message_for_html(message: str) -> str:
 
 
 def preprocess_chat_message(
-    view: sublime.View, message: str, templates: dict[CopilotUserDefinedPromptTemplates] = {}
+    view: sublime.View, message: str, templates: dict[str, CopilotUserDefinedPromptTemplates] = {}
 ) -> tuple[bool, str]:
     from .template import load_string_template
 
