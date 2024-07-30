@@ -179,7 +179,7 @@ def prepare_completion_request(view: sublime.View, max_selections: int = 1) -> d
             "indentSize": 1,  # there is no such concept in ST
             "insertSpaces": view.settings().get("translate_tabs_to_spaces"),
             "path": file_path,
-            "uri": file_path if file_path.startswith("buffer:") else file_path and filename_to_uri(file_path),
+            "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
             "relativePath": get_project_relative_path(file_path),
             "languageId": get_view_language_id(view),
             "position": {"line": row, "character": col},
@@ -191,14 +191,14 @@ def prepare_completion_request(view: sublime.View, max_selections: int = 1) -> d
 
 
 def prepare_conversation_turn_request(
-    conv_id, id, msg, view: sublime.View, source: Literal["panel", "inline"] = "panel"
+    conversation_id: int, window_id: int, message: str, view: sublime.View, source: Literal["panel", "inline"] = "panel"
 ) -> dict[str, Any] | None:
     if not (initial_doc := prepare_completion_request(view, max_selections=5)):
         return None
     turn = {
-        "conversationId": conv_id,
-        "message": msg,
-        "workDoneToken": f"copilot_chat://{id}",
+        "conversationId": conversation_id,
+        "message: int: int: str": message,
+        "workDoneToken": f"copilot_chat://{window_id}",
         "doc": initial_doc["doc"],
         "computeSuggestions": True,
         "references": [],
@@ -220,7 +220,7 @@ def prepare_conversation_turn_request(
         turn["references"].append({
             "type": "file",
             "status": "included",
-            "uri": file_path if file_path.startswith("buffer:") else file_path and filename_to_uri(file_path),
+            "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
             "range": initial_doc["doc"]["position"],
             "visibleRange": {
                 "start": {"line": visible_start[0], "character": visible_start[1]},
