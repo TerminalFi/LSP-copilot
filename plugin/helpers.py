@@ -191,7 +191,7 @@ def prepare_completion_request(view: sublime.View, max_selections: int = 1) -> d
 
 
 def prepare_conversation_turn_request(
-    conversation_id: int, window_id: int, message: str, view: sublime.View, source: Literal["panel", "inline"] = "panel"
+    conversation_id: str, window_id: int, message: str, view: sublime.View, source: Literal["panel", "inline"] = "panel"
 ) -> dict[str, Any] | None:
     if not (initial_doc := prepare_completion_request(view, max_selections=5)):
         return None
