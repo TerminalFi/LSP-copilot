@@ -214,12 +214,13 @@ def prepare_conversation_turn_request(
     for selection in view.sel():
         if selection.empty() or view.substr(selection).strip() == "":
             continue
+        file_path = view.file_name() or f"buffer:{view.buffer().id()}"
         selection_start = view.rowcol(selection.begin())
         selection_end = view.rowcol(selection.end())
         turn["references"].append({
             "type": "file",
             "status": "included",
-            "uri": filename_to_uri(view.file_name()),
+            "uri": file_path if file_path.startswith("buffer:") else file_path and filename_to_uri(file_path),
             "range": initial_doc["doc"]["position"],
             "visibleRange": {
                 "start": {"line": visible_start[0], "character": visible_start[1]},
