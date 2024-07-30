@@ -200,12 +200,14 @@ class CopilotClosePanelCompletionCommand(CopilotWindowCommand):
             view = self.window.active_view()
         else:
             view = find_view_by_id(view_id)
+
         if not view:
             return
+
         ViewPanelCompletionManager(view).close()
 
 
-class CopilotConversationChatShimCommand(LspWindowCommand):
+class CopilotConversationChatShimCommand(CopilotWindowCommand):
     def run(self, window_id: int, message: str = "") -> None:
         if not (window := find_window_by_id(window_id)):
             return
@@ -217,7 +219,7 @@ class CopilotConversationChatShimCommand(LspWindowCommand):
         view.run_command("copilot_conversation_chat", {"message": message})
 
 
-class CopilotConversationChatCommand(LspTextCommand):
+class CopilotConversationChatCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str = "") -> None:
         if not (window := self.view.window()):
@@ -337,7 +339,7 @@ class CopilotConversationCloseCommand(CopilotWindowCommand):
         WindowConversationManager(window).close()
 
 
-class CopilotConversationRatingShimCommand(LspWindowCommand):
+class CopilotConversationRatingShimCommand(CopilotWindowCommand):
     def run(self, turn_id: str, rating: int) -> None:
         wcm = WindowConversationManager(self.window)
         if not (view := find_view_by_id(wcm.last_active_view_id)):
@@ -345,7 +347,7 @@ class CopilotConversationRatingShimCommand(LspWindowCommand):
         view.run_command("copilot_conversation_rating", {"turn_id": turn_id, "rating": rating})
 
 
-class CopilotConversationRatingCommand(LspTextCommand):
+class CopilotConversationRatingCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, turn_id: str, rating: int) -> None:
         session.send_request(
@@ -364,7 +366,7 @@ class CopilotConversationRatingCommand(LspTextCommand):
         pass
 
 
-class CopilotConversationDestroyShimCommand(LspWindowCommand):
+class CopilotConversationDestroyShimCommand(CopilotWindowCommand):
     def run(self, conversation_id: str) -> None:
         wcm = WindowConversationManager(self.window)
         if not (view := find_view_by_id(wcm.last_active_view_id)):
@@ -372,7 +374,7 @@ class CopilotConversationDestroyShimCommand(LspWindowCommand):
         view.run_command("copilot_conversation_destroy", {"conversation_id": conversation_id})
 
 
-class CopilotConversationDestroyCommand(LspTextCommand):
+class CopilotConversationDestroyCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, conversation_id: str) -> None:
         if not (
@@ -411,7 +413,7 @@ class CopilotConversationDestroyCommand(LspTextCommand):
         return super().is_enabled() and bool(WindowConversationManager(window).conversation_id)
 
 
-class CopilotConversationTurnDeleteShimCommand(LspWindowCommand):
+class CopilotConversationTurnDeleteShimCommand(CopilotWindowCommand):
     def run(self, window_id: int, conversation_id: str, turn_id: str) -> None:
         wcm = WindowConversationManager(self.window)
         if not (view := find_view_by_id(wcm.last_active_view_id)):
@@ -422,7 +424,7 @@ class CopilotConversationTurnDeleteShimCommand(LspWindowCommand):
         )
 
 
-class CopilotConversationTurnDeleteCommand(LspTextCommand):
+class CopilotConversationTurnDeleteCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(
         self,
@@ -484,7 +486,7 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
         wcm.update()
 
 
-class CopilotConversationCopyCodeCommand(LspWindowCommand):
+class CopilotConversationCopyCodeCommand(CopilotWindowCommand):
     def run(self, window_id: int, code_block_index: int) -> None:
         if not (window := find_window_by_id(window_id)):
             return
@@ -496,7 +498,7 @@ class CopilotConversationCopyCodeCommand(LspWindowCommand):
         sublime.set_clipboard(code)
 
 
-class CopilotConversationInsertCodeShimCommand(LspWindowCommand):
+class CopilotConversationInsertCodeShimCommand(CopilotWindowCommand):
     def run(self, window_id: int, code_block_index: int) -> None:
         if not (window := find_window_by_id(window_id)):
             return
@@ -511,7 +513,7 @@ class CopilotConversationInsertCodeShimCommand(LspWindowCommand):
         view.run_command("copilot_conversation_insert_code", {"characters": code})
 
 
-class CopilotConversationInsertCodeCommand(LspTextCommand):
+class CopilotConversationInsertCodeCommand(CopilotTextCommand):
     def run(self, edit: sublime.Edit, characters: str) -> None:
         if len(self.view.sel()) > 1:
             return
@@ -521,7 +523,7 @@ class CopilotConversationInsertCodeCommand(LspTextCommand):
         self.view.insert(edit, begin, characters)
 
 
-class CopilotConversationAgentsCommand(LspTextCommand):
+class CopilotConversationAgentsCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         session.send_request(Request(REQ_CONVERSATION_AGENTS, {"options": {}}), self._on_result_conversation_agents)
@@ -533,7 +535,7 @@ class CopilotConversationAgentsCommand(LspTextCommand):
         window.show_quick_panel([[item["slug"], item["description"]] for item in payload], lambda _: None)
 
 
-class CopilotConversationTemplatesCommand(LspTextCommand):
+class CopilotConversationTemplatesCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         user_prompts: list[CopilotUserDefinedPromptTemplates] = session.config.settings.get("prompts") or []
