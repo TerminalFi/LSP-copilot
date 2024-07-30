@@ -197,7 +197,7 @@ def prepare_conversation_turn_request(
         return None
     turn = {
         "conversationId": conversation_id,
-        "message: int: int: str": message,
+        "message:": message,
         "workDoneToken": f"copilot_chat://{window_id}",
         "doc": initial_doc["doc"],
         "computeSuggestions": True,
