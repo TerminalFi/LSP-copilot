@@ -316,12 +316,10 @@ class CopilotConversationChatCommand(LspTextCommand):
             "annotations": [],
             "hideText": False,
         })
-
+        if not (request := prepare_conversation_turn_request(wcm.conversation_id, wcm.window.id(), msg, view)):
+            return
         session.send_request(
-            Request(
-                REQ_CONVERSATION_TURN,
-                prepare_conversation_turn_request(wcm.conversation_id, wcm.window.id(), msg, view),
-            ),
+            Request(REQ_CONVERSATION_TURN, request),
             lambda _: wcm.prompt(callback=lambda x: self._on_prompt(plugin, session, x)),
         )
         wcm.is_waiting = True
