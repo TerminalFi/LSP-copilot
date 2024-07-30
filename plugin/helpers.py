@@ -20,6 +20,7 @@ from .settings import get_plugin_setting_dotted
 from .types import (
     CopilotPayloadCompletion,
     CopilotPayloadPanelSolution,
+    CopilotRequestCoversationTurn,
     CopilotUserDefinedPromptTemplates,
 )
 from .utils import (
@@ -191,11 +192,15 @@ def prepare_completion_request(view: sublime.View, max_selections: int = 1) -> d
 
 
 def prepare_conversation_turn_request(
-    conversation_id: str, window_id: int, message: str, view: sublime.View, source: Literal["panel", "inline"] = "panel"
-) -> dict[str, Any] | None:
+    conversation_id: str,
+    window_id: int,
+    message: str,
+    view: sublime.View,
+    source: Literal["panel", "inline"] = "panel",
+) -> CopilotRequestCoversationTurn | None:
     if not (initial_doc := prepare_completion_request(view, max_selections=5)):
         return None
-    turn = {
+    turn: CopilotRequestCoversationTurn = {
         "conversationId": conversation_id,
         "message": message,
         "workDoneToken": f"copilot_chat://{window_id}",

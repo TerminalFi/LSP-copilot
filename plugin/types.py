@@ -37,6 +37,34 @@ class NetworkProxy(TypedDict, total=True):
     rejectUnauthorized: bool
 
 
+# ------------------- #
+# basic Copilot types #
+# ------------------- #
+
+
+class CopilotPositionType(TypedDict, total=True):
+    character: int
+    line: int
+
+
+class CopilotRangeType(TypedDict, total=True):
+    start: CopilotPositionType
+    end: CopilotPositionType
+
+
+class CopilotDocType(TypedDict, total=True):
+    source: str
+    tabSize: int
+    indentSize: int
+    insertSpaces: bool
+    path: str
+    uri: str
+    relativePath: str
+    languageId: str
+    position: CopilotPositionType
+    version: int
+
+
 # --------------- #
 # Copilot payload #
 # --------------- #
@@ -46,21 +74,11 @@ class CopilotPayloadFileStatus(TypedDict, total=True):
     status: Literal["not included", "included"]
 
 
-class CopilotPayloadCompletionPosition(TypedDict, total=True):
-    character: int
-    line: int
-
-
-class CopilotPayloadCompletionRange(TypedDict, total=True):
-    start: CopilotPayloadCompletionPosition
-    end: CopilotPayloadCompletionPosition
-
-
 class CopilotPayloadCompletion(TypedDict, total=True):
     text: str
-    position: CopilotPayloadCompletionPosition
+    position: CopilotPositionType
     uuid: str
-    range: CopilotPayloadCompletionRange
+    range: CopilotRangeType
     displayText: str
     point: StPoint
     region: StRegion
@@ -133,7 +151,7 @@ class CopilotPayloadPanelSolution(TypedDict, total=True):
     score: int
     panelId: str
     completionText: str
-    range: CopilotPayloadCompletionRange
+    range: CopilotRangeType
     region: StRegion
 
 
@@ -178,6 +196,25 @@ class CopilotPayloadConversationTemplate(TypedDict, total=True):
     description: str
     shortDescription: str
     scopes: list[str]
+
+
+class CopilotRequestCoversationTurn(TypedDict, total=True):
+    conversationId: str
+    message: str
+    workDoneToken: str
+    doc: CopilotDocType
+    computeSuggestions: bool
+    references: list[CopilotRequestCoversationTurnReference]
+    source: Literal["panel", "inline"]
+
+
+class CopilotRequestCoversationTurnReference(TypedDict, total=True):
+    type: str
+    status: str
+    uri: str
+    range: CopilotPositionType
+    visibleRange: CopilotRangeType
+    selection: CopilotRangeType
 
 
 class CopilotRequestCoversationAgent(TypedDict, total=True):
