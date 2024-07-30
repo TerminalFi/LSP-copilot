@@ -41,6 +41,7 @@ from .decorators import _must_be_active_view
 from .helpers import (
     GithubInfo,
     prepare_completion_request,
+    prepare_conversation_turn_request,
     preprocess_chat_message,
     preprocess_message_for_html,
 )
@@ -316,21 +317,10 @@ class CopilotConversationChatCommand(LspTextCommand):
             "hideText": False,
         })
 
-        if not (request := prepare_completion_request(view)):
-            return
-
         session.send_request(
             Request(
                 REQ_CONVERSATION_TURN,
-                {
-                    "conversationId": wcm.conversation_id,
-                    "message": msg,
-                    "workDoneToken": f"copilot_chat://{wcm.window.id()}",
-                    "doc": request["doc"],
-                    "computeSuggestions": True,
-                    "references": [],
-                    "source": "panel",
-                },
+                prepare_conversation_turn_request(wcm.conversation_id, wcm.window.id(), msg, view),
             ),
             lambda _: wcm.prompt(callback=lambda x: self._on_prompt(plugin, session, x)),
         )

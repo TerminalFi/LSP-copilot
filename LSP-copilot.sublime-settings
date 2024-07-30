@@ -26,7 +26,7 @@
 				"id": "review",
 				"description": "Review code and provide feedback.",
 				"prompt": [
-					"Review the provided code and provide feedback.",
+					"Review the referenced code and provide feedback.",
 					"Feedback should first reply back with the line or lines of code, followed by the feedback about the code.",
 					"Do not invent new problems.",
 					"The feedback should be constructive and aim to improve the code quality.",

@@ -7,7 +7,7 @@ import threading
 import time
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Literal, Sequence
 
 import sublime
 from LSP.plugin.core.url import filename_to_uri
@@ -18,7 +18,6 @@ from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
 from .log import log_error
 from .settings import get_plugin_setting_dotted
 from .types import (
-    CopilotConversationTemplates,
     CopilotPayloadCompletion,
     CopilotPayloadPanelSolution,
     CopilotUserDefinedPromptTemplates,
@@ -27,7 +26,6 @@ from .utils import (
     all_views,
     all_windows,
     drop_falsy,
-    enum_has_value,
     erase_copilot_setting,
     erase_copilot_view_setting,
     get_copilot_setting,
@@ -166,10 +164,10 @@ class CopilotIgnore:
         return False
 
 
-def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
+def prepare_completion_request(view: sublime.View, max_selections: int = 1) -> dict[str, Any] | None:
     if not view:
         return None
-    if len(sel := view.sel()) != 1:
+    if len(sel := view.sel()) > max_selections or len(sel) == 0:
         return None
 
     file_path = view.file_name() or f"buffer:{view.buffer().id()}"
@@ -190,6 +188,49 @@ def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
             "version": view.change_count(),
         }
     }
+
+
+def prepare_conversation_turn_request(
+    conv_id, id, msg, view: sublime.View, source: Literal["panel", "inline"] = "panel"
+) -> dict[str, Any] | None:
+    if not (initial_doc := prepare_completion_request(view, max_selections=5)):
+        return None
+    turn = {
+        "conversationId": conv_id,
+        "message": msg,
+        "workDoneToken": f"copilot_chat://{id}",
+        "doc": initial_doc["doc"],
+        "computeSuggestions": True,
+        "references": [],
+        "source": source,
+    }
+
+    visible_region = view.visible_region()
+    visible_start = view.rowcol(visible_region.begin())
+    visible_end = view.rowcol(visible_region.end())
+
+    # References can technicaly be across multiple files
+    # TODO: Support references across multiple files
+    for selection in view.sel():
+        if selection.empty() or view.substr(selection).strip() == "":
+            continue
+        selection_start = view.rowcol(selection.begin())
+        selection_end = view.rowcol(selection.end())
+        turn["references"].append({
+            "type": "file",
+            "status": "included",
+            "uri": filename_to_uri(view.file_name()),
+            "range": initial_doc["doc"]["position"],
+            "visibleRange": {
+                "start": {"line": visible_start[0], "character": visible_start[1]},
+                "end": {"line": visible_end[0], "character": visible_end[1]},
+            },
+            "selection": {
+                "start": {"line": selection_start[0], "character": selection_start[1]},
+                "end": {"line": selection_end[0], "character": selection_end[1]},
+            },
+        })
+    return turn
 
 
 def preprocess_message_for_html(message: str) -> str:
@@ -226,9 +267,12 @@ def preprocess_chat_message(
     user_template = first_true(templates, pred=lambda t: f"/{t['id']}" == message)
     is_template = False
 
-    if user_template or enum_has_value(CopilotConversationTemplates, message):
+    if user_template:
         is_template = True
         message += "\n\n{{ user_prompt }}\n\n{{ code }}"
+        message += "\n\n{{ user_prompt }}\n\n"
+    else:
+        return False, message
 
     region = view.sel()[0]
     lang = get_view_language_id(view, region.begin())
