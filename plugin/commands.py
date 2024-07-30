@@ -57,7 +57,7 @@ from .types import (
     CopilotPayloadSignInConfirm,
     CopilotPayloadSignInInitiate,
     CopilotPayloadSignOut,
-    CopilotRequestCoversationAgent,
+    CopilotRequestConversationAgent,
     CopilotUserDefinedPromptTemplates,
     T_Callable,
 )
@@ -356,10 +356,10 @@ class CopilotConversationRatingCommand(LspTextCommand):
                     "rating": rating,
                 },
             ),
-            self._on_result_coversation_rating,
+            self._on_result_conversation_rating,
         )
 
-    def _on_result_coversation_rating(self, payload: Literal["OK"]) -> None:
+    def _on_result_conversation_rating(self, payload: Literal["OK"]) -> None:
         # Returns OK
         pass
 
@@ -390,10 +390,10 @@ class CopilotConversationDestroyCommand(LspTextCommand):
                     "options": {},
                 },
             ),
-            self._on_result_coversation_destroy,
+            self._on_result_conversation_destroy,
         )
 
-    def _on_result_coversation_destroy(self, payload: str) -> None:
+    def _on_result_conversation_destroy(self, payload: str) -> None:
         if not (window := self.view.window()):
             return
         if payload != "OK":
@@ -455,10 +455,10 @@ class CopilotConversationTurnDeleteCommand(LspTextCommand):
                     "options": {},
                 },
             ),
-            lambda x: self._on_result_coversation_turn_delete(window_id, conversation_id, turn_id, x),
+            lambda x: self._on_result_conversation_turn_delete(window_id, conversation_id, turn_id, x),
         )
 
-    def _on_result_coversation_turn_delete(
+    def _on_result_conversation_turn_delete(
         self,
         window_id: int,
         conversation_id: str,
@@ -524,9 +524,9 @@ class CopilotConversationInsertCodeCommand(LspTextCommand):
 class CopilotConversationAgentsCommand(LspTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        session.send_request(Request(REQ_CONVERSATION_AGENTS, {"options": {}}), self._on_result_coversation_agents)
+        session.send_request(Request(REQ_CONVERSATION_AGENTS, {"options": {}}), self._on_result_conversation_agents)
 
-    def _on_result_coversation_agents(self, payload: list[CopilotRequestCoversationAgent]) -> None:
+    def _on_result_conversation_agents(self, payload: list[CopilotRequestConversationAgent]) -> None:
         window = self.view.window()
         if not window:
             return

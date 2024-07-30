@@ -198,17 +198,17 @@ class CopilotPayloadConversationTemplate(TypedDict, total=True):
     scopes: list[str]
 
 
-class CopilotRequestCoversationTurn(TypedDict, total=True):
+class CopilotRequestConversationTurn(TypedDict, total=True):
     conversationId: str
     message: str
     workDoneToken: str
     doc: CopilotDocType
     computeSuggestions: bool
-    references: list[CopilotRequestCoversationTurnReference]
+    references: list[CopilotRequestConversationTurnReference]
     source: Literal["panel", "inline"]
 
 
-class CopilotRequestCoversationTurnReference(TypedDict, total=True):
+class CopilotRequestConversationTurnReference(TypedDict, total=True):
     type: str
     status: str
     uri: str
@@ -217,7 +217,7 @@ class CopilotRequestCoversationTurnReference(TypedDict, total=True):
     selection: CopilotRangeType
 
 
-class CopilotRequestCoversationAgent(TypedDict, total=True):
+class CopilotRequestConversationAgent(TypedDict, total=True):
     slug: str
     name: str
     description: str
