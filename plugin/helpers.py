@@ -197,7 +197,7 @@ def prepare_conversation_turn_request(
         return None
     turn = {
         "conversationId": conversation_id,
-        "message:": message,
+        "message": message,
         "workDoneToken": f"copilot_chat://{window_id}",
         "doc": initial_doc["doc"],
         "computeSuggestions": True,
@@ -271,7 +271,6 @@ def preprocess_chat_message(
     if user_template:
         is_template = True
         message += "\n\n{{ user_prompt }}\n\n{{ code }}"
-        message += "\n\n{{ user_prompt }}\n\n"
     else:
         return False, message
 

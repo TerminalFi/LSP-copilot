@@ -318,6 +318,7 @@ class CopilotConversationChatCommand(LspTextCommand):
         })
         if not (request := prepare_conversation_turn_request(wcm.conversation_id, wcm.window.id(), msg, view)):
             return
+
         session.send_request(
             Request(REQ_CONVERSATION_TURN, request),
             lambda _: wcm.prompt(callback=lambda x: self._on_prompt(plugin, session, x)),
