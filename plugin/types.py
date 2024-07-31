@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Literal, Tuple, TypedDict, TypeVar
 
+from LSP.plugin.core.typing import StrEnum
+
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
@@ -35,6 +37,34 @@ class NetworkProxy(TypedDict, total=True):
     rejectUnauthorized: bool
 
 
+# ------------------- #
+# basic Copilot types #
+# ------------------- #
+
+
+class CopilotPositionType(TypedDict, total=True):
+    character: int
+    line: int
+
+
+class CopilotRangeType(TypedDict, total=True):
+    start: CopilotPositionType
+    end: CopilotPositionType
+
+
+class CopilotDocType(TypedDict, total=True):
+    source: str
+    tabSize: int
+    indentSize: int
+    insertSpaces: bool
+    path: str
+    uri: str
+    relativePath: str
+    languageId: str
+    position: CopilotPositionType
+    version: int
+
+
 # --------------- #
 # Copilot payload #
 # --------------- #
@@ -44,21 +74,11 @@ class CopilotPayloadFileStatus(TypedDict, total=True):
     status: Literal["not included", "included"]
 
 
-class CopilotPayloadCompletionPosition(TypedDict, total=True):
-    character: int
-    line: int
-
-
-class CopilotPayloadCompletionRange(TypedDict, total=True):
-    start: CopilotPayloadCompletionPosition
-    end: CopilotPayloadCompletionPosition
-
-
 class CopilotPayloadCompletion(TypedDict, total=True):
     text: str
-    position: CopilotPayloadCompletionPosition
+    position: CopilotPositionType
     uuid: str
-    range: CopilotPayloadCompletionRange
+    range: CopilotRangeType
     displayText: str
     point: StPoint
     region: StRegion
@@ -131,7 +151,7 @@ class CopilotPayloadPanelSolution(TypedDict, total=True):
     score: int
     panelId: str
     completionText: str
-    range: CopilotPayloadCompletionRange
+    range: CopilotRangeType
     region: StRegion
 
 
@@ -142,6 +162,14 @@ class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
 # --------------------- #
 #  Copilot Chat Types   #
 # --------------------- #
+
+
+class CopilotConversationTemplates(StrEnum):
+    FIX = "/fix"
+    TESTS = "/tests"
+    DOC = "/doc"
+    EXPLAIN = "/explain"
+    SIMPLIFY = "/simplify"
 
 
 class CopilotPayloadConversationEntry(TypedDict, total=True):
@@ -170,10 +198,40 @@ class CopilotPayloadConversationTemplate(TypedDict, total=True):
     scopes: list[str]
 
 
-class CopilotRequestCoversationAgent(TypedDict, total=True):
+class CopilotRequestConversationTurn(TypedDict, total=True):
+    conversationId: str
+    message: str
+    workDoneToken: str
+    doc: CopilotDocType
+    computeSuggestions: bool
+    references: list[CopilotRequestConversationTurnReference]
+    source: Literal["panel", "inline"]
+
+
+class CopilotRequestConversationTurnReference(TypedDict, total=True):
+    type: str
+    status: str
+    uri: str
+    range: CopilotPositionType
+    visibleRange: CopilotRangeType
+    selection: CopilotRangeType
+
+
+class CopilotRequestConversationAgent(TypedDict, total=True):
     slug: str
     name: str
     description: str
+
+
+class CopilotPayloadConversationPreconditions(TypedDict, total=True):
+    pass
+
+
+class CopilotPayloadConversationCreate(TypedDict, total=True):
+    conversationId: str
+    """E.g., `"15d1791c-42f4-490c-9f79-0b79c4142d17"`."""
+    turnId: str
+    """E.g., `"a4a3785f-808f-41cc-8037-cd6707ffe584"`."""
 
 
 class CopilotPayloadConversationContext(TypedDict, total=True):
@@ -184,4 +242,8 @@ class CopilotPayloadConversationContext(TypedDict, total=True):
     skillId: Literal["current-editor", "project-labels", "recent-files"]  # not the complet list yet
 
 
-CopilotConversationTemplates = {"/fix", "/tests", "/doc", "/explain", "/simplify"}
+class CopilotUserDefinedPromptTemplates(TypedDict, total=True):
+    id: str
+    description: str
+    prompt: list[str]
+    scopes: list[str]

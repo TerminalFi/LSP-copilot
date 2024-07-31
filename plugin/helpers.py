@@ -5,20 +5,25 @@ import os
 import re
 import threading
 import time
-from collections.abc import Callable
 from operator import itemgetter
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Literal, Sequence, cast
 
 import sublime
 from LSP.plugin.core.url import filename_to_uri
-from more_itertools import duplicates_everseen
+from more_itertools import duplicates_everseen, first_true
 from wcmatch import glob
 
 from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
 from .log import log_error
 from .settings import get_plugin_setting_dotted
-from .types import CopilotConversationTemplates, CopilotPayloadCompletion, CopilotPayloadPanelSolution
+from .types import (
+    CopilotDocType,
+    CopilotPayloadCompletion,
+    CopilotPayloadPanelSolution,
+    CopilotRequestConversationTurn,
+    CopilotUserDefinedPromptTemplates,
+)
 from .utils import (
     all_views,
     all_windows,
@@ -161,33 +166,82 @@ class CopilotIgnore:
         return False
 
 
-def prepare_completion_request(view: sublime.View) -> dict[str, Any] | None:
+def prepare_completion_request_doc(view: sublime.View, max_selections: int = 1) -> CopilotDocType | None:
     if not view:
         return None
-    if len(sel := view.sel()) != 1:
+    if len(sel := view.sel()) > max_selections or len(sel) == 0:
         return None
 
     file_path = view.file_name() or f"buffer:{view.buffer().id()}"
     row, col = view.rowcol(sel[0].begin())
     return {
-        "doc": {
-            "source": view.substr(sublime.Region(0, view.size())),
-            "tabSize": view.settings().get("tab_size"),
-            "indentSize": 1,  # there is no such concept in ST
-            "insertSpaces": view.settings().get("translate_tabs_to_spaces"),
-            "path": file_path,
-            "uri": file_path if file_path.startswith("buffer:") else file_path and filename_to_uri(file_path),
-            "relativePath": get_project_relative_path(file_path),
-            "languageId": get_view_language_id(view),
-            "position": {"line": row, "character": col},
-            # Buffer Version. Generally this is handled by LSP, but we need to handle it here
-            # Will need to test getting the version from LSP
-            "version": view.change_count(),
-        }
+        "source": view.substr(sublime.Region(0, view.size())),
+        "tabSize": cast(int, view.settings().get("tab_size")),
+        "indentSize": 1,  # there is no such concept in ST
+        "insertSpaces": cast(bool, view.settings().get("translate_tabs_to_spaces")),
+        "path": file_path,
+        "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
+        "relativePath": get_project_relative_path(file_path),
+        "languageId": get_view_language_id(view),
+        "position": {"line": row, "character": col},
+        # Buffer Version. Generally this is handled by LSP, but we need to handle it here
+        # Will need to test getting the version from LSP
+        "version": view.change_count(),
     }
 
 
+def prepare_conversation_turn_request(
+    conversation_id: str,
+    window_id: int,
+    message: str,
+    view: sublime.View,
+    source: Literal["panel", "inline"] = "panel",
+) -> CopilotRequestConversationTurn | None:
+    if not (doc := prepare_completion_request_doc(view, max_selections=5)):
+        return None
+    turn: CopilotRequestConversationTurn = {
+        "conversationId": conversation_id,
+        "message": message,
+        "workDoneToken": f"copilot_chat://{window_id}",
+        "doc": doc,
+        "computeSuggestions": True,
+        "references": [],
+        "source": source,
+    }
+
+    visible_region = view.visible_region()
+    visible_start = view.rowcol(visible_region.begin())
+    visible_end = view.rowcol(visible_region.end())
+
+    # References can technicaly be across multiple files
+    # TODO: Support references across multiple files
+    for selection in view.sel():
+        if selection.empty() or view.substr(selection).strip() == "":
+            continue
+        file_path = view.file_name() or f"buffer:{view.buffer().id()}"
+        selection_start = view.rowcol(selection.begin())
+        selection_end = view.rowcol(selection.end())
+        turn["references"].append({
+            "type": "file",
+            "status": "included",
+            "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
+            "range": doc["position"],
+            "visibleRange": {
+                "start": {"line": visible_start[0], "character": visible_start[1]},
+                "end": {"line": visible_end[0], "character": visible_end[1]},
+            },
+            "selection": {
+                "start": {"line": selection_start[0], "character": selection_start[1]},
+                "end": {"line": selection_end[0], "character": selection_end[1]},
+            },
+        })
+    return turn
+
+
 def preprocess_message_for_html(message: str) -> str:
+    def _escape_html(text: str) -> str:
+        return re.sub(r"<(.*?)>", r"&lt;\1&gt;", text)
+
     new_lines: list[str] = []
     inside_code_block = False
     inline_code_pattern = re.compile(r"`([^`]*)`")
@@ -200,28 +254,41 @@ def preprocess_message_for_html(message: str) -> str:
             escaped_line = ""
             start = 0
             for match in inline_code_pattern.finditer(line):
-                escaped_line += re.sub(r"<(.*?)>", r"&lt;\1&gt;", line[start : match.start()])
-                escaped_line += match.group(0)
+                escaped_line += _escape_html(line[start : match.start()]) + match.group(0)
                 start = match.end()
-            escaped_line += re.sub(r"<(.*?)>", r"&lt;\1&gt;", line[start:])
+            escaped_line += _escape_html(line[start:])
             new_lines.append(escaped_line)
         else:
             new_lines.append(line)
     return "\n".join(new_lines)
 
 
-def preprocess_chat_message(view: sublime.View, message: str) -> tuple[bool, str]:
+def preprocess_chat_message(
+    view: sublime.View,
+    message: str,
+    templates: Sequence[CopilotUserDefinedPromptTemplates] | None = None,
+) -> tuple[bool, str]:
     from .template import load_string_template
 
-    is_template = message in CopilotConversationTemplates
-    if is_template:
-        message += " {{ sel[0] }}"
+    templates = templates or []
+    user_template = first_true(templates, pred=lambda t: f"/{t['id']}" == message)
+    is_template = False
+
+    if user_template:
+        is_template = True
+        message += "\n\n{{ user_prompt }}\n\n{{ code }}"
+    else:
+        return False, message
+
+    region = view.sel()[0]
+    lang = get_view_language_id(view, region.begin())
 
     template = load_string_template(message)
-    lang = get_view_language_id(view, view.sel()[0].begin())
-    sel = [f"\n```{lang}\n{view.substr(region)}\n```\n" for region in view.sel()]
+    message = template.render(
+        code=f"\n```{lang}\n{view.substr(region)}\n```\n",
+        user_prompt="\n".join(user_template["prompt"]) if user_template else "",
+    )
 
-    message = template.render({"sel": sel})
     return is_template, message
 
 
@@ -247,7 +314,7 @@ def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadC
         _generate_completion_region(view, completion)
 
 
-def preprocess_panel_completions(view: sublime.View, completions: list[CopilotPayloadPanelSolution]) -> None:
+def preprocess_panel_completions(view: sublime.View, completions: Sequence[CopilotPayloadPanelSolution]) -> None:
     """Preprocess the `completions` from "getCompletionsCycling" request."""
     for completion in completions:
         _generate_completion_region(view, completion)

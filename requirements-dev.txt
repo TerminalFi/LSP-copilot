@@ -10,7 +10,7 @@ markupsafe==2.1.5
     # via jinja2
 more-itertools==10.3.0
     # via -r requirements.in
-mypy==1.11.0
+mypy==1.11.1
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via mypy
