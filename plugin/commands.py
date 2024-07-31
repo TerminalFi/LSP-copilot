@@ -407,10 +407,13 @@ class CopilotConversationDestroyCommand(CopilotTextCommand):
         wcm.close()
         wcm.reset()
 
-    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:
+    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:  # type: ignore
         if not (window := self.view.window()):
             return False
-        return super().is_enabled() and bool(WindowConversationManager(window).conversation_id)
+        return bool(
+            super().is_enabled()  # type: ignore
+            and WindowConversationManager(window).conversation_id
+        )
 
 
 class CopilotConversationTurnDeleteShimCommand(CopilotWindowCommand):
