@@ -33,7 +33,7 @@ from .helpers import (
     ActivityIndicator,
     CopilotIgnore,
     GithubInfo,
-    prepare_completion_request,
+    prepare_completion_request_doc,
     preprocess_completions,
     preprocess_panel_completions,
 )
@@ -399,7 +399,7 @@ class CopilotPlugin(NpmClientHandler):
         ):
             return
 
-        if not (params := prepare_completion_request(view)):
+        if not (doc := prepare_completion_request_doc(view)):
             return
 
         if no_callback:
@@ -410,7 +410,7 @@ class CopilotPlugin(NpmClientHandler):
                 self._activity_indicator.start()
             callback = functools.partial(self._on_get_completions, view, region=sel[0].to_tuple())
 
-        session.send_request_async(Request(request, params), callback)
+        session.send_request_async(Request(request, {"doc": doc}), callback)
 
     def _on_get_completions(
         self,

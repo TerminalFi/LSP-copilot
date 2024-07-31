@@ -7,7 +7,7 @@ import threading
 import time
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Callable, Literal, Sequence
+from typing import Any, Callable, Literal, Sequence, cast
 
 import sublime
 from LSP.plugin.core.url import filename_to_uri
@@ -18,6 +18,7 @@ from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
 from .log import log_error
 from .settings import get_plugin_setting_dotted
 from .types import (
+    CopilotDocType,
     CopilotPayloadCompletion,
     CopilotPayloadPanelSolution,
     CopilotRequestConversationTurn,
@@ -165,7 +166,7 @@ class CopilotIgnore:
         return False
 
 
-def prepare_completion_request(view: sublime.View, max_selections: int = 1) -> dict[str, Any] | None:
+def prepare_completion_request_doc(view: sublime.View, max_selections: int = 1) -> CopilotDocType | None:
     if not view:
         return None
     if len(sel := view.sel()) > max_selections or len(sel) == 0:
@@ -174,20 +175,18 @@ def prepare_completion_request(view: sublime.View, max_selections: int = 1) -> d
     file_path = view.file_name() or f"buffer:{view.buffer().id()}"
     row, col = view.rowcol(sel[0].begin())
     return {
-        "doc": {
-            "source": view.substr(sublime.Region(0, view.size())),
-            "tabSize": view.settings().get("tab_size"),
-            "indentSize": 1,  # there is no such concept in ST
-            "insertSpaces": view.settings().get("translate_tabs_to_spaces"),
-            "path": file_path,
-            "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
-            "relativePath": get_project_relative_path(file_path),
-            "languageId": get_view_language_id(view),
-            "position": {"line": row, "character": col},
-            # Buffer Version. Generally this is handled by LSP, but we need to handle it here
-            # Will need to test getting the version from LSP
-            "version": view.change_count(),
-        }
+        "source": view.substr(sublime.Region(0, view.size())),
+        "tabSize": cast(int, view.settings().get("tab_size")),
+        "indentSize": 1,  # there is no such concept in ST
+        "insertSpaces": cast(bool, view.settings().get("translate_tabs_to_spaces")),
+        "path": file_path,
+        "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
+        "relativePath": get_project_relative_path(file_path),
+        "languageId": get_view_language_id(view),
+        "position": {"line": row, "character": col},
+        # Buffer Version. Generally this is handled by LSP, but we need to handle it here
+        # Will need to test getting the version from LSP
+        "version": view.change_count(),
     }
 
 
@@ -198,13 +197,13 @@ def prepare_conversation_turn_request(
     view: sublime.View,
     source: Literal["panel", "inline"] = "panel",
 ) -> CopilotRequestConversationTurn | None:
-    if not (initial_doc := prepare_completion_request(view, max_selections=5)):
+    if not (doc := prepare_completion_request_doc(view, max_selections=5)):
         return None
     turn: CopilotRequestConversationTurn = {
         "conversationId": conversation_id,
         "message": message,
         "workDoneToken": f"copilot_chat://{window_id}",
-        "doc": initial_doc["doc"],
+        "doc": doc,
         "computeSuggestions": True,
         "references": [],
         "source": source,
@@ -226,7 +225,7 @@ def prepare_conversation_turn_request(
             "type": "file",
             "status": "included",
             "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
-            "range": initial_doc["doc"]["position"],
+            "range": doc["position"],
             "visibleRange": {
                 "start": {"line": visible_start[0], "character": visible_start[1]},
                 "end": {"line": visible_end[0], "character": visible_end[1]},
@@ -240,6 +239,9 @@ def prepare_conversation_turn_request(
 
 
 def preprocess_message_for_html(message: str) -> str:
+    def _escape_html(text: str) -> str:
+        return re.sub(r"<(.*?)>", r"&lt;\1&gt;", text)
+
     new_lines: list[str] = []
     inside_code_block = False
     inline_code_pattern = re.compile(r"`([^`]*)`")
@@ -252,10 +254,9 @@ def preprocess_message_for_html(message: str) -> str:
             escaped_line = ""
             start = 0
             for match in inline_code_pattern.finditer(line):
-                escaped_line += re.sub(r"<(.*?)>", r"&lt;\1&gt;", line[start : match.start()])
-                escaped_line += match.group(0)
+                escaped_line += _escape_html(line[start : match.start()]) + match.group(0)
                 start = match.end()
-            escaped_line += re.sub(r"<(.*?)>", r"&lt;\1&gt;", line[start:])
+            escaped_line += _escape_html(line[start:])
             new_lines.append(escaped_line)
         else:
             new_lines.append(line)

@@ -40,7 +40,7 @@ from .constants import (
 from .decorators import _must_be_active_view
 from .helpers import (
     GithubInfo,
-    prepare_completion_request,
+    prepare_completion_request_doc,
     prepare_conversation_turn_request,
     preprocess_chat_message,
     preprocess_message_for_html,
@@ -617,7 +617,7 @@ class CopilotRejectCompletionCommand(CopilotTextCommand):
 class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
-        if not (params := prepare_completion_request(self.view)):
+        if not (doc := prepare_completion_request_doc(self.view)):
             return
 
         vcm = ViewPanelCompletionManager(self.view)
@@ -625,7 +625,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
         vcm.is_visible = True
         vcm.completions = []
 
-        params["panelId"] = vcm.panel_id
+        params = {"doc": doc, "panelId": vcm.panel_id}
         session.send_request(Request(REQ_GET_PANEL_COMPLETIONS, params), self._on_result_get_panel_completions)
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
