@@ -277,8 +277,6 @@ def preprocess_chat_message(
     if user_template:
         is_template = True
         message += "\n\n{{ user_prompt }}\n\n{{ code }}"
-    else:
-        return False, message
 
     region = view.sel()[0]
     lang = get_view_language_id(view, region.begin())

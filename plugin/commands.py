@@ -365,11 +365,15 @@ class CopilotConversationRatingCommand(CopilotTextCommand):
         # Returns OK
         pass
 
+    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:
+        return True
+
 
 class CopilotConversationDestroyShimCommand(CopilotWindowCommand):
     def run(self, conversation_id: str) -> None:
         wcm = WindowConversationManager(self.window)
         if not (view := find_view_by_id(wcm.last_active_view_id)):
+            status_message("Failed to find last active view.")
             return
         view.run_command("copilot_conversation_destroy", {"conversation_id": conversation_id})
 
@@ -382,6 +386,7 @@ class CopilotConversationDestroyCommand(CopilotTextCommand):
             and (wcm := WindowConversationManager(window))
             and wcm.conversation_id == conversation_id
         ):
+            status_message("Failed to find window or conversation.")
             return
 
         session.send_request(
@@ -397,6 +402,7 @@ class CopilotConversationDestroyCommand(CopilotTextCommand):
 
     def _on_result_conversation_destroy(self, payload: str) -> None:
         if not (window := self.view.window()):
+            status_message("Failed to find window")
             return
         if payload != "OK":
             status_message("Failed to destroy conversation.")
@@ -410,10 +416,7 @@ class CopilotConversationDestroyCommand(CopilotTextCommand):
     def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:  # type: ignore
         if not (window := self.view.window()):
             return False
-        return bool(
-            super().is_enabled()  # type: ignore
-            and WindowConversationManager(window).conversation_id
-        )
+        return bool(WindowConversationManager(window).conversation_id)
 
 
 class CopilotConversationTurnDeleteShimCommand(CopilotWindowCommand):
@@ -488,6 +491,9 @@ class CopilotConversationTurnDeleteCommand(CopilotTextCommand):
         wcm.conversation = conversation
         wcm.update()
 
+    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:
+        return True
+
 
 class CopilotConversationCopyCodeCommand(CopilotWindowCommand):
     def run(self, window_id: int, code_block_index: int) -> None:
@@ -504,19 +510,22 @@ class CopilotConversationCopyCodeCommand(CopilotWindowCommand):
 class CopilotConversationInsertCodeShimCommand(CopilotWindowCommand):
     def run(self, window_id: int, code_block_index: int) -> None:
         if not (window := find_window_by_id(window_id)):
+            status_message(f"Failed to find window based on ID. ({window_id})")
             return
 
         wcm = WindowConversationManager(window)
         if not (view := find_view_by_id(wcm.last_active_view_id)):
+            status_message("Window has no active view")
             return
 
         if not (code := wcm.code_block_index.get(str(code_block_index), None)):
+            status_message(f"Failed to find code based on index. {code_block_index}")
             return
 
         view.run_command("copilot_conversation_insert_code", {"characters": code})
 
 
-class CopilotConversationInsertCodeCommand(CopilotTextCommand):
+class CopilotConversationInsertCodeCommand(sublime_plugin.TextCommand):
     def run(self, edit: sublime.Edit, characters: str) -> None:
         if len(self.view.sel()) > 1:
             return
