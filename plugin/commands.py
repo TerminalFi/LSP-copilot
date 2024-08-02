@@ -365,7 +365,7 @@ class CopilotConversationRatingCommand(CopilotTextCommand):
         # Returns OK
         pass
 
-    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:
+    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:  # type: ignore
         return True
 
 
@@ -491,7 +491,7 @@ class CopilotConversationTurnDeleteCommand(CopilotTextCommand):
         wcm.conversation = conversation
         wcm.update()
 
-    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:
+    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:  # type: ignore
         return True
 
 
