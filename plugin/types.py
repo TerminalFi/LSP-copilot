@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Literal, Tuple, TypedDict, TypeVar
 
+from LSP.plugin.core.protocol import Position as LspPosition
+from LSP.plugin.core.protocol import Range as LspRange
 from LSP.plugin.core.typing import StrEnum
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
@@ -42,16 +44,6 @@ class NetworkProxy(TypedDict, total=True):
 # ------------------- #
 
 
-class CopilotPositionType(TypedDict, total=True):
-    character: int
-    line: int
-
-
-class CopilotRangeType(TypedDict, total=True):
-    start: CopilotPositionType
-    end: CopilotPositionType
-
-
 class CopilotDocType(TypedDict, total=True):
     source: str
     tabSize: int
@@ -61,7 +53,7 @@ class CopilotDocType(TypedDict, total=True):
     uri: str
     relativePath: str
     languageId: str
-    position: CopilotPositionType
+    position: LspPosition
     version: int
 
 
@@ -76,9 +68,9 @@ class CopilotPayloadFileStatus(TypedDict, total=True):
 
 class CopilotPayloadCompletion(TypedDict, total=True):
     text: str
-    position: CopilotPositionType
+    position: LspPosition
     uuid: str
-    range: CopilotRangeType
+    range: LspRange
     displayText: str
     point: StPoint
     region: StRegion
@@ -151,7 +143,7 @@ class CopilotPayloadPanelSolution(TypedDict, total=True):
     score: int
     panelId: str
     completionText: str
-    range: CopilotRangeType
+    range: LspRange
     region: StRegion
 
 
@@ -212,9 +204,9 @@ class CopilotRequestConversationTurnReference(TypedDict, total=True):
     type: str
     status: str
     uri: str
-    range: CopilotPositionType
-    visibleRange: CopilotRangeType
-    selection: CopilotRangeType
+    range: LspPosition
+    visibleRange: LspRange
+    selection: LspRange
 
 
 class CopilotRequestConversationAgent(TypedDict, total=True):

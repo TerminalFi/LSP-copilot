@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any, Callable, Literal, Sequence, cast
 
 import sublime
+from LSP.plugin.core.protocol import Position as LspPosition
+from LSP.plugin.core.protocol import Range as LspRange
 from LSP.plugin.core.url import filename_to_uri
 from more_itertools import duplicates_everseen, first_true
 from wcmatch import glob
@@ -22,6 +24,7 @@ from .types import (
     CopilotPayloadCompletion,
     CopilotPayloadPanelSolution,
     CopilotRequestConversationTurn,
+    CopilotRequestConversationTurnReference,
     CopilotUserDefinedPromptTemplates,
 )
 from .utils import (
@@ -166,14 +169,34 @@ class CopilotIgnore:
         return False
 
 
+def st_point_to_lsp_position(point: int, view: sublime.View) -> LspPosition:
+    row, col = view.rowcol_utf16(point)
+    return {"line": row, "character": col}
+
+
+def lsp_position_to_st_point(position: LspPosition, view: sublime.View) -> int:
+    return view.text_point_utf16(position["line"], position["character"])
+
+
+def st_region_to_lsp_range(region: sublime.Region, view: sublime.View) -> LspRange:
+    return {
+        "start": st_point_to_lsp_position(region.begin(), view),
+        "end": st_point_to_lsp_position(region.end(), view),
+    }
+
+
+def lsp_range_to_st_region(range_: LspRange, view: sublime.View) -> sublime.Region:
+    return sublime.Region(
+        lsp_position_to_st_point(range_["start"], view),
+        lsp_position_to_st_point(range_["end"], view),
+    )
+
+
 def prepare_completion_request_doc(view: sublime.View, max_selections: int = 1) -> CopilotDocType | None:
-    if not view:
-        return None
-    if len(sel := view.sel()) > max_selections or len(sel) == 0:
+    if not view or len(sel := view.sel()) > max_selections or len(sel) == 0:
         return None
 
     file_path = view.file_name() or f"buffer:{view.buffer().id()}"
-    row, col = view.rowcol_utf16(sel[0].begin())
     return {
         "source": view.substr(sublime.Region(0, view.size())),
         "tabSize": cast(int, view.settings().get("tab_size")),
@@ -183,7 +206,7 @@ def prepare_completion_request_doc(view: sublime.View, max_selections: int = 1) 
         "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
         "relativePath": get_project_relative_path(file_path),
         "languageId": get_view_language_id(view),
-        "position": {"line": row, "character": col},
+        "position": st_point_to_lsp_position(sel[0].begin(), view),
         # Buffer Version. Generally this is handled by LSP, but we need to handle it here
         # Will need to test getting the version from LSP
         "version": view.change_count(),
@@ -199,43 +222,32 @@ def prepare_conversation_turn_request(
 ) -> CopilotRequestConversationTurn | None:
     if not (doc := prepare_completion_request_doc(view, max_selections=5)):
         return None
-    turn: CopilotRequestConversationTurn = {
+
+    # References can technicaly be across multiple files
+    # TODO: Support references across multiple files
+    references: list[CopilotRequestConversationTurnReference] = []
+    visible_range = st_region_to_lsp_range(view.visible_region(), view)
+    for selection in view.sel():
+        if selection.empty() or view.substr(selection).isspace():
+            continue
+        references.append({
+            "type": "file",
+            "status": "included",
+            "uri": filename_to_uri(file_path) if (file_path := view.file_name()) else f"buffer:{view.buffer().id()}",
+            "range": doc["position"],
+            "visibleRange": visible_range,
+            "selection": st_region_to_lsp_range(selection, view),
+        })
+
+    return {
         "conversationId": conversation_id,
         "message": message,
         "workDoneToken": f"copilot_chat://{window_id}",
         "doc": doc,
         "computeSuggestions": True,
-        "references": [],
+        "references": references,
         "source": source,
     }
-
-    visible_region = view.visible_region()
-    visible_start = view.rowcol_utf16(visible_region.begin())
-    visible_end = view.rowcol_utf16(visible_region.end())
-
-    # References can technicaly be across multiple files
-    # TODO: Support references across multiple files
-    for selection in view.sel():
-        if selection.empty() or view.substr(selection).strip() == "":
-            continue
-        file_path = view.file_name() or f"buffer:{view.buffer().id()}"
-        selection_start = view.rowcol_utf16(selection.begin())
-        selection_end = view.rowcol_utf16(selection.end())
-        turn["references"].append({
-            "type": "file",
-            "status": "included",
-            "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
-            "range": doc["position"],
-            "visibleRange": {
-                "start": {"line": visible_start[0], "character": visible_start[1]},
-                "end": {"line": visible_end[0], "character": visible_end[1]},
-            },
-            "selection": {
-                "start": {"line": selection_start[0], "character": selection_start[1]},
-                "end": {"line": selection_end[0], "character": selection_end[1]},
-            },
-        })
-    return turn
 
 
 def preprocess_message_for_html(message: str) -> str:
@@ -305,33 +317,14 @@ def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadC
 
     # inject extra information for convenience
     for completion in completions:
-        completion["point"] = view.text_point_utf16(
-            completion["position"]["line"],
-            completion["position"]["character"],
-        )
-        _generate_completion_region(view, completion)
+        completion["point"] = lsp_position_to_st_point(completion["position"], view)
+        completion["region"] = lsp_range_to_st_region(completion["range"], view).to_tuple()
 
 
 def preprocess_panel_completions(view: sublime.View, completions: Sequence[CopilotPayloadPanelSolution]) -> None:
     """Preprocess the `completions` from "getCompletionsCycling" request."""
     for completion in completions:
-        _generate_completion_region(view, completion)
-
-
-def _generate_completion_region(
-    view: sublime.View,
-    completion: CopilotPayloadCompletion | CopilotPayloadPanelSolution,
-) -> None:
-    completion["region"] = (
-        view.text_point_utf16(
-            completion["range"]["start"]["line"],
-            completion["range"]["start"]["character"],
-        ),
-        view.text_point_utf16(
-            completion["range"]["end"]["line"],
-            completion["range"]["end"]["character"],
-        ),
-    )
+        completion["region"] = lsp_range_to_st_region(completion["range"], view).to_tuple()
 
 
 def is_debug_mode() -> bool:
