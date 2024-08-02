@@ -173,7 +173,7 @@ def prepare_completion_request_doc(view: sublime.View, max_selections: int = 1) 
         return None
 
     file_path = view.file_name() or f"buffer:{view.buffer().id()}"
-    row, col = view.rowcol(sel[0].begin())
+    row, col = view.rowcol_utf16(sel[0].begin())
     return {
         "source": view.substr(sublime.Region(0, view.size())),
         "tabSize": cast(int, view.settings().get("tab_size")),
@@ -210,8 +210,8 @@ def prepare_conversation_turn_request(
     }
 
     visible_region = view.visible_region()
-    visible_start = view.rowcol(visible_region.begin())
-    visible_end = view.rowcol(visible_region.end())
+    visible_start = view.rowcol_utf16(visible_region.begin())
+    visible_end = view.rowcol_utf16(visible_region.end())
 
     # References can technicaly be across multiple files
     # TODO: Support references across multiple files
@@ -219,8 +219,8 @@ def prepare_conversation_turn_request(
         if selection.empty() or view.substr(selection).strip() == "":
             continue
         file_path = view.file_name() or f"buffer:{view.buffer().id()}"
-        selection_start = view.rowcol(selection.begin())
-        selection_end = view.rowcol(selection.end())
+        selection_start = view.rowcol_utf16(selection.begin())
+        selection_end = view.rowcol_utf16(selection.end())
         turn["references"].append({
             "type": "file",
             "status": "included",
@@ -305,7 +305,7 @@ def preprocess_completions(view: sublime.View, completions: list[CopilotPayloadC
 
     # inject extra information for convenience
     for completion in completions:
-        completion["point"] = view.text_point(
+        completion["point"] = view.text_point_utf16(
             completion["position"]["line"],
             completion["position"]["character"],
         )
@@ -323,11 +323,11 @@ def _generate_completion_region(
     completion: CopilotPayloadCompletion | CopilotPayloadPanelSolution,
 ) -> None:
     completion["region"] = (
-        view.text_point(
+        view.text_point_utf16(
             completion["range"]["start"]["line"],
             completion["range"]["start"]["character"],
         ),
-        view.text_point(
+        view.text_point_utf16(
             completion["range"]["end"]["line"],
             completion["range"]["end"]["character"],
         ),
