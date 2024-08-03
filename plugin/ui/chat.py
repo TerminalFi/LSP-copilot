@@ -303,6 +303,7 @@ class _ConversationEntry:
         sheet.close()
 
         self.wcm.is_visible = False
+        self.wcm.window.run_command("hide_panel")
         if self.wcm.original_layout:
             self.window.set_layout(self.wcm.original_layout)  # type: ignore
             self.wcm.original_layout = None
