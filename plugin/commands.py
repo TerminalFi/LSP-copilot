@@ -219,6 +219,17 @@ class CopilotConversationChatShimCommand(CopilotWindowCommand):
         view.run_command("copilot_conversation_chat", {"message": message})
 
 
+class CopilotToggleConversationChatCommand(CopilotWindowCommand):
+    def run(self) -> None:
+        if not (wcm := WindowConversationManager(self.window)):
+            return
+
+        if wcm.is_visible:
+            wcm.close()
+        else:
+            self.window.active_view().run_command("copilot_conversation_chat")
+
+
 class CopilotConversationChatCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str = "") -> None:

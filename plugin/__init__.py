@@ -32,6 +32,7 @@ from .commands import (
     CopilotSignInCommand,
     CopilotSignInWithGithubTokenCommand,
     CopilotSignOutCommand,
+    CopilotToggleConversationChatCommand,
 )
 from .helpers import CopilotIgnore
 from .listeners import EventListener, ViewEventListener, copilot_ignore_observer
@@ -57,6 +58,7 @@ __all__ = (
     "CopilotSignInCommand",
     "CopilotSignInWithGithubTokenCommand",
     "CopilotSignOutCommand",
+    "CopilotToggleConversationChatCommand",
     "CopilotConversationChatShimCommand",
     "CopilotConversationChatCommand",
     "CopilotConversationCloseCommand",
