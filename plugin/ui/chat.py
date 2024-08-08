@@ -126,8 +126,11 @@ class WindowConversationManager:
     # normal methods #
     # -------------- #
 
-    def __init__(self, window: sublime.Window) -> None:
-        self.window: sublime.Window | None = window
+    def __init__(self, window: sublime.Window | None) -> None:
+        if not window:
+            raise ValueError("window is required")
+
+        self.window: sublime.Window = window
 
     def reset(self) -> None:
         self.is_waiting = False

@@ -111,15 +111,25 @@ def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -
     return code
 
 
-def get_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+def get_copilot_setting(
+    instance: sublime.Window | sublime.View | None, prefix: str, key: str, default: Any = None
+) -> Any:
+    if not instance:
+        return
     return instance.settings().get(f"{prefix}.{key}", default)
 
 
-def set_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+def set_copilot_setting(
+    instance: sublime.Window | sublime.View | None, prefix: str, key: str, default: Any = None
+) -> Any:
+    if not instance:
+        return
     instance.settings().set(f"{prefix}.{key}", default)
 
 
-def erase_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str) -> Any:
+def erase_copilot_setting(instance: sublime.Window | sublime.View | None, prefix: str, key: str) -> Any:
+    if not instance:
+        return
     instance.settings().erase(f"{prefix}.{key}")
 
 
