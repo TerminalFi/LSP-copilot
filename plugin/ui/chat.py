@@ -105,6 +105,15 @@ class WindowConversationManager:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_waiting_conversation", value)
 
     @property
+    def is_visible(self) -> bool:
+        """Whether the converation completions is streaming."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible", False)
+
+    @is_visible.setter
+    def is_visible(self, value: bool) -> None:
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible", value)
+
+    @property
     def conversation(self) -> list[CopilotPayloadConversationEntry]:
         """All `conversation` in the view. Note that this is a copy."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_entries", [])
@@ -272,6 +281,7 @@ class _ConversationEntry:
         return transformed_conversation
 
     def open(self) -> None:
+        self.wcm.is_visible = True
         active_group = self.window.active_group()
         if active_group == self.window.num_groups() - 1:
             self._open_in_side_by_side(self.window)
@@ -291,7 +301,9 @@ class _ConversationEntry:
             return
 
         sheet.close()
+
         self.wcm.is_visible = False
+        self.wcm.window.run_command("hide_panel")
         if self.wcm.original_layout:
             self.window.set_layout(self.wcm.original_layout)  # type: ignore
             self.wcm.original_layout = None
