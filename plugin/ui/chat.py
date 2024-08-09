@@ -126,11 +126,8 @@ class WindowConversationManager:
     # normal methods #
     # -------------- #
 
-    def __init__(self, window: sublime.Window | None) -> None:
-        if not window:
-            raise ValueError("window is required")
-
-        self.window: sublime.Window = window
+    def __init__(self, window: sublime.Window) -> None:
+        self.window = window
 
     def reset(self) -> None:
         self.is_waiting = False
@@ -181,8 +178,8 @@ class WindowConversationManager:
 
 class _ConversationEntry:
     def __init__(self, window: sublime.Window) -> None:
-        self.window: sublime.Window = window
-        self.wcm: WindowConversationManager = WindowConversationManager(window)
+        self.window = window
+        self.wcm = WindowConversationManager(window)
 
     @property
     def completion_content(self) -> str:
