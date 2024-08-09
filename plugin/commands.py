@@ -226,9 +226,7 @@ class CopilotToggleConversationChatCommand(CopilotWindowCommand):
 
         if wcm.is_visible:
             wcm.close()
-        else:
-            if not (view := self.window.active_view()):
-                return
+        elif view := self.window.active_view():
             view.run_command("copilot_conversation_chat")
 
 
