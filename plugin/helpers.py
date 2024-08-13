@@ -20,6 +20,7 @@ from .constants import COPILOT_WINDOW_SETTINGS_PREFIX, PACKAGE_NAME
 from .log import log_error
 from .settings import get_plugin_setting_dotted
 from .types import (
+    CopilotConversationTemplates,
     CopilotDocType,
     CopilotPayloadCompletion,
     CopilotPayloadPanelSolution,
@@ -284,10 +285,8 @@ def preprocess_chat_message(
 
     templates = templates or []
     user_template = first_true(templates, pred=lambda t: f"/{t['id']}" == message)
-    is_template = False
 
-    if user_template:
-        is_template = True
+    if is_template := bool(user_template or CopilotConversationTemplates.has_value(message)):
         message += "\n\n{{ user_prompt }}\n\n{{ code }}"
 
     region = view.sel()[0]

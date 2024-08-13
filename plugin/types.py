@@ -163,6 +163,14 @@ class CopilotConversationTemplates(StrEnum):
     EXPLAIN = "/explain"
     SIMPLIFY = "/simplify"
 
+    @classmethod
+    def has_value(cls, value: str) -> bool:
+        try:
+            cls(value)
+            return True
+        except ValueError:
+            return False
+
 
 class CopilotPayloadConversationEntry(TypedDict, total=True):
     kind: str
