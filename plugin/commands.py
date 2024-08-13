@@ -831,7 +831,7 @@ class CopilotSendAnyRequestCommand(CopilotTextCommand):
     def _on_results_any_request(self, payload: Any) -> None:
         print(payload)
 
-    def input(self, args: dict[str, Any]) -> sublime_plugin.TextInputHandler | None:
+    def input(self, args: dict[str, Any]) -> sublime_plugin.CommandInputHandler | None:
         return CopilotSendAnyRequestCommandTextInputHandler()
 
 
@@ -842,7 +842,7 @@ class CopilotSendAnyRequestCommandTextInputHandler(sublime_plugin.TextInputHandl
     def name(self) -> str:
         return "request_type"
 
-    def next_input(self, args: dict[str, Any]) -> sublime_plugin.TextInputHandler | None:
+    def next_input(self, args: dict[str, Any]) -> sublime_plugin.CommandInputHandler | None:
         return CopilotSendAnyRequestPayloadInputHandler(args)
 
 
