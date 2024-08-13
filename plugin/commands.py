@@ -822,16 +822,16 @@ class CopilotSendAnyRequestCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, request_type: str, payload: str) -> None:
         try:
-            payload = sublime.decode_value(payload)
+            decode_payload = sublime.decode_value(payload)
         except ValueError as e:
             message_dialog(f"Failed to parse payload: {e}", is_error_=True)
-            payload = {}
-        session.send_request(Request(request_type, payload), self._on_results_any_request)
+            decode_payload = {}
+        session.send_request(Request(request_type, decode_payload), self._on_results_any_request)
 
     def _on_results_any_request(self, payload: Any) -> None:
         print(payload)
 
-    def input(self, args: dict[str, Any]) -> sublime_plugin.TextInputHandler:
+    def input(self, args: dict[str, Any]) -> sublime_plugin.TextInputHandler | None:
         return CopilotSendAnyRequestCommandTextInputHandler()
 
 
@@ -842,7 +842,7 @@ class CopilotSendAnyRequestCommandTextInputHandler(sublime_plugin.TextInputHandl
     def name(self) -> str:
         return "request_type"
 
-    def next_input(self, args: dict[str, Any]) -> sublime_plugin.TextInputHandler:
+    def next_input(self, args: dict[str, Any]) -> sublime_plugin.TextInputHandler | None:
         return CopilotSendAnyRequestPayloadInputHandler(args)
 
 
