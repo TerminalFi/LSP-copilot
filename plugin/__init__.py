@@ -29,6 +29,7 @@ from .commands import (
     CopilotPrepareAndEditSettingsCommand,
     CopilotPreviousCompletionCommand,
     CopilotRejectCompletionCommand,
+    CopilotSendAnyRequestCommand,
     CopilotSignInCommand,
     CopilotSignInWithGithubTokenCommand,
     CopilotSignOutCommand,
@@ -73,6 +74,7 @@ __all__ = (
     "CopilotConversationCopyCodeCommand",
     "CopilotConversationInsertCodeShimCommand",
     "CopilotConversationInsertCodeCommand",
+    "CopilotSendAnyRequestCommand",
     # ST: helper commands
     "CopilotPrepareAndEditSettingsCommand",
     # ST: event listeners
