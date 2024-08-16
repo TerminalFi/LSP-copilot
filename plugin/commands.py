@@ -18,6 +18,7 @@ from lsp_utils.helpers import rmtree_ex
 
 from .client import CopilotPlugin
 from .constants import (
+    COPILOT_OUTPUT_PANEL_PREFIX,
     PACKAGE_NAME,
     REQ_CHECK_STATUS,
     REQ_CONVERSATION_AGENTS,
@@ -70,6 +71,7 @@ from .utils import (
     find_window_by_id,
     get_session_setting,
     message_dialog,
+    mutable_view,
     ok_cancel_dialog,
     status_message,
 )
@@ -580,10 +582,13 @@ class CopilotGetPromptCommand(CopilotTextCommand):
         window = self.view.window()
         if not window:
             return
-        prompt_view = window.create_output_panel("prompt_view", unlisted=True)
-        prompt_view.assign_syntax("scope:source.json")
-        prompt_view.run_command("append", {"characters": json.dumps(payload, indent=4)})
-        window.run_command("show_panel", {"panel": "output.prompt_view"})
+        view = window.create_output_panel(f"{COPILOT_OUTPUT_PANEL_PREFIX}.prompt_view", unlisted=True)
+
+        with mutable_view(view) as view:
+            view.set_syntax_file("Packages/JavaScript/JavaScript.sublime-syntax")
+            view.assign_syntax("scope:source.json")
+            view.run_command("append", {"characters": json.dumps(payload, indent=4)})
+        window.run_command("show_panel", {"panel": f"output.{COPILOT_OUTPUT_PANEL_PREFIX}.prompt_view"})
 
 
 class CopilotConversationTemplatesCommand(CopilotTextCommand):

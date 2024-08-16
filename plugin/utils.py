@@ -180,6 +180,15 @@ def message_dialog(msg_: str, *args, error_: bool = False, console_: bool = Fals
         print(full_msg)
 
 
+@contextlib.contextmanager
+def mutable_view(view: sublime.View):
+    try:
+        view.set_read_only(False)
+        yield view
+    finally:
+        view.set_read_only(True)
+
+
 def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
     """
     Show an OK/cancel dialog, whose message is prefixed with "[PACKAGE_NAME]".

@@ -8,6 +8,7 @@ PACKAGE_NAME = __package__.partition(".")[0]
 # Setting Prefixes #
 # ---------------- #
 
+COPILOT_OUTPUT_PANEL_PREFIX = "copilot"
 COPILOT_VIEW_SETTINGS_PREFIX = "copilot.completion"
 COPILOT_WINDOW_SETTINGS_PREFIX = "copilot"
 COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX = "copilot.conversation"

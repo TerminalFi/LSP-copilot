@@ -6,6 +6,7 @@ from typing import Any, Callable, Literal, Tuple, TypedDict, TypeVar
 from LSP.plugin.core.protocol import Position as LspPosition
 from LSP.plugin.core.protocol import Range as LspRange
 from LSP.plugin.core.typing import StrEnum
+from sublime import Optional
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
@@ -210,7 +211,7 @@ class CopilotRequestConversationTurn(TypedDict, total=True):
     workDoneToken: str
     doc: CopilotDocType
     computeSuggestions: bool
-    references: list[CopilotRequestConversationTurnReference]
+    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]
     source: Literal["panel", "inline"]
 
 
@@ -218,9 +219,36 @@ class CopilotRequestConversationTurnReference(TypedDict, total=True):
     type: str
     status: str
     uri: str
+    position: LspPosition
     range: LspPosition
     visibleRange: LspRange
     selection: LspRange
+    opened_at: str
+    active_at: str
+
+
+class Result(TypedDict, total=True):
+    title: str
+    excerpt: str
+    url: str
+
+
+class Metadata(TypedDict, total=False):
+    display_name: Optional[str]
+    display_icon: Optional[str]
+
+
+class Data(TypedDict, total=True):
+    query: str
+    type: str
+    results: Optional[list[Result]]
+
+
+class CopilotGitHubWebSearch(TypedDict, total=True):
+    type: Literal["github.web-search"]
+    id: str
+    data: Data
+    metadata: Optional[Metadata]
 
 
 class CopilotRequestConversationAgent(TypedDict, total=True):

@@ -233,11 +233,20 @@ def prepare_conversation_turn_request(
             continue
         references.append({
             "type": "file",
+            # included, blocked, notfound, empty
             "status": "included",
-            "uri": filename_to_uri(file_path) if (file_path := view.file_name()) else f"buffer:{view.buffer().id()}",
             "range": doc["position"],
+            "uri": filename_to_uri(file_path) if (file_path := view.file_name()) else f"buffer:{view.buffer().id()}",
             "visibleRange": visible_range,
             "selection": st_region_to_lsp_range(selection, view),
+            # position: ni.Type.Optional(
+            #         ni.Type.Object({
+            #             line: ni.Type.Number({ minimum: 0 }),
+            #             character: ni.Type.Number({ minimum: 0 }),
+            #         }),
+            #     ),
+            # openedAt: ni.Type.Optional(ni.Type.String()),
+            # activeAt: ni.Type.Optional(ni.Type.String()),
         })
 
     return {
