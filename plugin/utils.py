@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import gzip
 import os
 import textwrap
@@ -139,10 +140,8 @@ def get_project_relative_path(path: str) -> str:
     """Get the relative path regarding the project root directory. If not possible, return the path as-is."""
     relpath = path
     for folder in sublime.active_window().folders():
-        try:
+        with contextlib.suppress(ValueError):
             relpath = min(relpath, os.path.relpath(path, folder), key=len)
-        except ValueError:
-            pass
     return relpath
 
 
