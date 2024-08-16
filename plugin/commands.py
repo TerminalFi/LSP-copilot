@@ -216,6 +216,8 @@ class CopilotConversationChatShimCommand(CopilotWindowCommand):
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
 
+        # Focus the view so that the command runs
+        self.window.focus_view(view)
         view.run_command("copilot_conversation_chat", {"message": message})
 
 
@@ -355,6 +357,8 @@ class CopilotConversationRatingShimCommand(CopilotWindowCommand):
         wcm = WindowConversationManager(self.window)
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
+        # Focus the view so that the command runs
+        self.window.focus_view(view)
         view.run_command("copilot_conversation_rating", {"turn_id": turn_id, "rating": rating})
 
 
@@ -386,6 +390,8 @@ class CopilotConversationDestroyShimCommand(CopilotWindowCommand):
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             status_message("Failed to find last active view.")
             return
+        # Focus the view so that the command runs
+        self.window.focus_view(view)
         view.run_command("copilot_conversation_destroy", {"conversation_id": conversation_id})
 
 
@@ -435,6 +441,8 @@ class CopilotConversationTurnDeleteShimCommand(CopilotWindowCommand):
         wcm = WindowConversationManager(self.window)
         if not (view := find_view_by_id(wcm.last_active_view_id)):
             return
+        # Focus the view so that the command runs
+        self.window.focus_view(view)
         view.run_command(
             "copilot_conversation_turn_delete",
             {"window_id": window_id, "conversation_id": conversation_id, "turn_id": turn_id},
@@ -533,6 +541,8 @@ class CopilotConversationInsertCodeShimCommand(CopilotWindowCommand):
             status_message(f"Failed to find code based on index. {code_block_index}")
             return
 
+        # Focus the view so that the command runs
+        self.window.focus_view(view)
         view.run_command("copilot_conversation_insert_code", {"characters": code})
 
 
