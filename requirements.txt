@@ -12,7 +12,7 @@ more-itertools==10.4.0
     # via -r requirements.in
 typing-extensions==4.12.2
     # via -r requirements.in
-watchdog==4.0.1
+watchdog==4.0.2
     # via -r requirements.in
 wcmatch==8.5.2
     # via -r requirements.in
