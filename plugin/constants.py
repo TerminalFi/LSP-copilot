@@ -16,46 +16,47 @@ COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX = "copilot.conversation"
 # Copilot requests #
 # ---------------- #
 
-REQ_CHECK_STATUS = "checkStatus"  # done
-REQ_FILE_CHECK_STATUS = "checkFileStatus"  # done
-REQ_GET_COMPLETIONS = "getCompletions"  # done
-REQ_GET_COMPLETIONS_CYCLING = "getCompletionsCycling"  # done
-REQ_GET_PANEL_COMPLETIONS = "getPanelCompletions"  # done
-REQ_GET_VERSION = "getVersion"  # done
-REQ_NOTIFY_ACCEPTED = "notifyAccepted"  # done
-REQ_NOTIFY_REJECTED = "notifyRejected"  # done
+REQ_CHECK_STATUS = "checkStatus"
+REQ_FILE_CHECK_STATUS = "checkFileStatus"
+REQ_GET_COMPLETIONS = "getCompletions"
+REQ_GET_COMPLETIONS_CYCLING = "getCompletionsCycling"
+REQ_GET_PROMPT = "getPrompt"
+REQ_GET_PANEL_COMPLETIONS = "getPanelCompletions"
+REQ_GET_VERSION = "getVersion"
+REQ_NOTIFY_ACCEPTED = "notifyAccepted"
+REQ_NOTIFY_REJECTED = "notifyRejected"
 REQ_NOTIFY_SHOWN = "notifyShown"
 REQ_RECORD_TELEMETRY_CONSENT = "recordTelemetryConsent"
-REQ_SET_EDITOR_INFO = "setEditorInfo"  # done
-REQ_SIGN_IN_CONFIRM = "signInConfirm"  # done
-REQ_SIGN_IN_INITIATE = "signInInitiate"  # done
-REQ_SIGN_IN_WITH_GITHUB_TOKEN = "signInWithGithubToken"  # done
-REQ_SIGN_OUT = "signOut"  # done
+REQ_SET_EDITOR_INFO = "setEditorInfo"
+REQ_SIGN_IN_CONFIRM = "signInConfirm"
+REQ_SIGN_IN_INITIATE = "signInInitiate"
+REQ_SIGN_IN_WITH_GITHUB_TOKEN = "signInWithGithubToken"
+REQ_SIGN_OUT = "signOut"
 
 # --------------------- #
 # Copilot Chat requests #
 # --------------------- #
 
-REQ_CONVERSATION_AGENTS = "conversation/agents"  # done
-REQ_CONVERSATION_CONTEXT = "conversation/context"  # done
-REQ_CONVERSATION_COPY_CODE = "conversation/copyCode"  # done
-REQ_CONVERSATION_CREATE = "conversation/create"  # done
-REQ_CONVERSATION_DESTROY = "conversation/destroy"  # done
-REQ_CONVERSATION_INSERT_CODE = "conversation/insertCode"  # done
-REQ_CONVERSATION_PERSISTANCE = "conversation/persistance"  # done
-REQ_CONVERSATION_PRECONDITIONS = "conversation/preconditions"  # done
-REQ_CONVERSATION_RATING = "conversation/rating"  # done
-REQ_CONVERSATION_TEMPLATES = "conversation/templates"  # done
-REQ_CONVERSATION_TURN = "conversation/turn"  # done
-REQ_CONVERSATION_TURN_DELETE = "conversation/turnDelete"  # done
+REQ_CONVERSATION_AGENTS = "conversation/agents"
+REQ_CONVERSATION_CONTEXT = "conversation/context"
+REQ_CONVERSATION_COPY_CODE = "conversation/copyCode"
+REQ_CONVERSATION_CREATE = "conversation/create"
+REQ_CONVERSATION_DESTROY = "conversation/destroy"
+REQ_CONVERSATION_INSERT_CODE = "conversation/insertCode"
+REQ_CONVERSATION_PERSISTANCE = "conversation/persistance"
+REQ_CONVERSATION_PRECONDITIONS = "conversation/preconditions"
+REQ_CONVERSATION_RATING = "conversation/rating"
+REQ_CONVERSATION_TEMPLATES = "conversation/templates"
+REQ_CONVERSATION_TURN = "conversation/turn"
+REQ_CONVERSATION_TURN_DELETE = "conversation/turnDelete"
 
 # --------------------- #
 # Copilot notifications #
 # --------------------- #
 
-NTFY_FEATURE_FLAGS_NOTIFICATION = "featureFlagsNotification"  # done
-NTFY_LOG_MESSAGE = "LogMessage"  # done
-NTFY_PANEL_SOLUTION = "PanelSolution"  # done
-NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"  # done
+NTFY_FEATURE_FLAGS_NOTIFICATION = "featureFlagsNotification"
+NTFY_LOG_MESSAGE = "LogMessage"
+NTFY_PANEL_SOLUTION = "PanelSolution"
+NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"
 NTFY_PROGRESS = "$/progress"
-NTFY_STATUS_NOTIFICATION = "statusNotification"  # done
+NTFY_STATUS_NOTIFICATION = "statusNotification"

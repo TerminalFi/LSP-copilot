@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import uuid
 from abc import ABC
@@ -29,6 +30,7 @@ from .constants import (
     REQ_CONVERSATION_TURN_DELETE,
     REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
+    REQ_GET_PROMPT,
     REQ_GET_VERSION,
     REQ_NOTIFY_ACCEPTED,
     REQ_NOTIFY_REJECTED,
@@ -566,6 +568,22 @@ class CopilotConversationAgentsCommand(CopilotTextCommand):
         if not window:
             return
         window.show_quick_panel([[item["slug"], item["description"]] for item in payload], lambda _: None)
+
+
+class CopilotGetPromptCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        doc = prepare_completion_request_doc(self.view)
+        session.send_request(Request(REQ_GET_PROMPT, {"doc": doc}), self._on_result_get_prompt)
+
+    def _on_result_get_prompt(self, payload) -> None:
+        window = self.view.window()
+        if not window:
+            return
+        prompt_view = window.create_output_panel("prompt_view", unlisted=True)
+        prompt_view.assign_syntax("scope:source.json")
+        prompt_view.run_command("append", {"characters": json.dumps(payload, indent=4)})
+        window.run_command("show_panel", {"panel": "output.prompt_view"})
 
 
 class CopilotConversationTemplatesCommand(CopilotTextCommand):
