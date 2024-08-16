@@ -117,7 +117,13 @@ class CopilotPayloadSignInWithGithubToken(TypedDict, total=True):
 
 
 class CopilotPayloadSignInConfirm(TypedDict, total=True):
-    status: Literal["AlreadySignedIn", "MaybeOk", "NotAuthorized", "NotSignedIn", "OK"]
+    status: Literal[
+        "AlreadySignedIn",
+        "MaybeOk",
+        "NotAuthorized",
+        "NotSignedIn",
+        "OK",
+    ]
     user: str
 
 
@@ -239,7 +245,13 @@ class CopilotPayloadConversationContext(TypedDict, total=True):
     """E.g., `"e3b0d5e3-0c3b-4292-a5ea-15d6003e7c45"`."""
     turnId: str
     """E.g., `"09ac7601-6c28-4617-b3e4-13f5ff8502b7"`."""
-    skillId: Literal["current-editor", "project-labels", "recent-files"]  # not the complet list yet
+    skillId: Literal[
+        "current-editor",
+        "project-labels",
+        "recent-files",
+        "references",
+        "problems-in-active-document",
+    ]  # not the complet list yet
 
 
 class CopilotUserDefinedPromptTemplates(TypedDict, total=True):

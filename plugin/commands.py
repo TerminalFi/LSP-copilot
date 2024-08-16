@@ -816,3 +816,42 @@ class CopilotSignOutCommand(CopilotTextCommand):
             message_dialog("Sign out OK. Bye!")
 
         GithubInfo.clear_avatar()
+
+
+class CopilotSendAnyRequestCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, request_type: str, payload: str) -> None:
+        try:
+            decode_payload = sublime.decode_value(payload)
+        except ValueError as e:
+            message_dialog(f"Failed to parse payload: {e}", is_error_=True)
+            decode_payload = {}
+        session.send_request(Request(request_type, decode_payload), self._on_results_any_request)
+
+    def _on_results_any_request(self, payload: Any) -> None:
+        print(payload)
+
+    def input(self, args: dict[str, Any]) -> sublime_plugin.CommandInputHandler | None:
+        return CopilotSendAnyRequestCommandTextInputHandler()
+
+
+class CopilotSendAnyRequestCommandTextInputHandler(sublime_plugin.TextInputHandler):
+    def placeholder(self) -> str:
+        return "Enter type of request. Example: conversation/turn"
+
+    def name(self) -> str:
+        return "request_type"
+
+    def next_input(self, args: dict[str, Any]) -> sublime_plugin.CommandInputHandler | None:
+        return CopilotSendAnyRequestPayloadInputHandler(args)
+
+
+class CopilotSendAnyRequestPayloadInputHandler(sublime_plugin.TextInputHandler):
+    def __init__(self, args: dict[str, Any]) -> None:
+        self.args = args
+
+    def placeholder(self) -> str:
+        return 'Enter payload JSON. Example: {"conversationId": "12345"}'
+
+    def name(self) -> str:
+        return "payload"

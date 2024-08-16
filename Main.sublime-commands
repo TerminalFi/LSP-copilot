@@ -121,4 +121,8 @@
             "default": "/* User extra CSS rules: Chat Panel */\n/* CSS rules: https://www.sublimetext.com/docs/minihtml.html#css */\n",
         },
     },
+    {
+        "caption": "Copilot: Send Any Request",
+        "command": "copilot_send_any_request"
+    }
 ]
