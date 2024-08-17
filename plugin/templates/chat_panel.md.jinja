@@ -24,6 +24,17 @@
 {% endif %}
 </div>
 
+<div class="references">
+{% if section.references_expanded %}
+{% for reference in section.references %}
+    <a class="reference" href='{{ reference.url }}'>{{ reference.text }}</a>
+{% endfor %}
+{% else references_expanded %}
+  <a class="reference" href='{{ references_expand_url }}'>{{ len(section.references)}}References</a>
+{% endif %}
+</div>
+
+
 <span class="kind {{ section.kind }}">
   {%- if section.kind == "report" -%}
     <img class="icon" src="{{ asset_url('github.png') }}"> Github Copilot
