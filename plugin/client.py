@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 import jmespath
 import sublime
-from LSP.plugin import ClientConfig, DottedDict, Request, Session, WorkspaceFolder
+from LSP.plugin import ClientConfig, DottedDict, Notification, Request, Session, WorkspaceFolder
 from lsp_utils import ApiWrapperInterface, NpmClientHandler, notification_handler, request_handler
 
 from .constants import (
@@ -318,7 +318,7 @@ class CopilotPlugin(NpmClientHandler):
                 log_warning(f'Invalid "status_text" template: {e}')
         session.set_config_status_async(rendered_text)
 
-    def on_server_notification_async(self, notification) -> None:
+    def on_server_notification_async(self, notification: Notification) -> None:
         if notification.method == "$/progress":
             if (token := notification.params["token"]) and token.startswith("copilot_chat://"):
                 if params := notification.params["value"]:
