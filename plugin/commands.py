@@ -451,6 +451,7 @@ class CopilotConversationToggleReferencesBlockCommand(CopilotWindowCommand):
             return
 
         wcm.toggle_references_block(turn_id)
+        wcm.update()
 
 
 class CopilotConversationTurnDeleteShimCommand(CopilotWindowCommand):
@@ -648,7 +649,6 @@ class CopilotAcceptCompletionCommand(CopilotTextCommand):
             return
 
         vcm.hide()
-
         if not (completion := vcm.current_completion):
             return
 

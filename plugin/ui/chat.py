@@ -162,12 +162,14 @@ class WindowConversationManager:
         return find_window_by_id(window_id)
 
     def toggle_references_block(self, turn_id: str) -> None:
-        for entry in self.conversation:
+        for idx, entry in enumerate(self.conversation):
             if entry["turnId"] != turn_id:
                 continue
-            if len(entry["references"]) == 0:
+            target_entry = self.conversation[idx - 1]
+            if len(target_entry["references"]) == 0:
                 continue
-            entry["references_expanded"] = not entry["references_expanded"]
+            target_entry["references_expanded"] = not target_entry["references_expanded"]
+            self.conversation[idx - 1] = target_entry
             break
 
     def prompt(self, callback: Callable[[str], None], initial_text: str = "") -> None:
@@ -216,6 +218,18 @@ class _ConversationEntry:
                     "kind": entry["kind"],
                     "message": "".join(entry["messages"]),
                     "code_block_indices": entry["codeBlockIndices"],
+                    "toggle_references_url": sublime.command_url(
+                        "copilot_conversation_toggle_references_block",
+                        {
+                            "conversation_id": self.wcm.conversation_id,
+                            "window_id": self.wcm.window.id(),
+                            "turn_id": entry["turnId"],
+                        },
+                    ),
+                    "referenences": [] if entry["kind"] != "report" else conversations_entries[idx - 1]["references"],
+                    "references_expanded": False
+                    if entry["kind"] != "report"
+                    else conversations_entries[idx - 1]["references_expanded"],
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
                         {
@@ -233,7 +247,7 @@ class _ConversationEntry:
                         {"turn_id": entry["turnId"], "rating": -1},
                     ),
                 }
-                for entry in conversations_entries
+                for idx, entry in enumerate(conversations_entries)
             ],
         )
 
@@ -269,6 +283,8 @@ class _ConversationEntry:
                     transformed_conversation.append(current_entry)
                 current_entry = {
                     "kind": kind,
+                    "references": entry.get("references", []),
+                    "references_expanded": entry.get("references_expanded", False),
                     "messages": [reply],
                     "codeBlockIndices": [],
                     "codeBlocks": [],
