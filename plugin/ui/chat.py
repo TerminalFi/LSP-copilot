@@ -143,34 +143,31 @@ class WindowConversationManager:
             view.close()
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
-        # @todo why we don't just `self.conversation.append(entry)`?
-        # If someone remember why, please just replace this comment with the reason.
+        # self.conversation is a copy of the original conversation entries
+        # So when we do self.conversation.append(entry), we are not modifying the original list
         conversation_history = self.conversation
         conversation_history.append(entry)
         self.conversation = conversation_history
 
     def insert_code_block_index(self, index: int, code_block: str) -> None:
-        # @todo why we don't just `self.code_block_index[str(index)] = code_block`?
-        # If someone remember why, please just replace this comment with the reason.
+        # self.code_block_index is a copy of the original conversation entries
+        # So when we do self.code_block_index[str(index)] = code_block_index, we are not modifying the original list
         code_block_index = self.code_block_index
         code_block_index[str(index)] = code_block
         self.code_block_index = code_block_index
+
+    def toggle_references_block(self, turn_id: str) -> None:
+        conversation = self.conversation
+        for entry in conversation:
+            if entry["turnId"] == turn_id:
+                entry["references_expanded"] = not entry["references_expanded"]
+                self.conversation = conversation
+                break
 
     @staticmethod
     def find_window_by_token_id(token_id: str) -> sublime.Window | None:
         window_id = int(remove_prefix(token_id, "copilot_chat://"))
         return find_window_by_id(window_id)
-
-    def toggle_references_block(self, turn_id: str) -> None:
-        for idx, entry in enumerate(self.conversation):
-            if entry["turnId"] != turn_id:
-                continue
-            target_entry = self.conversation[idx - 1]
-            if len(target_entry["references"]) == 0:
-                continue
-            target_entry["references_expanded"] = not target_entry["references_expanded"]
-            self.conversation[idx - 1] = target_entry
-            break
 
     def prompt(self, callback: Callable[[str], None], initial_text: str = "") -> None:
         self.window.show_input_panel("Copilot Chat", initial_text, callback, None, None)
@@ -223,13 +220,11 @@ class _ConversationEntry:
                         {
                             "conversation_id": self.wcm.conversation_id,
                             "window_id": self.wcm.window.id(),
-                            "turn_id": entry["turnId"],
+                            "turn_id": conversations_entries[idx - 1]["turnId"],
                         },
                     ),
-                    "referenences": [] if entry["kind"] != "report" else conversations_entries[idx - 1]["references"],
-                    "references_expanded": False
-                    if entry["kind"] != "report"
-                    else conversations_entries[idx - 1]["references_expanded"],
+                    "references": [] if entry["kind"] != "report" else entry["references"],
+                    "references_expanded": False if entry["kind"] != "report" else entry["references_expanded"],
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
                         {
@@ -260,7 +255,7 @@ class _ConversationEntry:
         is_inside_code_block = False
         code_block_index = -1
 
-        for entry in self.wcm.conversation:
+        for idx, entry in enumerate(self.wcm.conversation):
             kind = entry["kind"]
             reply = entry["reply"]
             turn_id = entry["turnId"]
@@ -283,13 +278,17 @@ class _ConversationEntry:
                     transformed_conversation.append(current_entry)
                 current_entry = {
                     "kind": kind,
-                    "references": entry.get("references", []),
-                    "references_expanded": entry.get("references_expanded", False),
                     "messages": [reply],
                     "codeBlockIndices": [],
                     "codeBlocks": [],
                     "turnId": turn_id,
                 }
+                if kind == "report":
+                    current_entry["references"] = self.wcm.conversation[idx - 1].get("references", [])
+                    current_entry["references_expanded"] = self.wcm.conversation[idx - 1].get(
+                        "references_expanded", False
+                    )
+
                 if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1

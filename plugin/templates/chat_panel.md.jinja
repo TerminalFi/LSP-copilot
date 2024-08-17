@@ -24,24 +24,6 @@
 {% endif %}
 </div>
 
- {%- if section.kind == "report" -%}
-<div class="references">
-{%- if section.references_expanded -%}
-<a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
-<div  class="reference_list">
-{% for reference in section.references %}
-    <a class="reference" href='#'>BOOM</a>
-{% endfor %}
-</div>
-
-{% else %}
-  <a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
-{%- endif -%}
-</div>
-{%- endif -%}
-
-
-
 <span class="kind {{ section.kind }}">
   {%- if section.kind == "report" -%}
     <img class="icon" src="{{ asset_url('github.png') }}"> Github Copilot
@@ -49,6 +31,23 @@
     {% if avatar_img_src %}<img class="icon" src="{{ avatar_img_src }}">{% endif %} {{ section.kind }}
   {%- endif -%}
 </span>
+
+
+{%- if section.kind == "report" -%}
+<div class="references">
+{%- if section.references_expanded -%}
+  <a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
+  <div class="reference">
+{% for reference in section.references %}
+      <a href="#">{{ reference['uri'] }}</a>
+{% endfor %}
+  </div>
+{% else %}
+  <a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
+{%- endif -%}
+</div>
+{%- endif -%}
+
 
 {% set code_block_replacements = [] %}
 {% for index in section.code_block_indices %}

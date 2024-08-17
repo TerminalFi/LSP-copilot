@@ -221,6 +221,7 @@ def prepare_conversation_turn_request(
     window_id: int,
     message: str,
     view: sublime.View,
+    views: list[sublime.View],
     source: Literal["panel", "inline"] = "panel",
 ) -> CopilotRequestConversationTurn | None:
     if not (doc := prepare_completion_request_doc(view)):
@@ -230,9 +231,12 @@ def prepare_conversation_turn_request(
     # TODO: Support references across multiple files
     references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch] = []
     visible_range = st_region_to_lsp_range(view.visible_region(), view)
-    for selection in view.sel():
+    views.append(view)
+    for v in views:
+        selection = v.sel()[0]
         if selection.empty() or view.substr(selection).isspace():
             continue
+
         references.append({
             "type": "file",
             # included, blocked, notfound, empty

@@ -329,7 +329,8 @@ class CopilotConversationChatCommand(CopilotTextCommand):
             return
         user_prompts: list[CopilotUserDefinedPromptTemplates] = session.config.settings.get("prompts") or []
         is_template, msg = preprocess_chat_message(view, msg, user_prompts)
-        if not (request := prepare_conversation_turn_request(wcm.conversation_id, wcm.window.id(), msg, view)):
+        views = [sv.view for sv in session.session_views_async() if sv.view.id() != view.id()]
+        if not (request := prepare_conversation_turn_request(wcm.conversation_id, wcm.window.id(), msg, view, views)):
             return
 
         wcm.append_conversation_entry({
@@ -599,7 +600,6 @@ class CopilotGetPromptCommand(CopilotTextCommand):
         view = window.create_output_panel(f"{COPILOT_OUTPUT_PANEL_PREFIX}.prompt_view", unlisted=True)
 
         with mutable_view(view) as view:
-            view.set_syntax_file("Packages/JavaScript/JavaScript.sublime-syntax")
             view.assign_syntax("scope:source.json")
             view.run_command("append", {"characters": json.dumps(payload, indent=4)})
         window.run_command("show_panel", {"panel": f"output.{COPILOT_OUTPUT_PANEL_PREFIX}.prompt_view"})
