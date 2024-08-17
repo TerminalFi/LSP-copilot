@@ -278,6 +278,8 @@ class CopilotConversationChatCommand(CopilotTextCommand):
                 "conversationId": wcm.conversation_id,
                 "reply": msg.split()[0] if is_template else preprocess_message_for_html(msg),
                 "turnId": str(uuid.uuid4()),
+                "references_expanded": False,
+                "references": [],
                 "annotations": [],
                 "hideText": False,
             })
@@ -327,17 +329,19 @@ class CopilotConversationChatCommand(CopilotTextCommand):
             return
         user_prompts: list[CopilotUserDefinedPromptTemplates] = session.config.settings.get("prompts") or []
         is_template, msg = preprocess_chat_message(view, msg, user_prompts)
+        if not (request := prepare_conversation_turn_request(wcm.conversation_id, wcm.window.id(), msg, view)):
+            return
+
         wcm.append_conversation_entry({
             "kind": plugin.get_account_status().user or "user",
             "conversationId": wcm.conversation_id,
             "reply": msg.split()[0] if is_template else preprocess_message_for_html(msg),
             "turnId": str(uuid.uuid4()),
+            "references_expanded": False,
+            "references": request["references"],
             "annotations": [],
             "hideText": False,
         })
-        if not (request := prepare_conversation_turn_request(wcm.conversation_id, wcm.window.id(), msg, view)):
-            return
-
         session.send_request(
             Request(REQ_CONVERSATION_TURN, request),
             lambda _: wcm.prompt(callback=lambda x: self._on_prompt(plugin, session, x)),
@@ -438,6 +442,15 @@ class CopilotConversationDestroyCommand(CopilotTextCommand):
         if not (window := self.view.window()):
             return False
         return bool(WindowConversationManager(window).conversation_id)
+
+
+class CopilotConversationToggleReferencesBlockCommand(CopilotWindowCommand):
+    def run(self, window_id: int, conversation_id: str, turn_id: str) -> None:
+        wcm = WindowConversationManager(self.window)
+        if conversation_id != wcm.conversation_id:
+            return
+
+        wcm.toggle_references_block(turn_id)
 
 
 class CopilotConversationTurnDeleteShimCommand(CopilotWindowCommand):

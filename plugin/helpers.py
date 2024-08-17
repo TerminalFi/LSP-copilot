@@ -253,6 +253,7 @@ def prepare_conversation_turn_request(
         "doc": doc,
         "computeSuggestions": True,
         "references": references,
+        "source": source,
     }
 
 

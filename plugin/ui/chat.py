@@ -161,6 +161,15 @@ class WindowConversationManager:
         window_id = int(remove_prefix(token_id, "copilot_chat://"))
         return find_window_by_id(window_id)
 
+    def toggle_references_block(self, turn_id: str) -> None:
+        for entry in self.conversation:
+            if entry["turnId"] != turn_id:
+                continue
+            if len(entry["references"]) == 0:
+                continue
+            entry["references_expanded"] = not entry["references_expanded"]
+            break
+
     def prompt(self, callback: Callable[[str], None], initial_text: str = "") -> None:
         self.window.show_input_panel("Copilot Chat", initial_text, callback, None, None)
 
