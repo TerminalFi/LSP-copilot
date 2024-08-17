@@ -320,26 +320,26 @@ class CopilotPlugin(NpmClientHandler):
 
     def on_server_notification_async(self, notification: Notification) -> None:
         if notification.method == "$/progress":
-            if (token := notification.params["token"]) and token.startswith("copilot_chat://"):
-                if params := notification.params["value"]:
-                    if not (window := WindowConversationManager.find_window_by_token_id(token)):
-                        return
+            if (
+                (token := notification.params["token"]).startswith("copilot_chat://")
+                and (params := notification.params["value"])
+                and (window := WindowConversationManager.find_window_by_token_id(token))
+            ):
+                wcm = WindowConversationManager(window)
+                if params.get("kind", None) == "end":
+                    wcm.is_waiting = False
 
-                    wcm = WindowConversationManager(window)
-                    if params.get("kind", None) == "end":
-                        wcm.is_waiting = False
+                if suggest_title := params.get("suggestedTitle", None):
+                    wcm.suggested_title = suggest_title
 
-                    if suggest_title := params.get("suggestedTitle", None):
-                        wcm.suggested_title = suggest_title
+                if params.get("reply", None):
+                    wcm.append_conversation_entry(params)
 
-                    if params.get("reply", None):
-                        wcm.append_conversation_entry(params)
+                if followup := params.get("followUp", None):
+                    message = followup.get("message", "")
+                    wcm.follow_up = message
 
-                    if followup := params.get("followUp", None):
-                        message = followup.get("message", "")
-                        wcm.follow_up = message
-
-                    wcm.update()
+                wcm.update()
 
     @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:
