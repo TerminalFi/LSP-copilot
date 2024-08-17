@@ -22,6 +22,7 @@ from .settings import get_plugin_setting_dotted
 from .types import (
     CopilotConversationTemplates,
     CopilotDocType,
+    CopilotGitHubWebSearch,
     CopilotPayloadCompletion,
     CopilotPayloadPanelSolution,
     CopilotRequestConversationTurn,
@@ -226,7 +227,7 @@ def prepare_conversation_turn_request(
 
     # References can technicaly be across multiple files
     # TODO: Support references across multiple files
-    references: list[CopilotRequestConversationTurnReference] = []
+    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch] = []
     visible_range = st_region_to_lsp_range(view.visible_region(), view)
     for selection in view.sel():
         if selection.empty() or view.substr(selection).isspace():
@@ -235,16 +236,11 @@ def prepare_conversation_turn_request(
             "type": "file",
             # included, blocked, notfound, empty
             "status": "included",
-            "range": doc["position"],
+            "range": st_region_to_lsp_range(selection, view),
             "uri": filename_to_uri(file_path) if (file_path := view.file_name()) else f"buffer:{view.buffer().id()}",
             "visibleRange": visible_range,
             "selection": st_region_to_lsp_range(selection, view),
-            # position: ni.Type.Optional(
-            #         ni.Type.Object({
-            #             line: ni.Type.Number({ minimum: 0 }),
-            #             character: ni.Type.Number({ minimum: 0 }),
-            #         }),
-            #     ),
+            "position": st_point_to_lsp_position(selection.begin(), view),
             # openedAt: ni.Type.Optional(ni.Type.String()),
             # activeAt: ni.Type.Optional(ni.Type.String()),
         })
@@ -256,7 +252,6 @@ def prepare_conversation_turn_request(
         "doc": doc,
         "computeSuggestions": True,
         "references": references,
-        "source": source,
     }
 
 
