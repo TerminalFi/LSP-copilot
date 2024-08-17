@@ -278,10 +278,12 @@ class _ConversationEntry:
                     transformed_conversation.append(current_entry)
                 current_entry = {
                     "kind": kind,
+                    "turnId": turn_id,
                     "messages": [reply],
                     "codeBlockIndices": [],
                     "codeBlocks": [],
-                    "turnId": turn_id,
+                    "references": [],
+                    "references_expanded": False,
                 }
                 if kind == "report":
                     current_entry["references"] = self.wcm.conversation[idx - 1].get("references", [])

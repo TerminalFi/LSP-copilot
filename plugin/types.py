@@ -184,7 +184,7 @@ class CopilotPayloadConversationEntry(TypedDict, total=True):
     turnId: str
     reply: str
     annotations: list[str]
-    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]  # is this correct?
+    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]
     hideText: bool
     warnings: list[Any]  # @todo define this
 
@@ -197,6 +197,8 @@ class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):
     messages: list[str]
     codeBlocks: list[str]
     codeBlockIndices: list[int]
+    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]
+    references_expanded: bool
 
 
 class CopilotPayloadConversationTemplate(TypedDict, total=True):
@@ -228,28 +230,28 @@ class CopilotRequestConversationTurnReference(TypedDict, total=True):
     active_at: str | None
 
 
-class Result(TypedDict, total=True):
+class CopilotGitHubWebDataResult(TypedDict, total=True):
     title: str
     excerpt: str
     url: str
 
 
-class Metadata(TypedDict, total=False):
-    display_name: str | None
-    display_icon: str | None
-
-
-class Data(TypedDict, total=True):
+class CopilotGitHubWebData(TypedDict, total=True):
     query: str
     type: str
-    results: list[Result] | None
+    results: list[CopilotGitHubWebDataResult] | None
+
+
+class CopilotGitHubWebMetadata(TypedDict, total=False):
+    display_name: str | None
+    display_icon: str | None
 
 
 class CopilotGitHubWebSearch(TypedDict, total=True):
     type: Literal["github.web-search"]
     id: str
-    data: Data
-    metadata: Metadata | None
+    data: CopilotGitHubWebData
+    metadata: CopilotGitHubWebMetadata | None
 
 
 class CopilotRequestConversationAgent(TypedDict, total=True):

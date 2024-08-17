@@ -232,8 +232,8 @@ def prepare_conversation_turn_request(
     references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch] = []
     visible_range = st_region_to_lsp_range(view.visible_region(), view)
     views.append(view)
-    for v in views:
-        selection = v.sel()[0]
+    for _view in views:
+        selection = _view.sel()[0]
         if selection.empty() or view.substr(selection).isspace():
             continue
 
