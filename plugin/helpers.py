@@ -194,10 +194,11 @@ def lsp_range_to_st_region(range_: LspRange, view: sublime.View) -> sublime.Regi
     )
 
 
-def prepare_completion_request_doc(view: sublime.View, max_selections: int = 1) -> CopilotDocType | None:
-    if not view or len(sel := view.sel()) > max_selections or len(sel) == 0:
+def prepare_completion_request_doc(view: sublime.View) -> CopilotDocType | None:
+    if not view.file_name():
         return None
 
+    selection = view.sel()[0]
     file_path = view.file_name() or f"buffer:{view.buffer().id()}"
     return {
         "source": view.substr(sublime.Region(0, view.size())),
@@ -208,7 +209,7 @@ def prepare_completion_request_doc(view: sublime.View, max_selections: int = 1) 
         "uri": file_path if file_path.startswith("buffer:") else filename_to_uri(file_path),
         "relativePath": get_project_relative_path(file_path),
         "languageId": get_view_language_id(view),
-        "position": st_point_to_lsp_position(sel[0].begin(), view),
+        "position": st_point_to_lsp_position(selection.begin(), view),
         # Buffer Version. Generally this is handled by LSP, but we need to handle it here
         # Will need to test getting the version from LSP
         "version": view.change_count(),
@@ -222,7 +223,7 @@ def prepare_conversation_turn_request(
     view: sublime.View,
     source: Literal["panel", "inline"] = "panel",
 ) -> CopilotRequestConversationTurn | None:
-    if not (doc := prepare_completion_request_doc(view, max_selections=5)):
+    if not (doc := prepare_completion_request_doc(view)):
         return None
 
     # References can technicaly be across multiple files
