@@ -38,11 +38,11 @@
 {%- if section.references_expanded -%}
   <a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
   <div class="reference">
-{% for reference in section.references %}
-      <a href="#">{{ reference['uri'] }}</a>
-{% endfor %}
+  {%- for reference in section.references -%}
+    <a href="#">{{ reference['uri'] }}</a>
+  {%- endfor -%}
   </div>
-{% else %}
+{%- else -%}
   <a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
 {%- endif -%}
 </div>
