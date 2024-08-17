@@ -282,6 +282,7 @@ class CopilotConversationChatCommand(CopilotTextCommand):
                 "references": [],
                 "annotations": [],
                 "hideText": False,
+                "warnings": [],
             })
         session.send_request(
             Request(
@@ -342,6 +343,7 @@ class CopilotConversationChatCommand(CopilotTextCommand):
             "references": request["references"],
             "annotations": [],
             "hideText": False,
+            "warnings": [],
         })
         session.send_request(
             Request(REQ_CONVERSATION_TURN, request),

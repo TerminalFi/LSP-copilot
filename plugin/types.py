@@ -184,7 +184,9 @@ class CopilotPayloadConversationEntry(TypedDict, total=True):
     turnId: str
     reply: str
     annotations: list[str]
+    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]  # is this correct?
     hideText: bool
+    warnings: list[Any]  # @todo define this
 
 
 class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):
