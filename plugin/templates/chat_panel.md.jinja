@@ -26,11 +26,15 @@
 
 <div class="references">
 {% if section.references_expanded %}
+<a class="reference_toggle" href='{{ references_collapse_url }}'><img class="icon" src="{{ asset_url('collapse.png') }}">{{ len(section.references) }}References</a>
+<div  class="reference_list">
 {% for reference in section.references %}
     <a class="reference" href='{{ reference.url }}'>{{ reference.text }}</a>
 {% endfor %}
+</div>
+
 {% else references_expanded %}
-  <a class="reference" href='{{ references_expand_url }}'>{{ len(section.references)}}References</a>
+  <a class="reference_toggle" href='{{ references_expand_url }}'><img class="icon" src="{{ asset_url('expand.png') }}">{{ len(section.references) }}References</a>
 {% endif %}
 </div>
 
