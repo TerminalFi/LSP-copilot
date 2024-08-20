@@ -33,14 +33,17 @@
 </span>
 
 
-{%- if section.kind == "report" -%}
-<div class="references">
+{%- if section.kind == "report" and section.references|length > 0 -%}
+<div class="reference">
 {%- if section.references_expanded -%}
   <a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
-  <div class="reference">
+  <div class="references">
+    <ol>
   {%- for reference in section.references -%}
-    <a href="#">{{ reference['uri'] }}</a>
+      <li><a class="reference_link" href='{{command_url("open_file", {"file": reference['uri'], "encoded_position": true})}}'>{{ reference['uri'] }}</a>
+      </li>
   {%- endfor -%}
+    </ol>
   </div>
 {%- else -%}
   <a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
@@ -55,10 +58,10 @@
     (
       "CODE_BLOCK_COMMANDS_" ~ index|string,
       (
-        "<a class='icon-link' href='" ~ command_url('copilot_conversation_copy_code', window_id, index) ~ "'>" ~
+        "<a class='icon-link' href='" ~ command_url('copilot_conversation_copy_code', {"window_id": window_id, "code_block_index": index}) ~ "'>" ~
         "<img class='icon icon-link' src='" ~ asset_url('copy.png') ~ "' /></a>" ~
         "<span></span>" ~
-        " <a class='icon-link' href='" ~ command_url('copilot_conversation_insert_code_shim', window_id, index) ~ "'>" ~
+        " <a class='icon-link' href='" ~ command_url('copilot_conversation_insert_code_shim', {"window_id": window_id, "code_block_index": index}) ~ "'>" ~
         "<img class='icon icon-link' src='" ~ asset_url('insert.png') ~ "' /></a>\n\n"
       ) | safe,
     )

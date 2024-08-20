@@ -10,6 +10,11 @@ html {
   --copilot-accept-foreground: var(--foreground);
   --copilot-accept-background: var(--background);
   --copilot-accept-border: var(--greenish);
+
+
+  --copilot-references-foreground: var(--foreground);
+  --copilot-references-background: var(--background);
+  --copilot-references-border: color(var(--foreground) alpha(0.25));
 }
 
 .wrapper {
@@ -20,6 +25,13 @@ html {
   color: color(var(--foreground) a(0.25));
 }
 
+.wrapper .navbar {
+  text-align: left;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+}
+
 .wrapper .navbar .suggested-title {
   display: inline-block;
   font-size: 1.2em;
@@ -27,11 +39,6 @@ html {
   padding-bottom: 1rem;
 }
 
-.wrapper .navbar {
-  text-align: left;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-}
 
 .wrapper .header {
   display: block;
@@ -121,4 +128,23 @@ html {
   width: 1em;
   height: 1em;
   color: var(--foreground)
+}
+
+.wrapper .reference {
+    margin-top: 1rem;
+}
+
+.wrapper div.references {
+    margin-top: 1rem;
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--copilot-references-border);
+}
+
+
+.wrapper div .reference_link {
+    border-radius: 0px;
+    border-style: none;
+    border-width: 0px;
 }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Iterable
+from typing import Any, Iterable
 
 import jinja2
 import sublime
@@ -25,8 +25,8 @@ def asset_url(asset_path: str) -> str:
     return f"res://{_plugin_asset_path(asset_path)}"
 
 
-def command_url(commmand: str, window_id: int, code_block_index: int) -> str:
-    return sublime.command_url(commmand, {"window_id": window_id, "code_block_index": code_block_index})
+def command_url(commmand: str, args: dict[Any]) -> str:
+    return sublime.command_url(commmand, args)
 
 
 def include_asset(asset_path: str, *, use_cache: bool = True) -> str:
