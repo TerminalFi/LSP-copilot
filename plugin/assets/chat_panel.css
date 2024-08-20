@@ -1,152 +1,151 @@
 html {
-    --copilot-delete-foreground: var(--redish);
-    --copilot-delete-background: var(--background);
-    --copilot-delete-border: var(--redish);
+  --copilot-delete-foreground: var(--redish);
+  --copilot-delete-background: var(--background);
+  --copilot-delete-border: var(--redish);
 
-    --copilot-close-foreground: var(--foreground);
-    --copilot-close-background: var(--background);
-    --copilot-close-border: var(--foreground);
+  --copilot-close-foreground: var(--foreground);
+  --copilot-close-background: var(--background);
+  --copilot-close-border: var(--foreground);
 
-    --copilot-accept-foreground: var(--foreground);
-    --copilot-accept-background: var(--background);
-    --copilot-accept-border: var(--greenish);
+  --copilot-accept-foreground: var(--foreground);
+  --copilot-accept-background: var(--background);
+  --copilot-accept-border: var(--greenish);
 
-
-    --copilot-references-foreground: color(var(--foreground) alpha(0.5));
-    --copilot-references-background: var(--background);
-    --copilot-references-border: color(var(--foreground) alpha(0.25));
+  --copilot-references-foreground: var(--foreground);
+  --copilot-references-background: var(--background);
+  --copilot-references-border: color(var(--foreground) alpha(0.25));
 }
 
 .wrapper {
-    margin: 1rem 0.5rem 0 0.5rem;
+  margin: 1rem 0.5rem 0 0.5rem;
 }
 
 .wrapper hr {
-    color: color(var(--foreground) a(0.25));
+  color: color(var(--foreground) a(0.25));
 }
 
 .wrapper .navbar {
-    text-align: left;
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
+  text-align: left;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
 }
 
 .wrapper .navbar .suggested-title {
-    display: inline-block;
-    font-size: 1.2em;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
+  display: inline-block;
+  font-size: 1.2em;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
 }
 
 
 .wrapper .header {
-    display: block;
-    margin-bottom: 1rem;
+  display: block;
+  margin-bottom: 1rem;
 }
 
 .wrapper a {
-    border-radius: 3px;
-    border-style: solid;
-    border-width: 1px;
-    display: inline;
-    padding: 2px;
-    text-decoration: none;
+  border-radius: 3px;
+  border-style: solid;
+  border-width: 1px;
+  display: inline;
+  padding: 2px;
+  text-decoration: none;
 }
 
 .wrapper a.icon-link {
-    border-radius: 0px;
-    border-style: none;
-    border-width: 0px;
-    display: inline;
-    text-decoration: underline;
+  border-radius: 0px;
+  border-style: none;
+  border-width: 0px;
+  display: inline;
+  text-decoration: underline;
 }
 
 .wrapper a.rating {
-    border-radius: 0px;
-    border-style: none;
-    border-width: 0px;
-    display: inline;
-    padding: 2px;
-    text-decoration: none;
+  border-radius: 0px;
+  border-style: none;
+  border-width: 0px;
+  display: inline;
+  padding: 2px;
+  text-decoration: none;
 }
 
 .wrapper a.delete {
-    border-radius: 0px;
-    border-style: none;
-    border-width: 0px;
+  border-radius: 0px;
+  border-style: none;
+  border-width: 0px;
 }
 
 .wrapper a.delete i {
-    color: var(--copilot-delete-border);
+  color: var(--copilot-delete-border);
 }
 
 .wrapper a.icon-link {
-    border-radius: 0px;
-    border-style: none;
-    border-width: 0px;
+  border-radius: 0px;
+  border-style: none;
+  border-width: 0px;
 }
 
 .wrapper a.close {
-    border-radius: 0px;
-    border-style: none;
-    border-width: 0px;
+  border-radius: 0px;
+  border-style: none;
+  border-width: 0px;
 }
 
 .wrapper a.accept {
-    background: var(--copilot-accept-background);
-    border-color: var(--copilot-accept-border);
-    color: var(--copilot-accept-foreground);
+  background: var(--copilot-accept-background);
+  border-color: var(--copilot-accept-border);
+  color: var(--copilot-accept-foreground);
 }
 
 .wrapper a.accept {
-    background: var(--copilot-accept-background);
-    border-color: var(--copilot-accept-border);
-    color: var(--copilot-accept-foreground);
+  background: var(--copilot-accept-background);
+  border-color: var(--copilot-accept-border);
+  color: var(--copilot-accept-foreground);
 }
 
 .wrapper a.accept i {
-    color: var(--copilot-accept-border);
+  color: var(--copilot-accept-border);
 }
 
 .wrapper .kind {
-    padding: 1px;
-    color: color(var(--greenish) alpha(1));
+  padding: 1px;
+  color: color(var(--greenish) alpha(1));
 }
 
 .wrapper .kind.report {
-    color: color(var(--yellowish) alpha(1));
+  color: color(var(--yellowish) alpha(1));
 }
 
 .wrapper .icon {
-    width: 1.25em;
-    height: 1.25em;
-    color: var(--foreground)
+  width: 1.25em;
+  height: 1.25em;
+  color: var(--foreground)
 }
 
 .wrapper .icon.delete-icon {
-    width: 1em;
-    height: 1em;
-    color: var(--foreground)
+  width: 1em;
+  height: 1em;
+  color: var(--foreground)
 }
 
-.wrapper .reference {
-    margin-top: 1rem;
+.wrapper div.reference {
+  margin-top: 1rem;
 }
 
 .wrapper div.references {
-    margin-top: 1rem;
-    border-radius: 3px;
-    border-style: solid;
-    border-width: 1px;
-    border-color: var(--copilot-references-border);
+  margin-top: 1rem;
+  border-radius: 3px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--copilot-references-border);
 }
-
 
 .wrapper div .reference_link {
-    border-radius: 0px;
-    border-style: none;
-    border-width: 0px;
-    font-size: 0.8em;
-    color: var(--copilot-references-foreground);
+  border-radius: 0px;
+  border-style: none;
+  border-width: 0px;
+  font-size: 0.8em;
+  color: var(--copilot-references-foreground);
 }
+
+
