@@ -33,14 +33,14 @@
 </span>
 
 
-{%- if section.kind == "report" and section.references|length > 0 -%}
+{%- if section.kind == "report" and section.references -%}
 <div class="reference">
 {%- if section.references_expanded -%}
   <a class="reference_toggle" href='{{ section.toggle_references_url }}'>{{ section.references|length }} References</a>
   <div class="references">
     <ol>
   {%- for reference in section.references -%}
-      <li><a class="reference_link" href='{{command_url("open_file", {"file": reference['uri'], "encoded_position": true})}}'>{{ reference['uri'] ~ ":" ~ reference['position']['line'] ~ ":" ~ reference['position']['character'] }}</a>
+      <li><a class="reference_link" href='{{ command_url("open_file", {"file": reference['uri'], "encoded_position": true}) }}'>{{ reference['uri'] ~ ":" ~ reference['position']['line'] ~ ":" ~ reference['position']['character'] }}</a>
       </li>
   {%- endfor -%}
     </ol>

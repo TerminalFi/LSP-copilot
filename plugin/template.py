@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any, Iterable
+from typing import Iterable
 
 import jinja2
 import sublime
@@ -23,10 +23,6 @@ def load_resource_template(template_path: str, *, keep_trailing_newline: bool = 
 
 def asset_url(asset_path: str) -> str:
     return f"res://{_plugin_asset_path(asset_path)}"
-
-
-def command_url(commmand: str, args: dict[Any]) -> str:
-    return sublime.command_url(commmand, args)
 
 
 def include_asset(asset_path: str, *, use_cache: bool = True) -> str:
@@ -56,7 +52,7 @@ _JINJA_TEMPLATE_ENV.globals.update(
     asset_url=asset_url,
     include_asset=include_asset,
     is_debug_mode=is_debug_mode,
-    command_url=command_url,
+    command_url=sublime.command_url,
 )
 
 _RESOURCE_ASSET_CACHES: dict[str, str] = {}
