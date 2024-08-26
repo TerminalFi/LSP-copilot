@@ -40,7 +40,7 @@
   <div class="references">
     <ol>
   {%- for reference in section.references -%}
-      <li><a class="reference_link" href='{{ command_url("open_file", {"file": sanitize_path(reference['uri']), "encoded_position": true}) }}'>{{ sanitize_path(reference['uri']) ~ ":" ~ reference['position']['line'] ~ ":" ~ reference['position']['character'] }}</a>
+      <li><a class="reference_link" href='{{ command_url("open_file", {"file": uri_to_filename(reference['uri']), "encoded_position": true}) }}'>{{ uri_to_filename(reference['uri'], reference['position']['line'], reference['position']['character']) }}</a>
       </li>
   {%- endfor -%}
     </ol>

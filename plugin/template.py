@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from functools import lru_cache
 from typing import Iterable
-from urllib.parse import unquote
 
 import jinja2
 import sublime
+from LSP.plugin.core.url import parse_uri
 
 from .constants import PACKAGE_NAME
 from .helpers import is_debug_mode
@@ -38,12 +38,19 @@ def multi_replace(message: str, replacements: Iterable[tuple[str, str]]) -> str:
     return message
 
 
+def uri_to_filename(uri: str, row: int | None = None, col: int | None = None) -> str:
+    filename = parse_uri(uri)[1]
+    if row is not None:
+        filename += f":{row}"
+    if col is not None:
+        if row is None:
+            raise ValueError("Column cannot be specified without row.")
+        filename += f":{col}"
+    return filename
+
+
 def _plugin_asset_path(asset_path: str) -> str:
     return f"Packages/{PACKAGE_NAME}/plugin/assets/{asset_path}"
-
-
-def sanitize_path(path: str) -> str:
-    return unquote(path.replace("file://", ""))
 
 
 _JINJA_TEMPLATE_ENV = jinja2.Environment(
@@ -58,7 +65,7 @@ _JINJA_TEMPLATE_ENV.globals.update(
     include_asset=include_asset,
     is_debug_mode=is_debug_mode,
     command_url=sublime.command_url,
-    sanitize_path=sanitize_path,
+    uri_to_filename=uri_to_filename,
 )
 
 _RESOURCE_ASSET_CACHES: dict[str, str] = {}
