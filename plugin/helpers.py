@@ -234,7 +234,7 @@ def prepare_conversation_turn_request(
     views.append(view)
     for _view in views:
         selection = _view.sel()[0]
-        if selection.empty() or view.substr(selection).isspace():
+        if selection.empty() or _view.substr(selection).isspace():
             continue
 
         references.append({
@@ -242,10 +242,10 @@ def prepare_conversation_turn_request(
             # included, blocked, notfound, empty
             "status": "included",
             "range": st_region_to_lsp_range(selection, view),
-            "uri": filename_to_uri(file_path) if (file_path := view.file_name()) else f"buffer:{view.buffer().id()}",
+            "uri": filename_to_uri(file_path) if (file_path := _view.file_name()) else f"buffer:{view.buffer().id()}",
             "visibleRange": visible_range,
-            "selection": st_region_to_lsp_range(selection, view),
-            "position": st_point_to_lsp_position(selection.begin(), view),
+            "selection": st_region_to_lsp_range(selection, _view),
+            "position": st_point_to_lsp_position(selection.begin(), _view),
             # openedAt: ni.Type.Optional(ni.Type.String()),
             # activeAt: ni.Type.Optional(ni.Type.String()),
         })

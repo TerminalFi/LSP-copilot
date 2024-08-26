@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from typing import Iterable
+from urllib.parse import unquote
 
 import jinja2
 import sublime
@@ -41,6 +42,10 @@ def _plugin_asset_path(asset_path: str) -> str:
     return f"Packages/{PACKAGE_NAME}/plugin/assets/{asset_path}"
 
 
+def sanitize_path(path: str) -> str:
+    return unquote(path.replace("file://", ""))
+
+
 _JINJA_TEMPLATE_ENV = jinja2.Environment(
     extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
 )
@@ -53,6 +58,7 @@ _JINJA_TEMPLATE_ENV.globals.update(
     include_asset=include_asset,
     is_debug_mode=is_debug_mode,
     command_url=sublime.command_url,
+    sanitize_path=sanitize_path,
 )
 
 _RESOURCE_ASSET_CACHES: dict[str, str] = {}
