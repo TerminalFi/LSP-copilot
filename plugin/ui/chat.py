@@ -114,6 +114,16 @@ class WindowConversationManager:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible", value)
 
     @property
+    def reference_block_state(self) -> dict[str, bool]:
+        return get_copilot_setting(
+            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "reference_block_state", {}
+        )
+
+    @reference_block_state.setter
+    def reference_block_state(self, value: dict[str, bool]):
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "reference_block_state", value)
+
+    @property
     def conversation(self) -> list[CopilotPayloadConversationEntry]:
         """All `conversation` in the view. Note that this is a copy."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_entries", [])
@@ -137,6 +147,7 @@ class WindowConversationManager:
         self.follow_up = ""
         self.conversation_id = ""
         self.conversation = []
+        self.reference_block_state = {}
         self.code_block_index = {}
 
         if view := find_view_by_id(self.view_id):
@@ -148,6 +159,14 @@ class WindowConversationManager:
         conversation_history = self.conversation
         conversation_history.append(entry)
         self.conversation = conversation_history
+        self.append_reference_block_state(entry["turnId"], False)
+
+    def append_reference_block_state(self, turn_id: str, state: bool) -> None:
+        # self.reference_block_state is a copy of the original reference_block_state entries
+        # So when we do self.reference_block_state.append(entry), we are not modifying the original list
+        reference_block_state = self.reference_block_state
+        reference_block_state[turn_id] = state
+        self.reference_block_state = reference_block_state
 
     def insert_code_block_index(self, index: int, code_block: str) -> None:
         # self.code_block_index is a copy of the original conversation entries
@@ -157,12 +176,10 @@ class WindowConversationManager:
         self.code_block_index = code_block_index
 
     def toggle_references_block(self, turn_id: str) -> None:
-        conversation = self.conversation
-        for entry in conversation:
-            if entry["turnId"] == turn_id:
-                entry["references_expanded"] = not entry["references_expanded"]
-                self.conversation = conversation
-                break
+        reference_block_state = self.reference_block_state
+        reference_block_state.setdefault(turn_id, False)
+        reference_block_state[turn_id] = not reference_block_state[turn_id]
+        self.reference_block_state = reference_block_state
 
     @staticmethod
     def find_window_by_token_id(token_id: str) -> sublime.Window | None:
@@ -220,11 +237,11 @@ class _ConversationEntry:
                         {
                             "conversation_id": self.wcm.conversation_id,
                             "window_id": self.wcm.window.id(),
-                            "turn_id": conversations_entries[idx - 1]["turnId"],
+                            "turn_id": entry["turnId"],
                         },
                     ),
                     "references": [] if entry["kind"] != "report" else entry["references"],
-                    "references_expanded": False if entry["kind"] != "report" else entry["references_expanded"],
+                    "references_expanded": self.wcm.reference_block_state.get(entry["turnId"], False),
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
                         {
@@ -283,13 +300,9 @@ class _ConversationEntry:
                     "codeBlockIndices": [],
                     "codeBlocks": [],
                     "references": [],
-                    "references_expanded": False,
                 }
                 if kind == "report":
                     current_entry["references"] = self.wcm.conversation[idx - 1].get("references", [])
-                    current_entry["references_expanded"] = self.wcm.conversation[idx - 1].get(
-                        "references_expanded", False
-                    )
 
                 if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
