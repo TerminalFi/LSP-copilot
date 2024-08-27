@@ -14,6 +14,7 @@ from .commands import (
     CopilotConversationChatShimCommand,
     CopilotConversationCloseCommand,
     CopilotConversationCopyCodeCommand,
+    CopilotConversationDebugCommand,
     CopilotConversationDestroyCommand,
     CopilotConversationDestroyShimCommand,
     CopilotConversationInsertCodeCommand,

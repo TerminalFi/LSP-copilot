@@ -49,6 +49,7 @@ from .helpers import (
     preprocess_message_for_html,
 )
 from .types import (
+    CopilotConversationDebugTemplates,
     CopilotPayloadConversationCreate,
     CopilotPayloadConversationPreconditions,
     CopilotPayloadConversationTemplate,
@@ -864,6 +865,28 @@ class CopilotSignOutCommand(CopilotTextCommand):
             message_dialog("Sign out OK. Bye!")
 
         GithubInfo.clear_avatar()
+
+
+class CopilotConversationDebugCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        if not (window := self.view.window()):
+            return
+
+        templates = [
+            [color_name, color_value.value]
+            for color_name, color_value in CopilotConversationDebugTemplates.__members__.items()
+        ]
+        window.show_quick_panel(templates, lambda index: self._on_selected(index, templates))
+
+    def _on_selected(
+        self,
+        index: int,
+        items: list[CopilotPayloadConversationTemplate | CopilotUserDefinedPromptTemplates],
+    ) -> None:
+        if index == -1:
+            return
+        self.view.run_command("copilot_conversation_chat", {"message": f"{items[index][1]}"})
 
 
 class CopilotSendAnyRequestCommand(CopilotTextCommand):
