@@ -259,7 +259,7 @@ class _ConversationEntry:
                         {"turn_id": entry["turnId"], "rating": -1},
                     ),
                 }
-                for idx, entry in enumerate(conversations_entries)
+                for entry in conversations_entries
             ],
         )
 

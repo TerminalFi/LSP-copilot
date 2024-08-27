@@ -5,7 +5,7 @@ assert __package__
 PACKAGE_NAME = __package__.partition(".")[0]
 
 # ---------------- #
-# Setting Prefixes #
+# Setting prefixes #
 # ---------------- #
 
 COPILOT_OUTPUT_PANEL_PREFIX = "copilot"
@@ -35,7 +35,7 @@ REQ_SIGN_IN_WITH_GITHUB_TOKEN = "signInWithGithubToken"
 REQ_SIGN_OUT = "signOut"
 
 # --------------------- #
-# Copilot Chat requests #
+# Copilot chat requests #
 # --------------------- #
 
 REQ_CONVERSATION_AGENTS = "conversation/agents"

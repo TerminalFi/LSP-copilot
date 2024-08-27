@@ -581,8 +581,7 @@ class CopilotConversationAgentsCommand(CopilotTextCommand):
         session.send_request(Request(REQ_CONVERSATION_AGENTS, {"options": {}}), self._on_result_conversation_agents)
 
     def _on_result_conversation_agents(self, payload: list[CopilotRequestConversationAgent]) -> None:
-        window = self.view.window()
-        if not window:
+        if not (window := self.view.window()):
             return
         window.show_quick_panel([[item["slug"], item["description"]] for item in payload], lambda _: None)
 
@@ -594,13 +593,12 @@ class CopilotGetPromptCommand(CopilotTextCommand):
         session.send_request(Request(REQ_GET_PROMPT, {"doc": doc}), self._on_result_get_prompt)
 
     def _on_result_get_prompt(self, payload) -> None:
-        window = self.view.window()
-        if not window:
+        if not (window := self.view.window()):
             return
         view = window.create_output_panel(f"{COPILOT_OUTPUT_PANEL_PREFIX}.prompt_view", unlisted=True)
+        view.assign_syntax("scope:source.json")
 
         with mutable_view(view) as view:
-            view.assign_syntax("scope:source.json")
             view.run_command("append", {"characters": json.dumps(payload, indent=4)})
         window.run_command("show_panel", {"panel": f"output.{COPILOT_OUTPUT_PANEL_PREFIX}.prompt_view"})
 
@@ -624,7 +622,11 @@ class CopilotConversationTemplatesCommand(CopilotTextCommand):
 
         templates = payload + user_prompts
         prompts = [
-            [item["id"], item["description"], ", ".join(item["scopes"]) if item.get("scopes", None) else "chat-panel"]
+            [
+                item["id"],
+                item["description"],
+                ", ".join(item["scopes"]) if item.get("scopes") else "chat-panel",
+            ]
             for item in templates
         ]
         window.show_quick_panel(
@@ -696,7 +698,7 @@ class CopilotGetPanelCompletionsCommand(CopilotTextCommand):
 
     def _on_result_get_panel_completions(self, payload: CopilotPayloadPanelCompletionSolutionCount) -> None:
         count = payload["solutionCountTarget"]
-        status_message("retrieving panel completions: {}", count)
+        status_message(f"retrieving panel completions: {count}")
 
         ViewPanelCompletionManager(self.view).open(completion_target_count=count)
 
@@ -748,7 +750,7 @@ class CopilotCheckFileStatusCommand(CopilotTextCommand):
         session.send_request(Request(REQ_FILE_CHECK_STATUS, {"uri": uri}), self._on_result_check_file_status)
 
     def _on_result_check_file_status(self, payload: CopilotPayloadFileStatus) -> None:
-        status_message("File is {} in session", payload["status"])
+        status_message(f'File is {payload["status"]} in session')
 
 
 class CopilotSignInCommand(CopilotTextCommand):

@@ -3,7 +3,6 @@ from __future__ import annotations
 import contextlib
 import gzip
 import os
-import textwrap
 import threading
 import urllib.request
 from collections.abc import Callable, Generator, Iterable
@@ -204,11 +203,6 @@ def ok_cancel_dialog(msg_: str, *args: Any, **kwargs: Any) -> bool:
     return sublime.ok_cancel_dialog(f"[{PACKAGE_NAME}] {msg_.format(*args, **kwargs)}")
 
 
-def reformat(text: str) -> str:
-    """Remove common indentations and then trim."""
-    return textwrap.dedent(text).strip()
-
-
 def remove_prefix(s: str, prefix: str) -> str:
     """Remove the prefix from the string. I.e., str.removeprefix in Python 3.9."""
     return s[len(prefix) :] if s.startswith(prefix) else s
@@ -239,7 +233,11 @@ def status_message(msg_: str, *args: Any, icon_: str | None = "✈", console_: b
 
 
 def find_index_by_key_value(items: Sequence[Mapping[_KT, _VT]], key: _KT, value: _VT) -> int:
-    return first((index for index, item in enumerate(items) if item.get(key) == value), -1)
+    """
+    Finds the index of the first map-like item in `items` whose `key` is equal to `value`.
+    If not found, returns `-1`.
+    """
+    return first((idx for idx, item in enumerate(items) if key in item and item[key] == value), -1)
 
 
 def simple_urlopen(url: str, *, chunk_size: int = 512 * 1024) -> bytes:
