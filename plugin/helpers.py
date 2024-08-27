@@ -232,22 +232,20 @@ def prepare_conversation_turn_request(
     references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch] = []
     visible_range = st_region_to_lsp_range(view.visible_region(), view)
     views.append(view)
-    for _view in views:
-        selection = _view.sel()[0]
-        if selection.empty() or _view.substr(selection).isspace():
+    for view_ in views:
+        if not (selection := view_.sel()[0]) or view_.substr(selection).isspace():
             continue
 
         references.append({
             "type": "file",
-            # included, blocked, notfound, empty
-            "status": "included",
+            "status": "included",  # included, blocked, notfound, empty
+            "uri": filename_to_uri(file_path) if (file_path := view_.file_name()) else f"buffer:{view.buffer().id()}",
+            "position": st_point_to_lsp_position(selection.begin(), view_),
             "range": st_region_to_lsp_range(selection, view),
-            "uri": filename_to_uri(file_path) if (file_path := _view.file_name()) else f"buffer:{view.buffer().id()}",
             "visibleRange": visible_range,
-            "selection": st_region_to_lsp_range(selection, _view),
-            "position": st_point_to_lsp_position(selection.begin(), _view),
-            # openedAt: ni.Type.Optional(ni.Type.String()),
-            # activeAt: ni.Type.Optional(ni.Type.String()),
+            "selection": st_region_to_lsp_range(selection, view_),
+            "openedAt": None,
+            "activeAt": None,
         })
 
     return {

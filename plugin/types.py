@@ -222,11 +222,11 @@ class CopilotRequestConversationTurnReference(TypedDict, total=True):
     status: str
     uri: str
     position: LspPosition
-    range: LspPosition
+    range: LspRange
     visibleRange: LspRange
     selection: LspRange
-    opened_at: str | None
-    active_at: str | None
+    openedAt: str | None
+    activeAt: str | None
 
 
 class CopilotGitHubWebDataResult(TypedDict, total=True):

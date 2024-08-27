@@ -154,23 +154,23 @@ class WindowConversationManager:
             view.close()
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
-        # self.conversation is a copy of the original conversation entries
-        # So when we do self.conversation.append(entry), we are not modifying the original list
+        # `self.conversation` is a copy of the original conversation entries
+        # So if we do `self.conversation.append(entry)``, we are not modifying the original list
         conversation_history = self.conversation
         conversation_history.append(entry)
         self.conversation = conversation_history
         self.append_reference_block_state(entry["turnId"], False)
 
     def append_reference_block_state(self, turn_id: str, state: bool) -> None:
-        # self.reference_block_state is a copy of the original reference_block_state entries
-        # So when we do self.reference_block_state.append(entry), we are not modifying the original list
+        # `self.reference_block_state` is a copy of the original reference_block_state entries
+        # So if we do self.`reference_block_state[turn_id] = state`, we are not modifying the original dict
         reference_block_state = self.reference_block_state
         reference_block_state[turn_id] = state
         self.reference_block_state = reference_block_state
 
     def insert_code_block_index(self, index: int, code_block: str) -> None:
-        # self.code_block_index is a copy of the original conversation entries
-        # So when we do self.code_block_index[str(index)] = code_block_index, we are not modifying the original list
+        # `self.code_block_index` is a copy of the original conversation entries
+        # So if we do `self.code_block_index[str(index)] = code_block_index`, we are not modifying the original dict
         code_block_index = self.code_block_index
         code_block_index[str(index)] = code_block
         self.code_block_index = code_block_index
