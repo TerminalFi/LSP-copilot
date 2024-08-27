@@ -114,6 +114,16 @@ class WindowConversationManager:
         set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible", value)
 
     @property
+    def reference_block_state(self) -> dict[str, bool]:
+        return get_copilot_setting(
+            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "reference_block_state", {}
+        )
+
+    @reference_block_state.setter
+    def reference_block_state(self, value: dict[str, bool]):
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "reference_block_state", value)
+
+    @property
     def conversation(self) -> list[CopilotPayloadConversationEntry]:
         """All `conversation` in the view. Note that this is a copy."""
         return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_entries", [])
@@ -137,24 +147,39 @@ class WindowConversationManager:
         self.follow_up = ""
         self.conversation_id = ""
         self.conversation = []
+        self.reference_block_state = {}
         self.code_block_index = {}
 
         if view := find_view_by_id(self.view_id):
             view.close()
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
-        # @todo why we don't just `self.conversation.append(entry)`?
-        # If someone remember why, please just replace this comment with the reason.
+        # `self.conversation` is a copy of the original conversation entries
+        # So if we do `self.conversation.append(entry)``, we are not modifying the original list
         conversation_history = self.conversation
         conversation_history.append(entry)
         self.conversation = conversation_history
+        self.append_reference_block_state(entry["turnId"], False)
+
+    def append_reference_block_state(self, turn_id: str, state: bool) -> None:
+        # `self.reference_block_state` is a copy of the original reference_block_state entries
+        # So if we do self.`reference_block_state[turn_id] = state`, we are not modifying the original dict
+        reference_block_state = self.reference_block_state
+        reference_block_state[turn_id] = state
+        self.reference_block_state = reference_block_state
 
     def insert_code_block_index(self, index: int, code_block: str) -> None:
-        # @todo why we don't just `self.code_block_index[str(index)] = code_block`?
-        # If someone remember why, please just replace this comment with the reason.
+        # `self.code_block_index` is a copy of the original conversation entries
+        # So if we do `self.code_block_index[str(index)] = code_block_index`, we are not modifying the original dict
         code_block_index = self.code_block_index
         code_block_index[str(index)] = code_block
         self.code_block_index = code_block_index
+
+    def toggle_references_block(self, turn_id: str) -> None:
+        reference_block_state = self.reference_block_state
+        reference_block_state.setdefault(turn_id, False)
+        reference_block_state[turn_id] = not reference_block_state[turn_id]
+        self.reference_block_state = reference_block_state
 
     @staticmethod
     def find_window_by_token_id(token_id: str) -> sublime.Window | None:
@@ -207,6 +232,16 @@ class _ConversationEntry:
                     "kind": entry["kind"],
                     "message": "".join(entry["messages"]),
                     "code_block_indices": entry["codeBlockIndices"],
+                    "toggle_references_url": sublime.command_url(
+                        "copilot_conversation_toggle_references_block",
+                        {
+                            "conversation_id": self.wcm.conversation_id,
+                            "window_id": self.wcm.window.id(),
+                            "turn_id": entry["turnId"],
+                        },
+                    ),
+                    "references": [] if entry["kind"] != "report" else entry["references"],
+                    "references_expanded": self.wcm.reference_block_state.get(entry["turnId"], False),
                     "turn_delete_url": sublime.command_url(
                         "copilot_conversation_turn_delete_shim",
                         {
@@ -224,7 +259,7 @@ class _ConversationEntry:
                         {"turn_id": entry["turnId"], "rating": -1},
                     ),
                 }
-                for entry in conversations_entries
+                for idx, entry in enumerate(conversations_entries)
             ],
         )
 
@@ -237,7 +272,7 @@ class _ConversationEntry:
         is_inside_code_block = False
         code_block_index = -1
 
-        for entry in self.wcm.conversation:
+        for idx, entry in enumerate(self.wcm.conversation):
             kind = entry["kind"]
             reply = entry["reply"]
             turn_id = entry["turnId"]
@@ -260,11 +295,15 @@ class _ConversationEntry:
                     transformed_conversation.append(current_entry)
                 current_entry = {
                     "kind": kind,
+                    "turnId": turn_id,
                     "messages": [reply],
                     "codeBlockIndices": [],
                     "codeBlocks": [],
-                    "turnId": turn_id,
+                    "references": [],
                 }
+                if kind == "report":
+                    current_entry["references"] = self.wcm.conversation[idx - 1].get("references", [])
+
                 if reply.startswith("```") and kind == "report":
                     is_inside_code_block = True
                     code_block_index += 1

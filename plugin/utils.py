@@ -9,17 +9,19 @@ import urllib.request
 from collections.abc import Callable, Generator, Iterable
 from functools import wraps
 from itertools import takewhile
-from typing import Any, TypeVar, Union, cast
+from typing import Any, Mapping, Sequence, TypeVar, Union, cast
 
 import sublime
 from LSP.plugin.core.sessions import Session
 from LSP.plugin.core.types import basescope2languageid
-from more_itertools import first_true
+from more_itertools import first, first_true
 
 from .constants import COPILOT_VIEW_SETTINGS_PREFIX, PACKAGE_NAME
 from .types import T_Callable
 
 _T = TypeVar("_T")
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
 
 all_windows = sublime.windows
@@ -113,6 +115,7 @@ def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -
 
 
 def get_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
+    """Gets the Copilot-related window setting. Note that what you get is just a "copy" of the value."""
     return instance.settings().get(f"{prefix}.{key}", default)
 
 
@@ -125,6 +128,7 @@ def erase_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, 
 
 
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
+    """Gets the Copilot-related view setting. Note that what you get is just a "copy" of the value."""
     return get_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key, default)
 
 
@@ -162,7 +166,7 @@ def get_view_language_id(view: sublime.View, point: int = 0) -> str:
     return ""
 
 
-def message_dialog(msg_: str, *args, error_: bool = False, console_: bool = False, **kwargs) -> None:
+def message_dialog(msg_: str, *args: Any, error_: bool = False, console_: bool = False, **kwargs: Any) -> None:
     """
     Show a message dialog, whose message is prefixed with "[PACKAGE_NAME]".
 
@@ -180,7 +184,16 @@ def message_dialog(msg_: str, *args, error_: bool = False, console_: bool = Fals
         print(full_msg)
 
 
-def ok_cancel_dialog(msg_: str, *args, **kwargs) -> bool:
+@contextlib.contextmanager
+def mutable_view(view: sublime.View) -> Generator[sublime.View, Any, None]:
+    try:
+        view.set_read_only(False)
+        yield view
+    finally:
+        view.set_read_only(True)
+
+
+def ok_cancel_dialog(msg_: str, *args: Any, **kwargs: Any) -> bool:
     """
     Show an OK/cancel dialog, whose message is prefixed with "[PACKAGE_NAME]".
 
@@ -207,7 +220,7 @@ def remove_suffix(s: str, suffix: str) -> str:
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
-def status_message(msg_: str, *args, icon_: str | None = "✈", console_: bool = False, **kwargs) -> None:
+def status_message(msg_: str, *args: Any, icon_: str | None = "✈", console_: bool = False, **kwargs: Any) -> None:
     """
     Show a status message in the status bar, whose message is prefixed with `icon` and "Copilot".
 
@@ -225,8 +238,8 @@ def status_message(msg_: str, *args, icon_: str | None = "✈", console_: bool =
         print(full_msg)
 
 
-def find_index_by_key_value(items, key, value):
-    return next((index for index, item in enumerate(items) if item.get(key) == value), -1)
+def find_index_by_key_value(items: Sequence[Mapping[_KT, _VT]], key: _KT, value: _VT) -> int:
+    return first((index for index, item in enumerate(items) if item.get(key) == value), -1)
 
 
 def simple_urlopen(url: str, *, chunk_size: int = 512 * 1024) -> bytes:

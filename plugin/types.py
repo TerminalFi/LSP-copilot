@@ -184,7 +184,9 @@ class CopilotPayloadConversationEntry(TypedDict, total=True):
     turnId: str
     reply: str
     annotations: list[str]
+    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]
     hideText: bool
+    warnings: list[Any]  # @todo define this
 
 
 class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):
@@ -195,6 +197,7 @@ class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):
     messages: list[str]
     codeBlocks: list[str]
     codeBlockIndices: list[int]
+    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]
 
 
 class CopilotPayloadConversationTemplate(TypedDict, total=True):
@@ -210,7 +213,7 @@ class CopilotRequestConversationTurn(TypedDict, total=True):
     workDoneToken: str
     doc: CopilotDocType
     computeSuggestions: bool
-    references: list[CopilotRequestConversationTurnReference]
+    references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]
     source: Literal["panel", "inline"]
 
 
@@ -218,9 +221,36 @@ class CopilotRequestConversationTurnReference(TypedDict, total=True):
     type: str
     status: str
     uri: str
-    range: LspPosition
+    position: LspPosition
+    range: LspRange
     visibleRange: LspRange
     selection: LspRange
+    openedAt: str | None
+    activeAt: str | None
+
+
+class CopilotGitHubWebDataResult(TypedDict, total=True):
+    title: str
+    excerpt: str
+    url: str
+
+
+class CopilotGitHubWebData(TypedDict, total=True):
+    query: str
+    type: str
+    results: list[CopilotGitHubWebDataResult] | None
+
+
+class CopilotGitHubWebMetadata(TypedDict, total=False):
+    display_name: str | None
+    display_icon: str | None
+
+
+class CopilotGitHubWebSearch(TypedDict, total=True):
+    type: Literal["github.web-search"]
+    id: str
+    data: CopilotGitHubWebData
+    metadata: CopilotGitHubWebMetadata | None
 
 
 class CopilotRequestConversationAgent(TypedDict, total=True):

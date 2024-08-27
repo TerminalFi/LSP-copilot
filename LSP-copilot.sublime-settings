@@ -17,10 +17,6 @@
 		"hook_to_auto_complete_command": false,
 		"local_checks": false,
 		"proxy": "",
-		"telemetry": false,
-		// The (Jinja2) template of the status bar text which is inside the parentheses `(...)`.
-		// See https://jinja.palletsprojects.com/templates/
-		"status_text": "{% if is_copilot_ignored %}{{ is_copilot_ignored }}{% elif is_waiting %}{{ is_waiting }}{% elif server_version %}v{{ server_version }}{% endif %}",
 		"prompts": [
 			{
 				"id": "review",
@@ -37,7 +33,11 @@
 					"At last provide a summary of the overall code quality and any general suggestions for improvement.",
 				]
 			}
-		]
+		],
+		// The (Jinja2) template of the status bar text which is inside the parentheses `(...)`.
+		// See https://jinja.palletsprojects.com/templates/
+		"status_text": "{% if is_copilot_ignored %}{{ is_copilot_ignored }}{% elif is_waiting %}{{ is_waiting }}{% elif server_version %}v{{ server_version }}{% endif %}",
+		"telemetry": false,
 	},
 	// ST4 configuration
 	"selector": "source | text | embedding"

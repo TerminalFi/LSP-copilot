@@ -25,6 +25,10 @@
         }
     },
     {
+        "caption": "Copilot: Get Prompt",
+        "command": "copilot_get_prompt",
+    },
+    {
         "caption": "Copilot: Fix This",
         "command": "copilot_conversation_chat",
         "args": {

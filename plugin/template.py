@@ -5,6 +5,7 @@ from typing import Iterable
 
 import jinja2
 import sublime
+from LSP.plugin.core.url import parse_uri
 
 from .constants import PACKAGE_NAME
 from .helpers import is_debug_mode
@@ -25,10 +26,6 @@ def asset_url(asset_path: str) -> str:
     return f"res://{_plugin_asset_path(asset_path)}"
 
 
-def command_url(commmand: str, window_id: int, code_block_index: int) -> str:
-    return sublime.command_url(commmand, {"window_id": window_id, "code_block_index": code_block_index})
-
-
 def include_asset(asset_path: str, *, use_cache: bool = True) -> str:
     if not use_cache or asset_path not in _RESOURCE_ASSET_CACHES or is_debug_mode():
         _RESOURCE_ASSET_CACHES[asset_path] = sublime.load_resource(_plugin_asset_path(asset_path))
@@ -39,6 +36,17 @@ def multi_replace(message: str, replacements: Iterable[tuple[str, str]]) -> str:
     for old, new in replacements:
         message = message.replace(old, new)
     return message
+
+
+def uri_to_filename(uri: str, row: int | None = None, col: int | None = None) -> str:
+    filename = parse_uri(uri)[1]
+    if row is not None:
+        filename += f":{row}"
+    if col is not None:
+        if row is None:
+            raise ValueError("Column cannot be specified without row.")
+        filename += f":{col}"
+    return filename
 
 
 def _plugin_asset_path(asset_path: str) -> str:
@@ -56,7 +64,8 @@ _JINJA_TEMPLATE_ENV.globals.update(
     asset_url=asset_url,
     include_asset=include_asset,
     is_debug_mode=is_debug_mode,
-    command_url=command_url,
+    command_url=sublime.command_url,
+    uri_to_filename=uri_to_filename,
 )
 
 _RESOURCE_ASSET_CACHES: dict[str, str] = {}
