@@ -882,7 +882,7 @@ class CopilotConversationDebugCommand(CopilotTextCommand):
     def _on_selected(
         self,
         index: int,
-        items: list[tuple[str, CopilotConversationDebugTemplates]],
+        items: list[tuple[str, str]],
     ) -> None:
         if index == -1:
             return
