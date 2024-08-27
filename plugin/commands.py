@@ -873,16 +873,13 @@ class CopilotConversationDebugCommand(CopilotTextCommand):
         if not (window := self.view.window()):
             return
 
-        templates = [
-            (color_name, color_value.value)
-            for color_name, color_value in CopilotConversationDebugTemplates.__members__.items()
-        ]
+        templates = [(name, template) for name, template in CopilotConversationDebugTemplates.__members__.items()]
         window.show_quick_panel(templates, lambda index: self._on_selected(index, templates))
 
     def _on_selected(
         self,
         index: int,
-        items: list[tuple[str, str]],
+        items: list[tuple[str, CopilotConversationDebugTemplates]],
     ) -> None:
         if index == -1:
             return
