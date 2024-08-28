@@ -7,7 +7,7 @@ from abc import ABC
 from collections.abc import Callable
 from functools import partial, wraps
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal, Sequence, cast
 
 import sublime
 import sublime_plugin
@@ -49,6 +49,7 @@ from .helpers import (
     preprocess_message_for_html,
 )
 from .types import (
+    CopilotConversationDebugTemplates,
     CopilotPayloadConversationCreate,
     CopilotPayloadConversationPreconditions,
     CopilotPayloadConversationTemplate,
@@ -864,6 +865,24 @@ class CopilotSignOutCommand(CopilotTextCommand):
             message_dialog("Sign out OK. Bye!")
 
         GithubInfo.clear_avatar()
+
+
+class CopilotConversationDebugCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        if not (window := self.view.window()):
+            return
+
+        templates = tuple(CopilotConversationDebugTemplates)
+        window.show_quick_panel(
+            [[template.name, template.value] for template in templates],
+            lambda index: self._on_selected(index, templates),
+        )
+
+    def _on_selected(self, index: int, templates: Sequence[CopilotConversationDebugTemplates]) -> None:
+        if index == -1:
+            return
+        self.view.run_command("copilot_conversation_chat", {"message": f"{templates[index].value}"})
 
 
 class CopilotSendAnyRequestCommand(CopilotTextCommand):

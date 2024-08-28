@@ -128,5 +128,9 @@
     {
         "caption": "Copilot: Send Any Request",
         "command": "copilot_send_any_request"
+    },
+    {
+        "caption": "Copilot: Debug Chat Commands",
+        "command": "copilot_conversation_debug"
     }
 ]

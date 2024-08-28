@@ -162,13 +162,7 @@ class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
 # --------------------- #
 
 
-class CopilotConversationTemplates(StrEnum):
-    FIX = "/fix"
-    TESTS = "/tests"
-    DOC = "/doc"
-    EXPLAIN = "/explain"
-    SIMPLIFY = "/simplify"
-
+class CopilotStrEnum(StrEnum):
     @classmethod
     def has_value(cls, value: str) -> bool:
         try:
@@ -176,6 +170,26 @@ class CopilotConversationTemplates(StrEnum):
             return True
         except ValueError:
             return False
+
+
+class CopilotConversationTemplates(CopilotStrEnum):
+    FIX = "/fix"
+    TESTS = "/tests"
+    DOC = "/doc"
+    EXPLAIN = "/explain"
+    SIMPLIFY = "/simplify"
+
+
+class CopilotConversationDebugTemplates(CopilotStrEnum):
+    FAIL = "/debug.fail"
+    FILTER = "/debug.filter"
+    DUMP = "/debug.dump"
+    TREE = "/debug.tree"
+    ECHO = "/debug.echo"
+    PROMPT = "/debug.prompt"
+    SKILLS = "/debug.skills"
+    VULNERABILITY = "/debug.vulnerability"
+    MARKDOWN = "/debug.markdown"
 
 
 class CopilotPayloadConversationEntry(TypedDict, total=True):
