@@ -13,8 +13,17 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 @dataclass
 class AccountStatus:
     has_signed_in: bool
+    """Whether the user has signed in."""
     is_authorized: bool
+    """Whether user's account can use the Copilot service."""
     user: str = ""
+    """User's GitHub ID."""
+
+
+class EnhancedStrEnum(StrEnum):
+    @classmethod
+    def has_value(cls, value: str) -> bool:
+        return value in iter(cls)  # type: ignore
 
 
 # ---------------------------- #
@@ -162,17 +171,7 @@ class CopilotPayloadPanelCompletionSolutionCount(TypedDict, total=True):
 # --------------------- #
 
 
-class CopilotStrEnum(StrEnum):
-    @classmethod
-    def has_value(cls, value: str) -> bool:
-        try:
-            cls(value)
-            return True
-        except ValueError:
-            return False
-
-
-class CopilotConversationTemplates(CopilotStrEnum):
+class CopilotConversationTemplates(EnhancedStrEnum):
     FIX = "/fix"
     TESTS = "/tests"
     DOC = "/doc"
@@ -180,7 +179,7 @@ class CopilotConversationTemplates(CopilotStrEnum):
     SIMPLIFY = "/simplify"
 
 
-class CopilotConversationDebugTemplates(CopilotStrEnum):
+class CopilotConversationDebugTemplates(EnhancedStrEnum):
     FAIL = "/debug.fail"
     FILTER = "/debug.filter"
     DUMP = "/debug.dump"
@@ -200,7 +199,7 @@ class CopilotPayloadConversationEntry(TypedDict, total=True):
     annotations: list[str]
     references: list[CopilotRequestConversationTurnReference | CopilotGitHubWebSearch]
     hideText: bool
-    warnings: list[Any]  # @todo define this
+    warnings: list[Any]  # @todo define a detailed type
 
 
 class CopilotPayloadConversationEntryTransformed(TypedDict, total=True):

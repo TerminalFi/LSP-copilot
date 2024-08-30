@@ -40,7 +40,7 @@ from .constants import (
     REQ_SIGN_IN_WITH_GITHUB_TOKEN,
     REQ_SIGN_OUT,
 )
-from .decorators import _must_be_active_view
+from .decorators import must_be_active_view
 from .helpers import (
     GithubInfo,
     prepare_completion_request_doc,
@@ -146,7 +146,7 @@ class CopilotTextCommand(BaseCopilotCommand, LspTextCommand, ABC):
 
         session.send_request(Request(request, payload), lambda _: None)
 
-    @_must_be_active_view(failed_return=False)
+    @must_be_active_view(failed_return=False)
     @_provide_plugin_session(failed_return=False)
     def is_enabled(self, plugin: CopilotPlugin, session: Session) -> bool:  # type: ignore
         return self._can_meet_requirement(session)

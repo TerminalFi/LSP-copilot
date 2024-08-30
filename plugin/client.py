@@ -148,6 +148,11 @@ class CopilotPlugin(NpmClientHandler):
         cls.server_version = cls.parse_server_version()
 
     @classmethod
+    def cleanup(cls) -> None:
+        cls.window_attrs.clear()
+        super().cleanup()
+
+    @classmethod
     def can_start(
         cls,
         window: sublime.Window,

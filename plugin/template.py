@@ -62,10 +62,11 @@ _JINJA_TEMPLATE_ENV.filters.update(
 _JINJA_TEMPLATE_ENV.globals.update(
     # functions
     asset_url=asset_url,
+    command_url=sublime.command_url,
     include_asset=include_asset,
     is_debug_mode=is_debug_mode,
-    command_url=sublime.command_url,
     uri_to_filename=uri_to_filename,
 )
 
 _RESOURCE_ASSET_CACHES: dict[str, str] = {}
+"""key = asset path; value = asset content (str)"""

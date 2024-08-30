@@ -99,8 +99,6 @@ def plugin_loaded() -> None:
 
 def plugin_unloaded() -> None:
     """Executed when this plugin is unloaded."""
-    CopilotPlugin.window_attrs.clear()
     CopilotPlugin.cleanup()
     CopilotIgnore.cleanup()
-    if copilot_ignore_observer:
-        copilot_ignore_observer.cleanup()
+    copilot_ignore_observer.cleanup()

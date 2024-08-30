@@ -3,11 +3,11 @@ from __future__ import annotations
 import contextlib
 import gzip
 import os
+import sys
 import threading
 import urllib.request
 from collections.abc import Callable, Generator, Iterable
 from functools import wraps
-from itertools import takewhile
 from typing import Any, Mapping, Sequence, TypeVar, Union, cast
 
 import sublime
@@ -23,7 +23,9 @@ _KT = TypeVar("_KT")
 _VT = TypeVar("_VT")
 _T_Number = TypeVar("_T_Number", bound=Union[int, float])
 
-all_windows = sublime.windows
+
+def all_windows() -> Generator[sublime.Window, None, None]:
+    yield from sublime.windows()  # just to unify the return type with other `all_*` functions
 
 
 def all_views(
@@ -31,7 +33,7 @@ def all_views(
     *,
     include_transient: bool = False,
 ) -> Generator[sublime.View, None, None]:
-    windows = [window] if window else all_windows()
+    windows: Iterable[sublime.Window] = (window,) if window else all_windows()
     for window in windows:
         yield from window.views(include_transient=include_transient)
 
@@ -41,7 +43,7 @@ def all_sheets(
     *,
     include_transient: bool = False,
 ) -> Generator[sublime.Sheet, None, None]:
-    windows = [window] if window else all_windows()
+    windows: Iterable[sublime.Window] = (window,) if window else all_windows()
     for window in windows:
         if include_transient:
             yield from drop_falsy(map(window.transient_sheet_in_group, range(window.num_groups())))
@@ -109,12 +111,12 @@ def is_active_view(obj: Any) -> bool:
 
 def fix_completion_syntax_highlight(view: sublime.View, point: int, code: str) -> str:
     if view.match_selector(point, "source.php"):
-        return f"<?php\n{code}"
+        return f"<?php\n{code}"  # otherwise `code` will be colored as HTML
     return code
 
 
 def get_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, key: str, default: Any = None) -> Any:
-    """Gets the Copilot-related window setting. Note that what you get is just a "copy" of the value."""
+    """Gets the Copilot-related window setting. Note that what you get is just a "deepcopy" of the value."""
     return instance.settings().get(f"{prefix}.{key}", default)
 
 
@@ -127,7 +129,7 @@ def erase_copilot_setting(instance: sublime.Window | sublime.View, prefix: str, 
 
 
 def get_copilot_view_setting(view: sublime.View, key: str, default: Any = None) -> Any:
-    """Gets the Copilot-related view setting. Note that what you get is just a "copy" of the value."""
+    """Gets the Copilot-related view setting. Note that what you get is just a "deepcopy" of the value."""
     return get_copilot_setting(view, COPILOT_VIEW_SETTINGS_PREFIX, key, default)
 
 
@@ -150,18 +152,17 @@ def get_project_relative_path(path: str) -> str:
 
 def get_session_setting(session: Session, key: str, default: Any = None) -> Any:
     """Get the value of the `key` in "settings" in this plugin's "LSP-*.sublime-settings"."""
-    value = session.config.settings.get(key)
-    return default if value is None else value
+    return default if (value := session.config.settings.get(key)) is None else value
 
 
 def get_view_language_id(view: sublime.View, point: int = 0) -> str:
     """Find the language ID for the `view` at `point`."""
-    # the deepest scope satisfying `source | text | embedding` will be used to find language ID
+    # the deepest scope satisfying `source | text | embedding` will be used to find the language ID
     for scope in reversed(view.scope_name(point).split(" ")):
         if sublime.score_selector(scope, "source | text | embedding"):
             # For some embedded languages, they are scoped as "EMBEDDED_LANG.embedded.PARENT_LANG"
-            # such as "source.php.embedded.html" and we only want those parts before "embedded".
-            return basescope2languageid(".".join(takewhile(lambda s: s != "embedded", scope.split("."))))
+            # such as "source.php.embedded.html" and we only want "source.php" (those parts before "embedded").
+            return basescope2languageid(scope.partition(".embedded.")[0])
     return ""
 
 
@@ -199,15 +200,18 @@ def ok_cancel_dialog(msg: str) -> bool:
     return sublime.ok_cancel_dialog(f"[{PACKAGE_NAME}] {msg}")
 
 
-def remove_prefix(s: str, prefix: str) -> str:
-    """Remove the prefix from the string. I.e., str.removeprefix in Python 3.9."""
-    return s[len(prefix) :] if s.startswith(prefix) else s
+if sys.version_info >= (3, 9):
+    remove_prefix = str.removeprefix
+    remove_suffix = str.removesuffix
+else:
 
+    def remove_prefix(s: str, prefix: str) -> str:
+        """Remove the prefix from the string. I.e., `str.removeprefix` in Python 3.9."""
+        return s[len(prefix) :] if s.startswith(prefix) else s
 
-def remove_suffix(s: str, suffix: str) -> str:
-    """Remove the suffix from the string. I.e., str.removesuffix in Python 3.9."""
-    # suffix="" should not call s[:-0]
-    return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
+    def remove_suffix(s: str, suffix: str) -> str:
+        """Remove the suffix from the string. I.e., `str.removesuffix` in Python 3.9."""
+        return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
 def status_message(msg: str, icon: str | None = "✈", *, console: bool = False) -> None:

@@ -11,7 +11,7 @@ from watchdog.observers import Observer
 from watchdog.observers.api import ObservedWatch
 
 from .client import CopilotPlugin
-from .decorators import _must_be_active_view
+from .decorators import must_be_active_view
 from .helpers import CopilotIgnore
 from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
 from .utils import all_windows, get_copilot_view_setting, get_session_setting, set_copilot_view_setting
@@ -44,7 +44,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def _is_saving(self, value: bool) -> None:
         set_copilot_view_setting(self.view, "_is_saving", value)
 
-    @_must_be_active_view()
+    @must_be_active_view()
     def on_modified_async(self) -> None:
         self._is_modified = True
 
@@ -132,7 +132,7 @@ class ViewEventListener(sublime_plugin.ViewEventListener):
     def on_post_save_async(self) -> None:
         self._is_saving = False
 
-    @_must_be_active_view()
+    @must_be_active_view()
     def on_selection_modified_async(self) -> None:
         if not self._is_modified:
             ViewCompletionManager(self.view).handle_selection_change()
@@ -161,13 +161,9 @@ class EventListener(sublime_plugin.EventListener):
         return None
 
     def on_new_window(self, window: sublime.Window) -> None:
-        if not copilot_ignore_observer:
-            return
         copilot_ignore_observer.add_folders(window.folders())
 
     def on_pre_close_window(self, window: sublime.Window) -> None:
-        if not copilot_ignore_observer:
-            return
         copilot_ignore_observer.remove_folders(window.folders())
 
 

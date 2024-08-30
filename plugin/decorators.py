@@ -7,7 +7,7 @@ from .utils import (
 )
 
 
-def _must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
+def must_be_active_view(*, failed_return: Any = None) -> Callable[[T_Callable], T_Callable]:
     def decorator(func: T_Callable) -> T_Callable:
         @wraps(func)
         def wrapped(self: Any, *arg, **kwargs) -> Any:

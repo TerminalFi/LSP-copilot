@@ -77,9 +77,7 @@ class GithubInfo:
 
     @classmethod
     def get_avatar_img_src(cls) -> str:
-        if cls.AVATAR_PATH.is_file():
-            return cls.AVATAR_RESOURCE_URL
-        return ""
+        return cls.AVATAR_RESOURCE_URL if cls.AVATAR_PATH.is_file() else ""
 
     @classmethod
     def fetch_avatar(cls, username: str, *, size: int = 64) -> None:
