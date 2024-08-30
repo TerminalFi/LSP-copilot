@@ -265,7 +265,7 @@ class CopilotPlugin(NpmClientHandler):
                 icon, msg = "⚠", "has signed in but not authorized."
             else:
                 icon, msg = "✈", "has been signed in and authorized."
-            status_message(msg, icon_=icon, console_=True)
+            status_message(msg, icon=icon, console=True)
 
     @classmethod
     def from_view(cls, view: sublime.View) -> CopilotPlugin | None:

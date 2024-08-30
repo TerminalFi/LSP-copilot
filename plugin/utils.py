@@ -165,21 +165,19 @@ def get_view_language_id(view: sublime.View, point: int = 0) -> str:
     return ""
 
 
-def message_dialog(msg_: str, *args: Any, error_: bool = False, console_: bool = False, **kwargs: Any) -> None:
+def message_dialog(msg: str, *, error: bool = False, console: bool = False) -> None:
     """
     Show a message dialog, whose message is prefixed with "[PACKAGE_NAME]".
 
-    :param      msg_:      The message
-    :param      args:      The arguments for `str.format`
-    :param      error_:    The error
-    :param      console_:  Show message in console as well?
-    :param      kwargs:    The keywords arguments for `str.format`
+    :param      msg:      The message
+    :param      error:    Use ST error dialog instead of message dialog
+    :param      console:  Show message in console as well
     """
-    full_msg = f"[{PACKAGE_NAME}] {msg_.format(*args, **kwargs)}"
-    messenger = sublime.error_message if error_ else sublime.message_dialog
+    full_msg = f"[{PACKAGE_NAME}] {msg}"
+    messenger = sublime.error_message if error else sublime.message_dialog
     messenger(full_msg)
 
-    if console_:
+    if console:
         print(full_msg)
 
 
@@ -192,15 +190,13 @@ def mutable_view(view: sublime.View) -> Generator[sublime.View, Any, None]:
         view.set_read_only(True)
 
 
-def ok_cancel_dialog(msg_: str, *args: Any, **kwargs: Any) -> bool:
+def ok_cancel_dialog(msg: str) -> bool:
     """
     Show an OK/cancel dialog, whose message is prefixed with "[PACKAGE_NAME]".
 
-    :param      msg_:      The message
-    :param      args:      The arguments for `str.format`
-    :param      kwargs:    The keywords arguments for `str.format`
+    :param      msg:  The message
     """
-    return sublime.ok_cancel_dialog(f"[{PACKAGE_NAME}] {msg_.format(*args, **kwargs)}")
+    return sublime.ok_cancel_dialog(f"[{PACKAGE_NAME}] {msg}")
 
 
 def remove_prefix(s: str, prefix: str) -> str:
@@ -214,21 +210,19 @@ def remove_suffix(s: str, suffix: str) -> str:
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
-def status_message(msg_: str, *args: Any, icon_: str | None = "✈", console_: bool = False, **kwargs: Any) -> None:
+def status_message(msg: str, icon: str | None = "✈", *, console: bool = False) -> None:
     """
     Show a status message in the status bar, whose message is prefixed with `icon` and "Copilot".
 
-    :param      msg_:      The message
-    :param      args:      The arguments for `str.format`
-    :param      icon_:     The icon
-    :param      console_:  Show message in console as well?
-    :param      kwargs:    The keywords arguments for `str.format`
+    :param      msg:      The message
+    :param      icon:     The icon
+    :param      console:  Show message in console as well
     """
-    prefix = f"{icon_} " if icon_ else ""
-    full_msg = f"{prefix}Copilot {msg_.format(*args, **kwargs)}"
+    prefix = f"{icon} " if icon else ""
+    full_msg = f"{prefix}Copilot {msg}"
     sublime.status_message(full_msg)
 
-    if console_:
+    if console:
         print(full_msg)
 
 

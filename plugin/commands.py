@@ -167,7 +167,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
         session.send_request(Request(REQ_GET_VERSION, {}), self._on_result_get_version)
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
-        message_dialog("Server version: {}", payload["version"])
+        message_dialog(f'Server version: {payload["version"]}')
 
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
@@ -737,7 +737,7 @@ class CopilotCheckStatusCommand(CopilotTextCommand):
             message_dialog(f'(localChecksOnly) Signed in and authorized with user "{user}".')
         elif payload["status"] == "NotAuthorized":
             CopilotPlugin.set_account_status(signed_in=True, authorized=False)
-            message_dialog("Your GitHub account doesn't subscribe to Copilot.", is_error_=True)
+            message_dialog("Your GitHub account doesn't subscribe to Copilot.", error=True)
         else:
             CopilotPlugin.set_account_status(signed_in=False, authorized=False)
             message_dialog("You haven't signed in yet.")
@@ -856,7 +856,7 @@ class CopilotSignOutCommand(CopilotTextCommand):
             session_dir = Path.home() / ".config/github-copilot"
 
         if not session_dir.is_dir():
-            message_dialog(f"Failed to find the session directory: {session_dir}", _error=True)
+            message_dialog(f"Failed to find the session directory: {session_dir}", error=True)
             return
 
         rmtree_ex(str(session_dir), ignore_errors=True)
@@ -891,7 +891,7 @@ class CopilotSendAnyRequestCommand(CopilotTextCommand):
         try:
             decode_payload = sublime.decode_value(payload)
         except ValueError as e:
-            message_dialog(f"Failed to parse payload: {e}", is_error_=True)
+            message_dialog(f"Failed to parse payload: {e}", error=True)
             decode_payload = {}
         session.send_request(Request(request_type, decode_payload), self._on_results_any_request)
 
