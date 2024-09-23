@@ -146,3 +146,9 @@ html {
   font-size: 0.8em;
   color: var(--copilot-references-foreground);
 }
+
+.wrapper .code-actions {
+  display: block;
+  margin: 8px 0;
+  text-align: right;
+}
