@@ -27,13 +27,13 @@
 {% endif %}
 </div>
 
-<span class="kind {{ section.kind }}">
+<div class="kind {{ section.kind }}">
   {%- if section.kind == "report" -%}
     <img class="icon" src="{{ asset_url('github.png') }}"> Github Copilot
   {%- else -%}
     {% if avatar_img_src %}<img class="icon" src="{{ avatar_img_src }}">{% endif %} {{ section.kind }}
   {%- endif -%}
-</span>
+</div>
 
 
 {%- if section.kind == "report" and section.references -%}
