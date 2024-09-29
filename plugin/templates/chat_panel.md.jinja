@@ -17,7 +17,6 @@
 
 {% for section in sections %}
 
-<div class="chat-message">
 <div class="header">
 {% if section.kind == "report" %}
   <a class="rating" title="Thumbs Up" href='{{ section.thumbs_up_url }}'><img class="icon" src="{{ asset_url('thumbs_up.png') }}"></a>
@@ -73,7 +72,6 @@
 ) %}
 {% endfor %}
 {{ section.message | multi_replace(code_block_replacements) | safe }}
-</div>
 
 ---
 
