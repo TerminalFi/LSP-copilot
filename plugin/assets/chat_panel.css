@@ -90,22 +90,6 @@ html {
   border-width: 0px;
 }
 
-.wrapper a.accept {
-  background: var(--copilot-accept-background);
-  border-color: var(--copilot-accept-border);
-  color: var(--copilot-accept-foreground);
-}
-
-.wrapper a.accept {
-  background: var(--copilot-accept-background);
-  border-color: var(--copilot-accept-border);
-  color: var(--copilot-accept-foreground);
-}
-
-.wrapper a.accept i {
-  color: var(--copilot-accept-border);
-}
-
 .wrapper .kind {
   padding: 1px;
   color: color(var(--greenish) alpha(1));
