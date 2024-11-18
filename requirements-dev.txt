@@ -10,13 +10,13 @@ markupsafe==2.1.5
     # via jinja2
 more-itertools==10.5.0
     # via -r requirements.in
-mypy==1.11.2
+mypy==1.13.0
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via mypy
-ruff==0.6.9
+ruff==0.7.4
     # via -r requirements-dev.in
-tomli==2.0.2
+tomli==2.1.0
     # via mypy
 types-jmespath==1.0.2.20240106
     # via -r requirements-dev.in
