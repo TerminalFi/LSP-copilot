@@ -167,7 +167,7 @@ class CopilotGetVersionCommand(CopilotTextCommand):
         session.send_request(Request(REQ_GET_VERSION, {}), self._on_result_get_version)
 
     def _on_result_get_version(self, payload: CopilotPayloadGetVersion) -> None:
-        message_dialog(f'Server version: {payload["version"]}')
+        message_dialog(f"Server version: {payload['version']}")
 
 
 class CopilotAskCompletionsCommand(CopilotTextCommand):
@@ -642,7 +642,7 @@ class CopilotConversationTemplatesCommand(CopilotTextCommand):
     ) -> None:
         if index == -1:
             return
-        self.view.run_command("copilot_conversation_chat", {"message": f'/{items[index]["id"]}'})
+        self.view.run_command("copilot_conversation_chat", {"message": f"/{items[index]['id']}"})
 
 
 class CopilotAcceptCompletionCommand(CopilotTextCommand):
@@ -751,7 +751,7 @@ class CopilotCheckFileStatusCommand(CopilotTextCommand):
         session.send_request(Request(REQ_FILE_CHECK_STATUS, {"uri": uri}), self._on_result_check_file_status)
 
     def _on_result_check_file_status(self, payload: CopilotPayloadFileStatus) -> None:
-        status_message(f'File is {payload["status"]} in session')
+        status_message(f"File is {payload['status']} in session")
 
 
 class CopilotSignInCommand(CopilotTextCommand):
