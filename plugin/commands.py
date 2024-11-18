@@ -48,6 +48,7 @@ from .helpers import (
     preprocess_chat_message,
     preprocess_message_for_html,
 )
+from .log import log_info
 from .types import (
     CopilotConversationDebugTemplates,
     CopilotPayloadConversationCreate,
@@ -779,9 +780,12 @@ class CopilotSignInCommand(CopilotTextCommand):
             return
         sublime.set_clipboard(user_code)
         sublime.run_command("open_url", {"url": verification_uri})
+        log_info(f"Sign-in URL: {verification_uri} (User code = {user_code})")
         if not ok_cancel_dialog(
             "The device activation code has been copied."
             + " Please paste it in the popup GitHub page. Press OK when completed."
+            + " If you don't see a popup GitHub page, please check Sublime Text's console,"
+            + " open the given URL and paste the user code manually.",
         ):
             return
         session.send_request(
