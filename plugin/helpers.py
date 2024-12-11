@@ -9,6 +9,7 @@ from operator import itemgetter
 from pathlib import Path
 from typing import Any, Callable, Literal, Sequence, cast
 
+import requests
 import sublime
 from LSP.plugin.core.protocol import Position as LspPosition
 from LSP.plugin.core.protocol import Range as LspRange
@@ -39,7 +40,6 @@ from .utils import (
     get_project_relative_path,
     get_view_language_id,
     set_copilot_setting,
-    simple_urlopen,
 )
 
 
@@ -95,10 +95,13 @@ class GithubInfo:
             cls.clear_avatar()
             return
 
-        try:
-            data = simple_urlopen(f"https://github.com/{username}.png?size={size}")
-        except Exception as e:
-            log_error(f'Failed to fetch avatar for "{username}" because: {e}')
+        if (req := requests.get(f"https://github.com/{username}.png?size={size}")).ok:
+            data = req.content
+        # see https://github.com/TerminalFi/LSP-copilot/issues/218#issuecomment-2535522265
+        elif req.status_code == 404:
+            data = sublime.load_binary_resource(f"Packages/{PACKAGE_NAME}/plugin/assets/white-pixel.png")
+        else:
+            log_error(f'Failed to fetch avatar for "{username}" with status code {req.status_code}.')
             cls.clear_avatar()
             return
 

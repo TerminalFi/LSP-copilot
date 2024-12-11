@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import contextlib
-import gzip
 import os
 import sys
 import threading
-import urllib.request
 from collections.abc import Callable, Generator, Iterable
 from functools import wraps
 from typing import Any, Mapping, Sequence, TypeVar, Union, cast
@@ -236,27 +234,3 @@ def find_index_by_key_value(items: Sequence[Mapping[_KT, _VT]], key: _KT, value:
     If not found, returns `-1`.
     """
     return first((idx for idx, item in enumerate(items) if key in item and item[key] == value), -1)
-
-
-def simple_urlopen(url: str, *, chunk_size: int = 512 * 1024) -> bytes:
-    """
-    Opens a URL and reads the data in chunks, optionally decompressing gzip-encoded content.
-
-    This function opens a connection to the specified URL and reads the response data in chunks
-    of a specified size. If the response is gzip-encoded, it decompresses the data before returning it.
-
-    Args:
-        url (str): The URL to open.
-        chunk_size (int, optional): The size of each chunk to read. Defaults to 512KB.
-
-    Returns:
-        bytes: The raw bytes of the data read from the URL. If the content was gzip-encoded,
-               it is decompressed before being returned.
-    """
-    with urllib.request.urlopen(url) as resp:
-        data = b""
-        while chunk := resp.read(chunk_size):
-            data += chunk
-        if resp.info().get("Content-Encoding") == "gzip":
-            data = gzip.decompress(data)
-    return data
