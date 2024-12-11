@@ -14,16 +14,20 @@ mypy==1.13.0
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via mypy
-ruff==0.7.4
+ruff==0.8.2
     # via -r requirements-dev.in
-tomli==2.1.0
+tomli==2.2.1
     # via mypy
 types-jmespath==1.0.2.20240106
+    # via -r requirements-dev.in
+types-requests==2.32.0.20241016
     # via -r requirements-dev.in
 typing-extensions==4.12.2
     # via
     #   -r requirements.in
     #   mypy
+urllib3==2.2.3
+    # via types-requests
 watchdog==4.0.2
     # via -r requirements.in
 wcmatch==8.5.2
