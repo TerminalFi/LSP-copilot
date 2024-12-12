@@ -2,6 +2,8 @@
     "*": {
         "*": [
             "bracex",
+            "charset-normalizer",
+            "idna",
             "Jinja2",
             "jmespath",
             "lsp_utils",
@@ -9,6 +11,7 @@
             "more-itertools",
             "requests",
             "sublime_lib",
+            "urllib3",
             "watchdog",
             "wcmatch"
         ]
