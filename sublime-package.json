@@ -113,9 +113,14 @@
                       "type": "string"
                     },
                     "telemetry": {
-                      "default": false,
                       "markdownDescription": "Enables Copilot telemetry requests for `Accept` and `Reject` completions.",
-                      "type": "boolean"
+                      "type": "object",
+                      "items":  {
+                          "telemetryLevel": {
+                            "markdownDescription": "Level of Telemetry to be sent. (null, 'all')",
+                            "type": "string"
+                          }
+                      }
                     }
                   }
                 }
