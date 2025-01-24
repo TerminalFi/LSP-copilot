@@ -60,6 +60,6 @@ select = [
   "I",
   "UP",
   "FURB",
-  # "SIM",
+  "SIM",
 ]
-ignore = ["E203"]
+ignore = ["E203", "SIM102", "SIM108"]

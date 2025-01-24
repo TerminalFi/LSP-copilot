@@ -2,7 +2,7 @@
 #    uv pip compile requirements-dev.in -o requirements-dev.txt
 bracex==2.5.post1
     # via wcmatch
-jinja2==3.1.4
+jinja2==3.1.5
     # via -r requirements.in
 jmespath==1.0.1
     # via -r requirements.in
@@ -10,11 +10,11 @@ markupsafe==2.1.5
     # via jinja2
 more-itertools==10.5.0
     # via -r requirements.in
-mypy==1.13.0
+mypy==1.14.1
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via mypy
-ruff==0.8.2
+ruff==0.9.4
     # via -r requirements-dev.in
 tomli==2.2.1
     # via mypy
