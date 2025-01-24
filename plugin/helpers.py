@@ -196,9 +196,6 @@ def lsp_range_to_st_region(range_: LspRange, view: sublime.View) -> sublime.Regi
 
 
 def prepare_completion_request_doc(view: sublime.View) -> CopilotDocType | None:
-    if not view.file_name():
-        return None
-
     selection = view.sel()[0]
     file_path = view.file_name() or f"buffer:{view.buffer().id()}"
     return {
