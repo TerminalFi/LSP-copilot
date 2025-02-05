@@ -29,6 +29,10 @@
         "command": "copilot_get_prompt",
     },
     {
+        "caption": "Copilot: Models",
+        "command": "copilot_models",
+    },
+    {
         "caption": "Copilot: Fix This",
         "command": "copilot_conversation_chat",
         "args": {

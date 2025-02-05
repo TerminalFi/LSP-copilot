@@ -33,6 +33,9 @@ REQ_SIGN_IN_CONFIRM = "signInConfirm"
 REQ_SIGN_IN_INITIATE = "signInInitiate"
 REQ_SIGN_IN_WITH_GITHUB_TOKEN = "signInWithGithubToken"
 REQ_SIGN_OUT = "signOut"
+REQ_COPILOT_MODELS = "copilot/models"
+REQ_SET_MODEL_POLICY = "copilot/setModelPolicy"
+REQ_GIT_COMMIT_GENERATE = "git/commitGenerate"
 
 # --------------------- #
 # Copilot chat requests #

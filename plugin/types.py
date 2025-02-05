@@ -302,3 +302,9 @@ class CopilotUserDefinedPromptTemplates(TypedDict, total=True):
     description: str
     prompt: list[str]
     scopes: list[str]
+
+
+class CopilotModel(TypedDict, total=True):
+    modelFamily: str
+    modelName: str
+    scopes: list[str]
