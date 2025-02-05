@@ -18,12 +18,15 @@ COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX = "copilot.conversation"
 # ---------------- #
 
 REQ_CHECK_STATUS = "checkStatus"
+REQ_COPILOT_MODELS = "copilot/models"
+REQ_COPILOT_SET_MODEL_POLICY = "copilot/setModelPolicy"
 REQ_FILE_CHECK_STATUS = "checkFileStatus"
 REQ_GET_COMPLETIONS = "getCompletions"
 REQ_GET_COMPLETIONS_CYCLING = "getCompletionsCycling"
-REQ_GET_PROMPT = "getPrompt"
 REQ_GET_PANEL_COMPLETIONS = "getPanelCompletions"
+REQ_GET_PROMPT = "getPrompt"
 REQ_GET_VERSION = "getVersion"
+REQ_GIT_COMMIT_GENERATE = "git/commitGenerate"
 REQ_NOTIFY_ACCEPTED = "notifyAccepted"
 REQ_NOTIFY_REJECTED = "notifyRejected"
 REQ_NOTIFY_SHOWN = "notifyShown"
@@ -33,9 +36,6 @@ REQ_SIGN_IN_CONFIRM = "signInConfirm"
 REQ_SIGN_IN_INITIATE = "signInInitiate"
 REQ_SIGN_IN_WITH_GITHUB_TOKEN = "signInWithGithubToken"
 REQ_SIGN_OUT = "signOut"
-REQ_COPILOT_MODELS = "copilot/models"
-REQ_SET_MODEL_POLICY = "copilot/setModelPolicy"
-REQ_GIT_COMMIT_GENERATE = "git/commitGenerate"
 
 # --------------------- #
 # Copilot chat requests #
