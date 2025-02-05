@@ -102,14 +102,14 @@ class CopilotPlugin(NpmClientHandler):
     server_binary_path = os.path.join(
         server_directory,
         "node_modules",
-        "copilot-node-server",
-        "copilot",
+        "@github",
+        "copilot-language-server",
         "dist",
         "language-server.js",
     )
 
     server_version = ""
-    """The version of the [copilot.vim](https://github.com/github/copilot.vim) package."""
+    """The version of the "@github/copilot-language-server" package."""
     server_version_gh = ""
     """The version of the Github Copilot language server."""
 
@@ -286,7 +286,13 @@ class CopilotPlugin(NpmClientHandler):
     @classmethod
     def parse_server_version(cls) -> str:
         lock_file_content = sublime.load_resource(f"Packages/{PACKAGE_NAME}/language-server/package-lock.json")
-        return jmespath.search('dependencies."copilot-node-server".version', json.loads(lock_file_content)) or ""
+        return (
+            jmespath.search(
+                'dependencies."@github/copilot-language-server".version',
+                json.loads(lock_file_content),
+            )
+            or ""
+        )
 
     @classmethod
     def plugin_session(cls, view: sublime.View) -> tuple[None, None] | tuple[CopilotPlugin, Session | None]:
