@@ -29,12 +29,14 @@ from .constants import (
     REQ_CONVERSATION_TEMPLATES,
     REQ_CONVERSATION_TURN,
     REQ_CONVERSATION_TURN_DELETE,
+    REQ_COPILOT_MODELS,
     REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_PROMPT,
     REQ_GET_VERSION,
     REQ_NOTIFY_ACCEPTED,
     REQ_NOTIFY_REJECTED,
+    REQ_SET_MODEL_POLICY,
     REQ_SIGN_IN_CONFIRM,
     REQ_SIGN_IN_INITIATE,
     REQ_SIGN_IN_WITH_GITHUB_TOKEN,
@@ -51,6 +53,7 @@ from .helpers import (
 from .log import log_info
 from .types import (
     CopilotConversationDebugTemplates,
+    CopilotModel,
     CopilotPayloadConversationCreate,
     CopilotPayloadConversationPreconditions,
     CopilotPayloadConversationTemplate,
@@ -586,6 +589,28 @@ class CopilotConversationAgentsCommand(CopilotTextCommand):
         if not (window := self.view.window()):
             return
         window.show_quick_panel([[item["slug"], item["description"]] for item in payload], lambda _: None)
+
+
+class CopilotModelsCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        session.send_request(Request(REQ_COPILOT_MODELS, {}), self._on_result_copilot_models)
+
+    def _on_result_copilot_models(self, payload: list[CopilotModel]) -> None:
+        if not (window := self.view.window()):
+            return
+        window.show_quick_panel(
+            [[item["modelFamily"], item["modelName"], ", ".join(item["scopes"])] for item in payload], lambda _: None
+        )
+
+
+class CopilotSetModelPolicyCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, model_name: str, enabled: str) -> None:
+        session.send_request(
+            Request(REQ_SET_MODEL_POLICY, {"modelFamily": model_name, "enabled": enabled}),
+            lambda _: None,
+        )
 
 
 class CopilotGetPromptCommand(CopilotTextCommand):

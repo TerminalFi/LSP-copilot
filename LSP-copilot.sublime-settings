@@ -9,6 +9,16 @@
 		"buffer",
 		"res"
 	],
+	"initializationOptions": {
+		"editorInfo": {
+			"name": "vscode",
+			"version": "4191"
+		},
+		"editorPluginInfo": {
+			"name": "LSP-copilot",
+			"version": "unknown"
+		}
+	},
 	"settings": {
 		"auto_ask_completions": true,
 		"commit_completion_on_tab": true,
