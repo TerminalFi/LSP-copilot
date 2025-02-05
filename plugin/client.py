@@ -166,6 +166,18 @@ class CopilotPlugin(NpmClientHandler):
         cls.window_attrs.setdefault(window, WindowAttr())
         return None
 
+    @classmethod
+    def on_pre_start(
+        cls,
+        window: sublime.Window,
+        initiating_view: sublime.View,
+        workspace_folders: list[WorkspaceFolder],
+        configuration: ClientConfig,
+    ) -> str | None:
+        super().on_pre_start(window, initiating_view, workspace_folders, configuration)
+        configuration.init_options.update(cls.editor_info())
+        return None
+
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def _on_get_version(response: CopilotPayloadGetVersion, failed: bool) -> None:
             self.server_version_gh = response.get("version", "")
@@ -178,12 +190,8 @@ class CopilotPlugin(NpmClientHandler):
                 user=user,
             )
 
-        def _on_set_editor_info(result: str, failed: bool) -> None:
-            pass
-
         api.send_request(REQ_GET_VERSION, {}, _on_get_version)
         api.send_request(REQ_CHECK_STATUS, {}, _on_check_status)
-        api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), _on_set_editor_info)
 
     def on_settings_changed(self, settings: DottedDict) -> None:
         def parse_proxy(proxy: str) -> NetworkProxy | None:
@@ -224,7 +232,7 @@ class CopilotPlugin(NpmClientHandler):
     def editor_info(cls) -> dict[str, Any]:
         return {
             "editorInfo": {
-                "name": "vscode",
+                "name": "Sublime Text",
                 "version": sublime.version(),
             },
             "editorPluginInfo": {
