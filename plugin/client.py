@@ -232,7 +232,7 @@ class CopilotPlugin(NpmClientHandler):
     def editor_info(cls) -> dict[str, Any]:
         return {
             "editorInfo": {
-                "name": "Sublime Text",
+                "name": "vscode",
                 "version": sublime.version(),
             },
             "editorPluginInfo": {

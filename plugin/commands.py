@@ -608,15 +608,23 @@ class CopilotModelsCommand(CopilotTextCommand):
                 )
                 for item in payload
             ],
-            lambda _: None,  # @todo implement model switching callback
+            lambda index: self._set_model_policy(index, payload),
         )
+
+    # TODO: We need to track what model is active. As I don't think there is anyway via copilot to see
+    # the active model.
+    def _set_model_policy(self, index: int, models: list[CopilotModel]) -> None:
+        if index == -1:
+            return
+        model_name = models[index]["modelFamily"]
+        self.view.run_command("copilot_set_model_policy", {"model": model_name, "status": "enabled"})
 
 
 class CopilotSetModelPolicyCommand(CopilotTextCommand):
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, model_name: str, enabled: str) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, model: str, status: str) -> None:
         session.send_request(
-            Request(REQ_COPILOT_SET_MODEL_POLICY, {"modelFamily": model_name, "enabled": enabled}),
+            Request(REQ_COPILOT_SET_MODEL_POLICY, {"model": model, "status": status}),
             lambda _: None,
         )
 
