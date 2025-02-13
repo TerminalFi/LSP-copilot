@@ -29,6 +29,8 @@ from .constants import (
     REQ_CONVERSATION_TEMPLATES,
     REQ_CONVERSATION_TURN,
     REQ_CONVERSATION_TURN_DELETE,
+    REQ_COPILOT_MODELS,
+    REQ_COPILOT_SET_MODEL_POLICY,
     REQ_FILE_CHECK_STATUS,
     REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_PROMPT,
@@ -51,6 +53,7 @@ from .helpers import (
 from .log import log_info
 from .types import (
     CopilotConversationDebugTemplates,
+    CopilotModel,
     CopilotPayloadConversationCreate,
     CopilotPayloadConversationPreconditions,
     CopilotPayloadConversationTemplate,
@@ -586,6 +589,44 @@ class CopilotConversationAgentsCommand(CopilotTextCommand):
         if not (window := self.view.window()):
             return
         window.show_quick_panel([[item["slug"], item["description"]] for item in payload], lambda _: None)
+
+
+class CopilotModelsCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+        session.send_request(Request(REQ_COPILOT_MODELS, {}), self._on_result_copilot_models)
+
+    def _on_result_copilot_models(self, payload: list[CopilotModel]) -> None:
+        if not (window := self.view.window()):
+            return
+        window.show_quick_panel(
+            [
+                sublime.QuickPanelItem(
+                    trigger=item["modelFamily"],
+                    details=item["modelName"],
+                    annotation=", ".join(item["scopes"]),
+                )
+                for item in payload
+            ],
+            lambda index: self._set_model_policy(index, payload),
+        )
+
+    # TODO: We need to track what model is active. As I don't think there is anyway via copilot to see
+    # the active model.
+    def _set_model_policy(self, index: int, models: list[CopilotModel]) -> None:
+        if index == -1:
+            return
+        model_name = models[index]["modelFamily"]
+        self.view.run_command("copilot_set_model_policy", {"model": model_name, "status": "enabled"})
+
+
+class CopilotSetModelPolicyCommand(CopilotTextCommand):
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, model: str, status: str) -> None:
+        session.send_request(
+            Request(REQ_COPILOT_SET_MODEL_POLICY, {"model": model, "status": status}),
+            lambda _: None,
+        )
 
 
 class CopilotGetPromptCommand(CopilotTextCommand):

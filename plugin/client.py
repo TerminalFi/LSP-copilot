@@ -102,14 +102,14 @@ class CopilotPlugin(NpmClientHandler):
     server_binary_path = os.path.join(
         server_directory,
         "node_modules",
-        "copilot-node-server",
-        "copilot",
+        "@github",
+        "copilot-language-server",
         "dist",
         "language-server.js",
     )
 
     server_version = ""
-    """The version of the [copilot.vim](https://github.com/github/copilot.vim) package."""
+    """The version of the "@github/copilot-language-server" package."""
     server_version_gh = ""
     """The version of the Github Copilot language server."""
 
@@ -166,6 +166,18 @@ class CopilotPlugin(NpmClientHandler):
         cls.window_attrs.setdefault(window, WindowAttr())
         return None
 
+    @classmethod
+    def on_pre_start(
+        cls,
+        window: sublime.Window,
+        initiating_view: sublime.View,
+        workspace_folders: list[WorkspaceFolder],
+        configuration: ClientConfig,
+    ) -> str | None:
+        super().on_pre_start(window, initiating_view, workspace_folders, configuration)
+        configuration.init_options.update(cls.editor_info())
+        return None
+
     def on_ready(self, api: ApiWrapperInterface) -> None:
         def _on_get_version(response: CopilotPayloadGetVersion, failed: bool) -> None:
             self.server_version_gh = response.get("version", "")
@@ -178,12 +190,8 @@ class CopilotPlugin(NpmClientHandler):
                 user=user,
             )
 
-        def _on_set_editor_info(result: str, failed: bool) -> None:
-            pass
-
         api.send_request(REQ_GET_VERSION, {}, _on_get_version)
         api.send_request(REQ_CHECK_STATUS, {}, _on_check_status)
-        api.send_request(REQ_SET_EDITOR_INFO, self.editor_info(), _on_set_editor_info)
 
     def on_settings_changed(self, settings: DottedDict) -> None:
         def parse_proxy(proxy: str) -> NetworkProxy | None:
@@ -286,7 +294,13 @@ class CopilotPlugin(NpmClientHandler):
     @classmethod
     def parse_server_version(cls) -> str:
         lock_file_content = sublime.load_resource(f"Packages/{PACKAGE_NAME}/language-server/package-lock.json")
-        return jmespath.search('dependencies."copilot-node-server".version', json.loads(lock_file_content)) or ""
+        return (
+            jmespath.search(
+                'dependencies."@github/copilot-language-server".version',
+                json.loads(lock_file_content),
+            )
+            or ""
+        )
 
     @classmethod
     def plugin_session(cls, view: sublime.View) -> tuple[None, None] | tuple[CopilotPlugin, Session | None]:
