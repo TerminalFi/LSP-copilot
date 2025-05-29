@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import uuid
 from abc import ABC
 from collections.abc import Callable
@@ -70,6 +69,7 @@ from .helpers import (
     prepare_conversation_turn_request,
     preprocess_chat_message,
     preprocess_message_for_html,
+    GitHelper,
 )
 from .log import log_info
 from .types import (
@@ -609,8 +609,34 @@ class CopilotConversationAgentsCommand(CopilotTextCommand):
         session.send_request(Request(REQ_CONVERSATION_AGENTS, {}), self._on_result_conversation_agents)
 
     def _on_result_conversation_agents(self, payload: list[CopilotRequestConversationAgent]) -> None:
-        for agent in payload:
-            print(agent["slug"], agent["name"], agent["description"])
+        if not payload:
+            status_message("No conversation agents available", icon="❌")
+            return
+
+        window = self.view.window() or sublime.active_window()
+        window.show_quick_panel(
+            [
+                sublime.QuickPanelItem(
+                    trigger=agent["slug"],
+                    details=agent["name"],
+                    annotation=agent["description"],
+                )
+                for agent in payload
+            ],
+            lambda index: self._on_agent_selected(index, payload),
+        )
+
+    def _on_agent_selected(self, index: int, agents: list[CopilotRequestConversationAgent]) -> None:
+        if index == -1:
+            return
+        
+        # For now, just show detailed info about the selected agent
+        agent = agents[index]
+        message_dialog(
+            f"Agent: {agent['name']}\n"
+            f"Slug: {agent['slug']}\n"
+            f"Description: {agent['description']}"
+        )
 
 
 class CopilotRegisterConversationToolsCommand(CopilotTextCommand):
@@ -792,175 +818,21 @@ class CopilotCodeReviewCommand(CopilotTextCommand):
 class CopilotGitCommitGenerateCommand(CopilotTextCommand):
     """Command to generate Git commit messages using GitHub Copilot."""
 
-    def _run_git_command(self, cmd: list[str], cwd: str | None = None) -> str | None:
-        """Run a git command and return the output, or None if it fails."""
-        try:
-            result = subprocess.run(
-                cmd,
-                cwd=cwd,
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=True
-            )
-            return result.stdout.strip()
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
-            return None
-
-    def _get_git_repo_root(self, start_path: str) -> str | None:
-        """Find the Git repository root starting from the given path."""
-        try:
-            result = subprocess.run(
-                ["git", "rev-parse", "--show-toplevel"],
-                cwd=start_path,
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=True
-            )
-            return result.stdout.strip()
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
-            return None
-
-    def _get_git_changes(self, repo_root: str) -> list[str]:
-        """Get actual diff content for staged and unstaged changes."""
-        changes = []
-
-        # Get staged changes (actual diff content)
-        staged_output = self._run_git_command(["git", "diff", "--cached"], repo_root)
-        if staged_output:
-            changes.append(f"=== STAGED CHANGES ===\n{staged_output}")
-
-        # Get unstaged changes (actual diff content)
-        unstaged_output = self._run_git_command(["git", "diff"], repo_root)
-        if unstaged_output:
-            changes.append(f"=== UNSTAGED CHANGES ===\n{unstaged_output}")
-
-        # Get untracked files content (for small files)
-        untracked_output = self._run_git_command(["git", "ls-files", "--others", "--exclude-standard"], repo_root)
-        if untracked_output:
-            untracked_files = [f.strip() for f in untracked_output.split('\n') if f.strip()]
-            untracked_content = []
-
-            for file_path in untracked_files[:5]:  # Limit to first 5 untracked files
-                full_path = Path(repo_root) / file_path
-                try:
-                    if full_path.is_file() and full_path.stat().st_size < 10000:  # Only read files < 10KB
-                        content = full_path.read_text(encoding='utf-8', errors='ignore')
-                        untracked_content.append(f"=== NEW FILE: {file_path} ===\n{content}")
-                except (OSError, UnicodeDecodeError):
-                    untracked_content.append(f"=== NEW FILE: {file_path} ===\n[Binary or unreadable file]")
-
-            if untracked_content:
-                changes.extend(untracked_content)
-
-        return changes
-
-    def _get_current_user_email(self, repo_root: str) -> str | None:
-        """Get the current Git user email."""
-        return self._run_git_command(["git", "config", "user.email"], repo_root)
-
-    def _get_user_commits(self, repo_root: str, user_email: str | None, limit: int = 10) -> list[str]:
-        """Get recent commits by the current user."""
-        if not user_email:
-            return []
-
-        cmd = [
-            "git", "log",
-            f"--author={user_email}",
-            f"--max-count={limit}",
-            "--oneline",
-            "--no-merges"
-        ]
-
-        output = self._run_git_command(cmd, repo_root)
-        if output:
-            return [line.strip() for line in output.split('\n') if line.strip()]
-        return []
-
-    def _get_recent_commits(self, repo_root: str, limit: int = 20) -> list[str]:
-        """Get recent commits from all contributors."""
-        cmd = [
-            "git", "log",
-            f"--max-count={limit}",
-            "--oneline",
-            "--no-merges"
-        ]
-
-        output = self._run_git_command(cmd, repo_root)
-        if output:
-            return [line.strip() for line in output.split('\n') if line.strip()]
-        return []
-
-    def _get_workspace_folder(self) -> str | None:
-        """Get the workspace folder path."""
-        if not (window := self.view.window()):
-            return None
-
-        # Try to get the project path
-        if folders := window.folders():
-            return folders[0]
-
-        # Fallback to file directory
-        if file_name := self.view.file_name():
-            return str(Path(file_name).parent)
-
-        return None
-
-    def _get_user_language(self) -> str | None:
-        """Get user's language preference from Sublime Text settings."""
-        # Try to get language from various Sublime Text settings
-        settings = sublime.load_settings("Preferences.sublime-settings")
-
-        # Check for explicit language setting
-        if lang := settings.get("language"):
-            return lang
-
-        # Fallback to system locale
-        try:
-            import locale
-            return locale.getdefaultlocale()[0]
-        except:
-            return "en-US"
-
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         if not (window := self.view.window()):
             return
 
-        # Get workspace folder
-        workspace_folder = self._get_workspace_folder()
-        if not workspace_folder:
-            status_message("No workspace folder found", icon="❌")
+        # Gather all Git data using GitHelper
+        git_data = GitHelper.gather_git_commit_data(self.view)
+        if not git_data:
+            status_message("Not in a Git repository or no workspace folder found", icon="❌")
             return
-
-        # Find Git repository root
-        repo_root = self._get_git_repo_root(workspace_folder)
-        if not repo_root:
-            status_message("Not in a Git repository", icon="❌")
-            return
-
-        # Gather Git information
-        changes = self._get_git_changes(repo_root)
-        user_email = self._get_current_user_email(repo_root)
-        user_commits = self._get_user_commits(repo_root, user_email)
-        recent_commits = self._get_recent_commits(repo_root)
-        user_language = self._get_user_language()
-
-        # Prepare payload according to expected structure
-        payload = {
-            "changes": changes,
-            "userCommits": user_commits,
-            "recentCommits": recent_commits,
-            "workspaceFolder": workspace_folder,
-            "userLanguage": user_language,
-        }
-
         status_message("Generating commit message...", icon="⏳")
 
         # Send request to generate commit message
         session.send_request(
-            Request(REQ_GIT_COMMIT_GENERATE, payload),
+            Request(REQ_GIT_COMMIT_GENERATE, git_data),
             lambda response: self._on_result_git_commit_generate(response, window)
         )
 
