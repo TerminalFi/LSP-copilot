@@ -20,6 +20,7 @@ COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX = "copilot.conversation"
 REQ_CHECK_STATUS = "checkStatus"
 REQ_COPILOT_MODELS = "copilot/models"
 REQ_COPILOT_SET_MODEL_POLICY = "copilot/setModelPolicy"
+REQ_COPILOT_CODE_REVIEW = "copilot/codeReview"
 REQ_FILE_CHECK_STATUS = "checkFileStatus"
 REQ_GET_COMPLETIONS = "getCompletions"
 REQ_GET_COMPLETIONS_CYCLING = "getCompletionsCycling"
@@ -36,6 +37,12 @@ REQ_SIGN_IN_CONFIRM = "signInConfirm"
 REQ_SIGN_IN_INITIATE = "signInInitiate"
 REQ_SIGN_IN_WITH_GITHUB_TOKEN = "signInWithGithubToken"
 REQ_SIGN_OUT = "signOut"
+REQ_TEXT_DOCUMENT_DID_FOCUS = "textDocument/didFocus"
+# {
+#     "textDocument": {
+#         "uri": "file:///path/to/file"
+#     }
+# }
 
 # --------------------- #
 # Copilot chat requests #
@@ -53,6 +60,22 @@ REQ_CONVERSATION_RATING = "conversation/rating"
 REQ_CONVERSATION_TEMPLATES = "conversation/templates"
 REQ_CONVERSATION_TURN = "conversation/turn"
 REQ_CONVERSATION_TURN_DELETE = "conversation/turnDelete"
+REQ_CONVERSATION_REGISTER_TOOLS = "conversation/registerTools"
+
+# ---------------------------- #
+# Copilot edit chat requests #
+# ---------------------------- #
+
+REQ_EDIT_CONVERSATION_CREATE = "editConversation/create"
+REQ_EDIT_CONVERSATION_TURN = "editConversation/turn"
+REQ_EDIT_CONVERSATION_TURN_DELETE = "editConversation/turnDelete"
+
+# -------------------------- #
+# Copilot context requests #
+# -------------------------- #
+
+REQ_CONTEXT_REGISTER_PROVIDERS = "context/registerProviders"
+REQ_CONTEXT_UNREGISTER_PROVIDERS = "context/unregisterProviders"
 
 # --------------------- #
 # Copilot notifications #

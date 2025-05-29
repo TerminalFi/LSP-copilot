@@ -28,6 +28,7 @@ from .constants import (
     REQ_GET_COMPLETIONS_CYCLING,
     REQ_GET_VERSION,
     REQ_SET_EDITOR_INFO,
+    REQ_CONTEXT_REGISTER_PROVIDERS,
 )
 from .helpers import (
     ActivityIndicator,
@@ -37,7 +38,7 @@ from .helpers import (
     preprocess_completions,
     preprocess_panel_completions,
 )
-from .log import log_warning
+from .log import log_warning, log_info
 from .template import load_string_template
 from .types import (
     AccountStatus,
@@ -189,9 +190,31 @@ class CopilotPlugin(NpmClientHandler):
                 authorized=result["status"] == "OK",
                 user=user,
             )
+            
+        def _on_register_providers(response: Any, failed: bool) -> None:
+            if failed:
+                log_warning("Failed to register context providers")
+            else:
+                log_info("Successfully registered context providers")
 
         api.send_request(REQ_GET_VERSION, {}, _on_get_version)
         api.send_request(REQ_CHECK_STATUS, {}, _on_check_status)
+        
+        # Register context providers
+        api.send_request(
+            REQ_CONTEXT_REGISTER_PROVIDERS,
+            {
+                "providers": [
+                    {
+                        "id": "sublime-text-editor",
+                        "name": "Sublime Text Editor",
+                        "fullName": "Sublime Text Editor Context Provider",
+                        "description": "Provides access to the Sublime Text editor context"
+                    }
+                ]
+            },
+            _on_register_providers
+        )
 
     def on_settings_changed(self, settings: DottedDict) -> None:
         def parse_proxy(proxy: str) -> NetworkProxy | None:
