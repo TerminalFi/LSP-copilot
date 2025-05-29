@@ -966,7 +966,7 @@ class CopilotGitCommitGenerateCommand(CopilotTextCommand):
 
     def _on_result_git_commit_generate(self, payload: dict, window: sublime.Window) -> None:
         """Handle the git commit message generation response from Copilot."""
-        if not payload or not (commit_message := payload.get("message")):
+        if not payload or not (commit_message := payload.get("commitMessage")):
             status_message("Failed to generate commit message", icon="❌")
             return
 
@@ -976,8 +976,8 @@ class CopilotGitCommitGenerateCommand(CopilotTextCommand):
         view.set_scratch(True)
 
         # Insert the generated commit message
-        with mutable_view(view) as we:
-            we.replace(sublime.Region(0, view.size()), commit_message)
+        with mutable_view(view) as v:
+            v.run_command("append", {"characters": commit_message})
 
         # Set commit message syntax
         view.assign_syntax("Packages/Git/Git Commit.sublime-syntax")
