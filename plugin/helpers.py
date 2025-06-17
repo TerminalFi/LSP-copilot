@@ -520,3 +520,38 @@ class GitHelper:
             "workspaceFolder": workspace_folder,
             "userLanguage": user_language,
         }
+
+def prepare_conversation_edit_request(view: sublime.View) -> dict:
+    """Prepare document information for edit conversation request."""
+    if not (doc := prepare_completion_request_doc(view)):
+        return {}
+
+    # Get the current selection
+    selection = view.sel()[0]
+    selection_start = selection.begin()
+    selection_end = selection.end()
+
+    # Get the line range for the selection
+    selection_line_start = view.line(selection_start).begin()
+    selection_line_end = view.line(selection_end).end()
+
+    # Convert positions to LSP format (line, character)
+    def point_to_lsp_position(point: int) -> dict:
+        row, col = view.rowcol(point)
+        return {
+            "line": row,
+            "character": col
+        }
+
+    return {
+        "text": view.substr(sublime.Region(0, view.size())),
+        "languageId": get_view_language_id(view),
+        "selection": {
+            "start": point_to_lsp_position(selection_start),
+            "end": point_to_lsp_position(selection_end)
+        },
+        "range": {
+            "start": point_to_lsp_position(selection_line_start),
+            "end": point_to_lsp_position(selection_line_end)
+        }
+    }

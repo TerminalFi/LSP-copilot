@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import Any, cast
 from urllib.parse import urlparse
+import uuid
 
 import jmespath
 import sublime
@@ -382,6 +383,36 @@ class CopilotPlugin(NpmClientHandler):
                     wcm.follow_up = message
 
                 wcm.update()
+            elif (
+                (token := notification.params["token"]).startswith("copilot_pedit://")
+                and (params := notification.params["value"])
+                and (window := WindowConversationManager.find_window_by_token_id(token))
+            ):
+                wcm = WindowConversationManager(window)
+                for update in params:
+                    if "editConversationId" in update:
+                        wcm.edit_conversation_id = update["editConversationId"]
+                        if update["fileGenerationStatus"] == "edit-conversation-begin":
+                            wcm.is_waiting = True
+                            wcm.open()
+                            print("Open Panel")
+
+                    if update.get("fileGenerationStatus") == "edit-conversation-end":
+                        wcm.is_waiting = False
+
+                    if update.get("fileGenerationStatus") == "edit-plan-generated":
+                        if "editDescription" in update:
+                            wcm.append_conversation_entry({
+                                "kind": "report",
+                                "conversationId": wcm.edit_conversation_id,
+                                "reply": update["editDescription"],
+                                "turnId": update.get("editTurnId", str(uuid.uuid4())),
+                                "references": [],
+                                "annotations": [],
+                                "hideText": False,
+                                "warnings": [],
+                            })
+                    wcm.update()
 
     @notification_handler(NTFY_FEATURE_FLAGS_NOTIFICATION)
     def _handle_feature_flags_notification(self, payload: CopilotPayloadFeatureFlagsNotification) -> None:

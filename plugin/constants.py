@@ -69,6 +69,7 @@ REQ_CONVERSATION_REGISTER_TOOLS = "conversation/registerTools"
 REQ_EDIT_CONVERSATION_CREATE = "editConversation/create"
 REQ_EDIT_CONVERSATION_TURN = "editConversation/turn"
 REQ_EDIT_CONVERSATION_TURN_DELETE = "editConversation/turnDelete"
+REQ_EDIT_CONVERSATION_DESTROY = "editConversation/destroy"
 
 # -------------------------- #
 # Copilot context requests #

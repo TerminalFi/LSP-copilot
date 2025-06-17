@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import uuid
+import time
 from abc import ABC
 from collections.abc import Callable
 from functools import partial, wraps
@@ -70,6 +71,7 @@ from .helpers import (
     preprocess_chat_message,
     preprocess_message_for_html,
     GitHelper,
+    prepare_conversation_edit_request,
 )
 from .log import log_info
 from .types import (
@@ -746,7 +748,7 @@ class CopilotCodeReviewCommand(CopilotTextCommand):
             status_message("Cannot perform code review on an unsaved file", icon="❌")
             return
         doc = prepare_code_review_request_doc(self.view)
-        sublime.set_clipboard(json.dumps(doc))
+
         # Send request to perform code review
         session.send_request(
             Request(
@@ -1206,6 +1208,23 @@ class CopilotSendAnyRequestPayloadInputHandler(sublime_plugin.TextInputHandler):
         return "payload"
 
 # THIS IS NOT IMPLEMENTED
+# {
+#     partialResultToken: I.Union([I.String(), I.Number()]),
+#     turns: I.Array({ request: I.String(), response: I.Optional(I.String()) }), { minItems: 1 }),
+#     workingSet: I.Optional(I.Array({
+#     t-ype: I.Literal("file"),
+#     uri: I.String(),
+#     visibleRange: I.Optional(Ea),
+#     selection: I.Optional(Ea),
+#     status: I.Optional(xNt),
+#     range: I.Optional(Ea),
+# })),
+#     source: I.Optional(yLt),
+#     workspaceFolder: I.Optional(I.String()),
+#     userLanguage: I.Optional(I.String()),
+#     model: I.Optional(I.String()),
+# })
+
 class CopilotEditConversationCreateCommand(CopilotTextCommand):
     """Command to create a new edit conversation with GitHub Copilot."""
 
@@ -1219,23 +1238,46 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
             status_message("Cannot start edit conversation on an unsaved file", icon="❌")
             return
 
-        # Prepare the initial document information for the edit conversation
-        doc = prepare_completion_request_doc(self.view)
+        # Get workspace folder if available
+        workspace_folder = None
+        if window.folders():
+            workspace_folder = window.folders()[0]
 
+        # Prepare the document for the request
+        doc = prepare_conversation_edit_request(self.view)
+        if not doc:
+            status_message("Failed to prepare document for edit conversation", icon="❌")
+            return
+
+        wcm = WindowConversationManager(window)
+        if wcm.conversation_id:
+            wcm.open()
+            wcm.prompt(callback=lambda msg: self._on_edit_prompt(plugin, session, msg), initial_text=message)
+            return
         # Send request to create a new edit conversation
         session.send_request(
             Request(
                 REQ_EDIT_CONVERSATION_CREATE,
                 {
-                    "doc": doc,
-                    "turns": [{"request": "Help me improve this code\n\n```python\n\ndef example_function():\n    pass\n```"}],
-                    "capabilities": {
-                        "editingSupport": True,
-                        "editingOptions": ["refactor", "explain", "fix", "document"]
-                    },
                     "partialResultToken": f"copilot_pedit://{window.id()}",
-                    "editConversationId": f"copilot_edit://{window.id()}",
+                    "turns": [
+                        {
+                            "request": "Help me improve this code",
+                            "doc": doc
+                        }
+                    ],
+                    "workingSet": [
+                        {
+                            "type": "file",
+                            "uri": file_uri,
+                            "selection": doc["selection"],
+                            "range": doc["range"]
+                        }
+                    ],
                     "source": "panel",
+                    "workspaceFolder": "",
+                    "userLanguage": "en-US",  # Default to English
+                    "model": None  # Let the server choose the model
                 }
             ),
             lambda response: self._on_result_edit_conversation_create(plugin, session, response)
@@ -1247,126 +1289,85 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
         self,
         plugin: CopilotPlugin,
         session: Session,
-        payload: CopilotPayloadEditConversationCreate,
+        response: list
     ) -> None:
         if not (window := self.view.window()):
             return
-
-        # Store the conversation ID for later use
-        conversation_id = payload["conversationId"]
-
-        # Create an output panel to display the edit conversation
-        panel_name = f"{COPILOT_OUTPUT_PANEL_PREFIX}_edit_{conversation_id[:8]}"
-        panel = window.create_output_panel(panel_name)
-        panel.set_read_only(False)
-        panel.run_command("append", {"characters": "# Copilot Edit Conversation\n\n"})
-        panel.run_command("append", {"characters": "Ready to help you edit this code. What would you like to do?\n\n"})
-        panel.run_command("append", {"characters": "Options: refactor, explain, fix, document\n\n"})
-        panel.set_read_only(True)
-
-        # Show the panel
-        window.run_command("show_panel", {"panel": f"output.{panel_name}"})
-
-        # Store conversation data in view settings
-        panel.settings().set(f"{COPILOT_WINDOW_SETTINGS_PREFIX}.edit_conversation_id", conversation_id)
-        panel.settings().set(f"{COPILOT_WINDOW_SETTINGS_PREFIX}.edit_source_view_id", self.view.id())
-
-        # Prompt user for input
-        window.show_input_panel(
-            "Copilot Edit:",
-            "",
-            lambda msg: self._on_prompt_input(plugin, session, conversation_id, msg, panel),
-            None,
-            None
-        )
-
-    def _on_prompt_input(
-        self,
-        plugin: CopilotPlugin,
-        session: Session,
-        conversation_id: str,
-        message: str,
-        panel: sublime.View
-    ) -> None:
-        if not message.strip():
+        if len(response) != 0:
+            status_message(f"{response} Failed to create edit conversation", icon="❌")
             return
 
+        # The conversation ID will come from progress updates
+        # We'll handle it in the progress notification handler
+        wcm = WindowConversationManager(window)
+        wcm.edit_source_view_id = self.view.id()
+        wcm.is_waiting = True
+        wcm.update()
+
+
+    def _on_edit_prompt(self, plugin: CopilotPlugin, session: Session, msg: str):
         if not (window := self.view.window()):
             return
 
-        # Get the source view
-        source_view_id = panel.settings().get(f"{COPILOT_WINDOW_SETTINGS_PREFIX}.edit_source_view_id")
-        source_view = find_view_by_id(source_view_id)
-        if not source_view:
+        wcm = WindowConversationManager(window)
+        if wcm.is_waiting:
+            wcm.prompt(callback=lambda x: self._on_edit_prompt(plugin, session, x), initial_text=msg)
+            return
+
+        if not (source_view := find_view_by_id(wcm.edit_source_view_id)):
             status_message("Source view no longer available", icon="❌")
             return
 
-        # Update the panel with the user's message
-        panel.set_read_only(False)
-        panel.run_command("append", {"characters": f"## You\n\n{message}\n\n"})
-        panel.set_read_only(True)
+        # Get workspace folder if available
+        workspace_folder = None
+        if window.folders():
+            workspace_folder = window.folders()[0]
 
         # Prepare the document for the request
-        doc = prepare_completion_request_doc(source_view)
+        doc = prepare_conversation_edit_request(source_view)
+        if not doc:
+            status_message("Failed to prepare document for edit conversation", icon="❌")
+            return
+
+        file_uri = filename_to_uri(source_view.file_name() or "")
+
+        # Add user message to conversation
+        wcm.append_conversation_entry({
+            "kind": plugin.get_account_status().user or "user",
+            "conversationId": wcm.edit_conversation_id,
+            "reply": preprocess_message_for_html(msg),
+            "turnId": str(uuid.uuid4()),
+            "references": [],
+            "annotations": [],
+            "hideText": False,
+            "warnings": [],
+        })
 
         # Send the turn request
         session.send_request(
             Request(
                 REQ_EDIT_CONVERSATION_TURN,
                 {
-                    "conversationId": conversation_id,
-                    "message": message,
-                    "doc": doc,
-                    "workDoneToken": f"copilot_edit://{window.id()}_{conversation_id}",
-                    "editOptions": {
-                        "allowAutoEdit": True
-                    },
-                    "source": "panel"
+                    "partialResultToken": f"copilot_edit://{window.id()}_{wcm.edit_conversation_id}",
+                    "editConversationId": wcm.edit_conversation_id,
+                    "message": msg,
+                    "workingSet": [
+                        {
+                            "type": "file",
+                            "uri": file_uri,
+                            "selection": doc["selection"],
+                            "range": doc["range"]
+                        }
+                    ],
+                    "workspaceFolder": "",
+                    "userLanguage": "en-US",
+                    "model": None
                 }
             ),
-            lambda response: self._on_result_edit_conversation_turn(panel, source_view, response)
+            lambda _: wcm.prompt(callback=lambda x: self._on_edit_prompt(plugin, session, x))
         )
-
-        status_message("Processing edit request...", icon="⏳")
-
-    def _on_result_edit_conversation_turn(
-        self,
-        panel: sublime.View,
-        source_view: sublime.View,
-        payload: CopilotPayloadEditConversationTurn
-    ) -> None:
-        if not payload.get("reply"):
-            status_message("No response from Copilot", icon="❌")
-            return
-
-        # Update the panel with the assistant's response
-        panel.set_read_only(False)
-        panel.run_command("append", {"characters": f"## Copilot\n\n{payload['reply']}\n\n"})
-
-        # Check if the response includes code edits
-        if edits := payload.get("edits", []):
-            panel.run_command("append", {"characters": "Edits available. Use 'Apply Edit' to apply them.\n\n"})
-
-            # Store edits in the panel's settings
-            panel.settings().set(f"{COPILOT_WINDOW_SETTINGS_PREFIX}.pending_edits", edits)
-
-            # Add a clickable link to apply edits
-            panel.run_command("append", {"characters": "[Apply Edit](command:copilot_apply_edit_conversation_edits)\n\n"})
-
-        panel.set_read_only(True)
-
-        # Show the panel in case it was closed
-        if window := panel.window():
-            window.run_command("show_panel", {"panel": f"output.{panel.settings().get('output.name')}"})
-
-        # Continue the conversation
-        window.show_input_panel(
-            "Copilot Edit:",
-            "",
-            lambda msg: self._on_prompt_input(None, None, payload["conversationId"], msg, panel),
-            None,
-            None
-        )
+        wcm.is_waiting = True
+        wcm.update()
 
 
 class CopilotApplyEditConversationEditsCommand(CopilotTextCommand):
@@ -1374,20 +1375,18 @@ class CopilotApplyEditConversationEditsCommand(CopilotTextCommand):
 
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, edit: sublime.Edit) -> None:
-        # This command should be run from the panel, but we need to apply edits to the source view
         if not (window := self.view.window()):
             return
 
-        # Get pending edits and source view ID from settings
-        pending_edits = self.view.settings().get(f"{COPILOT_WINDOW_SETTINGS_PREFIX}.pending_edits", [])
-        source_view_id = self.view.settings().get(f"{COPILOT_WINDOW_SETTINGS_PREFIX}.edit_source_view_id")
+        wcm = WindowConversationManager(window)
+        # Get pending edits and source view ID from window settings
+        pending_edits = wcm.pending_edits
+        source_view = find_view_by_id(wcm.edit_source_view_id)
 
         if not pending_edits:
             status_message("No pending edits to apply", icon="❌")
             return
 
-        # Get the source view
-        source_view = find_view_by_id(source_view_id)
         if not source_view:
             status_message("Source view no longer available", icon="❌")
             return
@@ -1412,7 +1411,7 @@ class CopilotApplyEditConversationEditsCommand(CopilotTextCommand):
                     edit_obj.replace(region, edit_item.get("newText", ""))
 
         # Clear pending edits
-        self.view.settings().erase(f"{COPILOT_WINDOW_SETTINGS_PREFIX}.pending_edits")
+        wcm.pending_edits = []
         status_message("Applied edits to the document", icon="✅")
 
 
@@ -1456,6 +1455,45 @@ class CopilotEditConversationTurnDeleteCommand(CopilotTextCommand):
             if view.settings().get('output.name') == panel_name:
                 view.run_command("copilot_refresh_edit_conversation_panel", {"conversation_id": conversation_id})
                 break
+
+
+class CopilotEditConversationDestroyCommand(CopilotTextCommand):
+    """Command to destroy an edit conversation."""
+
+    @_provide_plugin_session()
+    def run(
+        self,
+        plugin: CopilotPlugin,
+        session: Session,
+        _: sublime.Edit,
+        conversation_id: str
+    ) -> None:
+        session.send_request(
+            Request(
+                REQ_EDIT_CONVERSATION_DESTROY,
+                {
+                    "conversationId": conversation_id
+                }
+            ),
+            lambda response: self._on_result_edit_conversation_destroy(conversation_id, response)
+        )
+
+    def _on_result_edit_conversation_destroy(
+        self,
+        conversation_id: str,
+        payload: Any
+    ) -> None:
+        if not (window := self.view.window()):
+            return
+
+        # Close and clean up the panel
+        panel_name = f"{COPILOT_OUTPUT_PANEL_PREFIX}_edit_{conversation_id[:8]}"
+        for view in window.views():
+            if view.settings().get('output.name') == panel_name:
+                view.close()
+                break
+
+        status_message("Edit conversation destroyed", icon="✅")
 
 
 class CopilotRefreshEditConversationPanelCommand(sublime_plugin.TextCommand):
