@@ -4,6 +4,10 @@
         "command": "copilot_conversation_chat"
     },
     {
+        "caption": "CopilotSelectInlineCompletionCommand",
+        "command": "copilot_select_inline_completion"
+    },
+    {
         "caption": "Copilot: Code Review",
         "command": "copilot_code_review"
     },

@@ -49,6 +49,8 @@ from .constants import (
     REQ_GET_PANEL_COMPLETIONS,
     REQ_GET_PROMPT,
     REQ_GET_VERSION,
+    REQ_INLINE_COMPLETION_PROMPT,
+    REQ_INLINE_COMPLETION,
     REQ_NOTIFY_ACCEPTED,
     REQ_NOTIFY_REJECTED,
     REQ_SIGN_IN_CONFIRM,
@@ -204,6 +206,327 @@ class CopilotAskCompletionsCommand(CopilotTextCommand):
     @_provide_plugin_session()
     def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
         plugin.request_get_completions(self.view)
+
+
+class CopilotInlineCompletionPromptCommand(CopilotTextCommand):
+    """Command to get inline completions with a custom prompt/message."""
+
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str = "") -> None:
+        # Prompt for message if not provided
+        if not message.strip():
+            self.view.window().show_input_panel(
+                "Completion Prompt:",
+                "",
+                lambda msg: self._request_inline_completion_with_prompt(plugin, session, msg),
+                None,
+                None
+            )
+        else:
+            self._request_inline_completion_with_prompt(plugin, session, message)
+
+    def _request_inline_completion_with_prompt(self, plugin: CopilotPlugin, session: Session, message: str) -> None:
+        """Send the inline completion request with the custom prompt."""
+        if not message.strip():
+            status_message("Please provide a message for the completion prompt", icon="❌")
+            return
+
+        # Prepare document information
+        if not (doc := prepare_completion_request_doc(self.view)):
+            status_message("Failed to prepare document for completion request", icon="❌")
+            return
+
+        # Get cursor position
+        if not (sel := self.view.sel()) or len(sel) != 1:
+            status_message("Please place cursor at a single position", icon="❌")
+            return
+
+        cursor_point = sel[0].begin()
+        row, col = self.view.rowcol(cursor_point)
+
+        # Prepare the request payload based on the structure from constants
+        payload = {
+            "textDocument": {
+                "uri": doc["uri"]
+            },
+            "position": {
+                "line": row,
+                "character": col
+            },
+            "formattingOptions": {
+                "tabSize": doc.get("tabSize", 4),
+                "insertSpaces": doc.get("insertSpaces", True)
+            },
+            "context": {
+                "triggerKind": 2
+            },
+            "data": {
+                "message": message
+            }
+        }
+
+        # Send the request
+        session.send_request(
+            Request(REQ_INLINE_COMPLETION_PROMPT, payload),
+            lambda response: self._on_result_inline_completion_prompt(response, message)
+        )
+
+        status_message(f"Requesting completion with prompt: {message[:50]}...", icon="⏳")
+
+    def _on_result_inline_completion_prompt(self, response: Any, original_message: str) -> None:
+        """Handle the response from the inline completion prompt request."""
+        if not response:
+            status_message("No completion suggestions received", icon="❌")
+            return
+
+        # Handle the new response format with items
+        if isinstance(response, dict) and "items" in response:
+            items = response["items"]
+            if not items:
+                status_message("No completion items received", icon="❌")
+                return
+
+            # Show the completion selection dialog
+            self.view.window().run_command("copilot_select_inline_completion", {
+                "items": items,
+                "original_message": original_message
+            })
+        else:
+            # Fallback for other response formats
+            status_message(f"Unexpected response format: {type(response)}", icon="❌")
+
+
+class CopilotInlineCompletionCommand(CopilotTextCommand):
+    """Command to get inline completions (automatic trigger)."""
+
+    @_provide_plugin_session()
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str = "") -> None:
+        # Prompt for message if not provided
+        if not message.strip():
+            self.view.window().show_input_panel(
+                "Completion Message:",
+                "",
+                lambda msg: self._request_inline_completion(plugin, session, msg),
+                None,
+                None
+            )
+        else:
+            self._request_inline_completion(plugin, session, message)
+
+    def _request_inline_completion(self, plugin: CopilotPlugin, session: Session, message: str) -> None:
+        """Send the inline completion request."""
+        if not message.strip():
+            status_message("Please provide a message for the completion", icon="❌")
+            return
+
+        # Prepare document information
+        if not (doc := prepare_completion_request_doc(self.view)):
+            status_message("Failed to prepare document for completion request", icon="❌")
+            return
+
+        # Get cursor position
+        if not (sel := self.view.sel()) or len(sel) != 1:
+            status_message("Please place cursor at a single position", icon="❌")
+            return
+
+        cursor_point = sel[0].begin()
+        row, col = self.view.rowcol(cursor_point)
+
+        # Prepare the request payload - same as prompt but with triggerKind: 1
+        payload = {
+            "textDocument": {
+                "uri": doc["uri"]
+            },
+            "position": {
+                "line": row,
+                "character": col
+            },
+            "formattingOptions": {
+                "tabSize": doc.get("tabSize", 4),
+                "insertSpaces": doc.get("insertSpaces", True)
+            },
+            "context": {
+                "triggerKind": 1  # Different from prompt command which uses 2
+            },
+            "data": {
+                "message": message
+            }
+        }
+
+        # Send the request
+        session.send_request(
+            Request(REQ_INLINE_COMPLETION, payload),
+            lambda response: self._on_result_inline_completion(response, message)
+        )
+
+        status_message(f"Requesting inline completion: {message[:50]}...", icon="⏳")
+
+    def _on_result_inline_completion(self, response: Any, original_message: str) -> None:
+        """Handle the response from the inline completion request."""
+        if not response:
+            status_message("No completion suggestions received", icon="❌")
+            return
+
+        # Handle the new response format with items
+        if isinstance(response, dict) and "items" in response:
+            items = response["items"]
+            if not items:
+                status_message("No completion items received", icon="❌")
+                return
+
+            # Store the completion items for the input handler
+            self._completion_items = items
+            self._original_message = original_message
+
+            # Show the completion selection dialog
+            self.view.window().run_command("copilot_select_inline_completion", {
+                "items": items,
+                "original_message": original_message
+            })
+        else:
+            # Fallback for other response formats
+            status_message(f"Unexpected response format: {type(response)}", icon="❌")
+
+
+class CopilotSelectInlineCompletionCommand(CopilotTextCommand):
+    """Command to select and insert an inline completion from a list."""
+
+    def run(self, edit: sublime.Edit, selected: int, items: list[dict[str, Any]], original_message: str, selected_item: dict[str, Any] | None = None) -> None:
+        if selected_item:
+            # Insert the selected completion
+            insert_text = selected_item.get("insertText", "")
+            if insert_text:
+                # Get the range where to insert
+                if "range" in selected_item:
+                    range_data = selected_item["range"]
+                    start_line = range_data["start"]["line"]
+                    start_char = range_data["start"]["character"]
+                    end_line = range_data["end"]["line"]
+                    end_char = range_data["end"]["character"]
+
+                    # Convert to Sublime Text points
+                    start_point = self.view.text_point(start_line, start_char)
+                    end_point = self.view.text_point(end_line, end_char)
+
+                    # Replace the range with the completion
+                    self.view.replace(edit, sublime.Region(start_point, end_point), insert_text)
+                else:
+                    # Insert at current cursor position
+                    if sel := self.view.sel():
+                        self.view.insert(edit, sel[0].begin(), insert_text)
+
+                status_message(f"Inserted completion for: {original_message[:30]}...", icon="✅")
+
+                # Handle acceptance command if present
+                if "command" in selected_item and selected_item["command"]:
+                    cmd = selected_item["command"]
+                    if cmd.get("command") == "github.copilot.didAcceptCompletionItem":
+                        # Send acceptance notification to Copilot
+                        args = cmd.get("arguments", [])
+                        if args:
+                            # This would typically be handled by the LSP client
+                            # For now, we'll just log it
+                            print(f"Copilot completion accepted: {args[0]}")
+            else:
+                status_message("Selected completion has no text", icon="❌")
+
+    def input(self, args: dict[str, Any]) -> sublime_plugin.CommandInputHandler | None:
+        items = args.get("items", [])
+        original_message = args.get("original_message", "")
+
+        if not items:
+            return None
+
+        return CopilotInlineCompletionInputHandler(items, original_message)
+
+
+class CopilotInlineCompletionInputHandler(sublime_plugin.ListInputHandler):
+    """Input handler for selecting inline completions."""
+
+    def __init__(self, items: list[dict[str, Any]], original_message: str):
+        self.items = items
+        self.original_message = original_message
+
+    def name(self) -> str:
+        return "selected_item"
+
+    def placeholder(self) -> str:
+        return f"Select completion for: {self.original_message[:50]}..."
+
+    def list_items(self) -> list[sublime.ListInputItem]:
+        import mdpopups
+
+        list_items = []
+        for i, item in enumerate(self.items):
+            insert_text = item.get("insertText", "")
+
+            # Create preview using mdpopups to convert markdown to HTML
+            if insert_text:
+                # Detect language for syntax highlighting
+                # This is a simple heuristic - you might want to improve this
+                language = self._detect_language(insert_text)
+                markdown_text = f"```{language}\n{insert_text}\n```"
+
+                # Convert markdown to HTML using mdpopups
+                try:
+                    html_details = mdpopups.md2html(None, markdown_text)
+                except Exception:
+                    # Fallback to plain text if markdown conversion fails
+                    html_details = f"<pre>{insert_text}</pre>"
+
+                # Create a short preview for the main text
+                preview = insert_text.strip().split('\n')[0]
+                if len(preview) > 60:
+                    preview = preview[:57] + "..."
+
+                # Add line count annotation
+                line_count = len(insert_text.split('\n'))
+                annotation = f"{line_count} line{'s' if line_count != 1 else ''}"
+
+                list_items.append(sublime.ListInputItem(
+                    text=preview,
+                    value=item,
+                    details=html_details,
+                    annotation=annotation,
+                    kind=sublime.KIND_SNIPPET
+                ))
+            else:
+                list_items.append(sublime.ListInputItem(
+                    text=f"Completion {i + 1}",
+                    value=item,
+                    details="<em>No preview available</em>",
+                    annotation="",
+                    kind=sublime.KIND_SNIPPET
+                ))
+
+        return list_items
+
+    def _detect_language(self, text: str) -> str:
+        """Simple language detection based on content."""
+        text_lower = text.lower().strip()
+
+        # Python
+        if any(keyword in text_lower for keyword in ['def ', 'import ', 'from ', 'class ', 'if __name__']):
+            return "python"
+
+        # JavaScript/TypeScript
+        if any(keyword in text_lower for keyword in ['function ', 'const ', 'let ', 'var ', '=>', 'console.log']):
+            return "javascript"
+
+        # HTML
+        if text_lower.startswith('<') and '>' in text_lower:
+            return "html"
+
+        # CSS
+        if '{' in text and '}' in text and ':' in text:
+            return "css"
+
+        # JSON
+        if text.strip().startswith('{') and text.strip().endswith('}'):
+            return "json"
+
+        # Default to text
+        return "text"
 
 
 class CopilotAcceptPanelCompletionShimCommand(CopilotWindowCommand):

@@ -28,6 +28,8 @@ REQ_GET_COMPLETIONS_CYCLING = "getCompletionsCycling"
 REQ_GET_PANEL_COMPLETIONS = "getPanelCompletions"
 REQ_GET_PROMPT = "getPrompt"
 REQ_GET_VERSION = "getVersion"
+REQ_INLINE_COMPLETION_PROMPT = "textDocument/inlineCompletionPrompt"
+REQ_INLINE_COMPLETION = "textDocument/inlineCompletion"
 REQ_GIT_COMMIT_GENERATE = "git/commitGenerate"
 REQ_NOTIFY_ACCEPTED = "notifyAccepted"
 REQ_NOTIFY_REJECTED = "notifyRejected"
@@ -47,16 +49,32 @@ REQ_TEXT_DOCUMENT_DID_FOCUS = "textDocument/didFocus"
 
 # textDocument/inlineCompletionPrompt
 # {
-#         textDocument: nv,
-#         position: wl,
+#         textDocument: {
+#             uri: string;
+    # },
+#         position: {
+    #     line: I.Integer({ minimum: 0 }),
+    #     character: I.Integer({ minimum: 0 }),
+    # },
 #         formattingOptions: I.Optional(
 #             I.Object({
 #                 tabSize: I.Optional(I.Union([I.Integer({ minimum: 1 }), I.String()])),
 #                 insertSpaces: I.Optional(I.Union([I.Boolean(), I.String()])),
 #             }),
 #         ),
-#         context: _nt,
-#         data: I.Optional(I.Unknown()),
+#         context: {
+            #     triggerKind: "Invoked" or "Automatic",
+            #     selectedCompletionInfo: I.Optional(
+            #         I.Object({
+            #             text: I.String(),
+            #             range: { start: {line: character}, end: wl },
+            #             tooltipSignature: I.Optional(I.String()),
+            #         }),
+            #     ),
+            # },
+#         data: {
+# "message": "string",
+# },
 #     }
 # textDocument/inlineCompletion
 

@@ -10,6 +10,7 @@ def reload_plugin() -> None:
         del sys.modules[module_name]
 
 
+
 reload_plugin()
 
 from .plugin import *  # noqa: E402, F403
