@@ -545,6 +545,7 @@ class _EditConversationEntry(BaseConversationEntry):
                 "kind": entry.get("kind", "unknown"),
                 "message": entry.get("reply", ""),
                 "turnId": entry.get("turnId", ""),
+                "annotations": entry.get("annotations", []),
                 "thumbs_up_url": sublime.command_url(
                     "copilot_conversation_rating_shim",
                     {"turn_id": entry.get("turnId", ""), "rating": 1}

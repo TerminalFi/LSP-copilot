@@ -487,6 +487,13 @@ class CopilotPlugin(NpmClientHandler):
                 update["editDescription"],
                 update.get("editTurnId")
             )
+            # Use annotations to store metadata for template processing
+            status = update.get("fileGenerationStatus")
+            if status == EDIT_STATUS_PLAN_GENERATED:
+                entry["annotations"] = ["edit-plan"]
+            elif status == EDIT_STATUS_OVERALL_DESCRIPTION:
+                entry["annotations"] = ["edit-description"]
+            
             wecm.append_conversation_entry(entry)
 
     def _handle_code_generated_response(self, wecm: WindowEditConversationManager, update: dict[str, Any]) -> None:

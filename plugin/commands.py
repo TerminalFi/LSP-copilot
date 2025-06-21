@@ -1230,7 +1230,7 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
     """Command to create a new edit conversation with GitHub Copilot."""
 
     @_provide_plugin_session()
-    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit) -> None:
+    def run(self, plugin: CopilotPlugin, session: Session, _: sublime.Edit, message: str = "") -> None:
         if not (window := self.view.window()):
             return
 
@@ -1239,10 +1239,41 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
             status_message("Cannot start edit conversation on an unsaved file", icon="❌")
             return
 
-        # Get workspace folder if available
-        workspace_folder = None
-        if window.folders():
-            workspace_folder = window.folders()[0]
+        wecm = WindowEditConversationManager(window)
+        if wecm.conversation_id:
+            ui_entry = wecm.get_ui_entry()
+            ui_entry.open()
+            ui_entry.prompt_for_message(callback=lambda msg: self._on_edit_prompt(plugin, session, msg), initial_text=message)
+            return
+
+        # If no message provided, prompt for it first
+        if not message.strip():
+            wecm = WindowEditConversationManager(window)
+            wecm.source_view_id = self.view.id()
+            ui_entry = wecm.get_ui_entry()
+            ui_entry.open()
+            ui_entry.prompt_for_message(
+                callback=lambda msg: self._create_edit_conversation_with_message(plugin, session, msg),
+                initial_text=""
+            )
+            return
+
+        # Create conversation with the provided message
+        self._create_edit_conversation_with_message(plugin, session, message)
+
+    def _create_edit_conversation_with_message(self, plugin: CopilotPlugin, session: Session, message: str) -> None:
+        """Create a new edit conversation with the specified message."""
+        if not (window := self.view.window()):
+            return
+
+        if not message.strip():
+            status_message("Please provide a message for the edit conversation", icon="❌")
+            return
+
+        file_uri = filename_to_uri(self.view.file_name() or "")
+        if not file_uri:
+            status_message("Cannot start edit conversation on an unsaved file", icon="❌")
+            return
 
         # Prepare the document for the request
         doc = prepare_conversation_edit_request(self.view)
@@ -1250,13 +1281,26 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
             status_message("Failed to prepare document for edit conversation", icon="❌")
             return
 
+        # Add user message to conversation before sending request
         wecm = WindowEditConversationManager(window)
-        if wecm.conversation_id:
-            print("opening pre-existing")
-            ui_entry = wecm.get_ui_entry()
-            ui_entry.open()
-            ui_entry.prompt_for_message(callback=lambda msg: self._on_edit_prompt(plugin, session, msg), initial_text="")
-            return
+        wecm.source_view_id = self.view.id()
+        is_template, msg = preprocess_chat_message(self.view, message, [])
+        # Add the user's message to the conversation
+        wecm.append_conversation_entry({
+            "kind": plugin.get_account_status().user or "user",
+            "conversationId": "",  # Will be set when conversation is created
+            "reply": preprocess_message_for_html(msg),
+            "turnId": str(uuid.uuid4()),
+            "references": [],
+            "annotations": [],
+            "hideText": False,
+            "warnings": [],
+        })
+
+        # Update UI to show the user message
+        ui_entry = wecm.get_ui_entry()
+        ui_entry.update()
+
         # Send request to create a new edit conversation
         session.send_request(
             Request(
@@ -1265,7 +1309,7 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
                     "partialResultToken": f"copilot_pedit://{window.id()}",
                     "turns": [
                         {
-                            "request": "Help me improve this code",
+                            "request": msg,
                             "doc": doc
                         }
                     ],
@@ -1301,9 +1345,12 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
             return
 
         # The conversation ID will come from progress updates
-        # We'll handle it in the progress notification handler
+        # Set up the manager and UI for continuous conversation
         wecm = WindowEditConversationManager(window)
         wecm.source_view_id = self.view.id()
+        ui_entry = wecm.get_ui_entry()
+        ui_entry.open()
+        ui_entry.prompt_for_message(callback=lambda msg: self._on_edit_prompt(plugin, session, msg))
 
 
     def _on_edit_prompt(self, plugin: CopilotPlugin, session: Session, msg: str):
@@ -1320,6 +1367,7 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
             status_message("Source view no longer available", icon="❌")
             return
 
+        is_template, msg = preprocess_chat_message(source_view, msg, [])
         # Get workspace folder if available
         workspace_folder = None
         if window.folders():
@@ -1334,7 +1382,19 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
         file_uri = filename_to_uri(source_view.file_name() or "")
 
         # Add user message to conversation
-        ui_entry.add_user_message(msg)
+        wecm.append_conversation_entry({
+            "kind": plugin.get_account_status().user or "user",
+            "conversationId": wecm.conversation_id,
+            "reply": preprocess_message_for_html(msg),
+            "turnId": str(uuid.uuid4()),
+            "references": [],
+            "annotations": [],
+            "hideText": False,
+            "warnings": [],
+        })
+
+        # Update UI to show the user message
+        ui_entry.update()
 
         # Send the turn request
         session.send_request(

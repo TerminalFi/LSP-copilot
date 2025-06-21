@@ -1,6 +1,49 @@
 <style>
 {{ include_asset('chat_panel.css') }}
 {{ include_asset('chat_panel.custom.css', use_cache=False) }}
+
+/* Edit plan specific styling */
+.edit-plan {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background-color: color(var(--background) blend(var(--foreground) 85%));
+  border-left: 3px solid var(--bluish);
+  border-radius: 3px;
+}
+
+.edit-plan strong {
+  color: var(--bluish);
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.edit-plan-content {
+  color: color(var(--foreground) alpha(0.8));
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Edit description (overall-description-generated) styling */
+.edit-description {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background-color: color(var(--background) blend(var(--foreground) 3%));
+  border-left: 3px solid var(--greenish);
+  border-radius: 3px;
+}
+
+.edit-description strong {
+  color: var(--greenish);
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.edit-description-content {
+  color: color(var(--foreground) alpha(0.9));
+  line-height: 1.4;
+}
 </style>
 
 <div class="navbar">
@@ -44,7 +87,19 @@
   {%- endif -%}
 </div>
 
+{% if "edit-plan" in section.annotations %}
+<div class="edit-plan">
+  <strong>Planned work</strong>
+  <div class="edit-plan-content">{{ section.message | safe }}</div>
+</div>
+{% elif "edit-description" in section.annotations %}
+<div class="edit-description">
+  <strong>Overview</strong>
+  <div class="edit-description-content">{{ section.message | safe }}</div>
+</div>
+{% else %}
 {{ section.message | safe }}
+{% endif %}
 
 ---
 
