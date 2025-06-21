@@ -60,6 +60,7 @@ from .constants import (
     REQ_EDIT_CONVERSATION_CREATE,
     REQ_EDIT_CONVERSATION_TURN,
     REQ_EDIT_CONVERSATION_TURN_DELETE,
+    REQ_EDIT_CONVERSATION_DESTROY,
     REQ_CONVERSATION_REGISTER_TOOLS,
 )
 from .decorators import must_be_active_view
@@ -1447,6 +1448,15 @@ class CopilotEditConversationTurnDeleteCommand(CopilotTextCommand):
                 view.run_command("copilot_refresh_edit_conversation_panel", {"conversation_id": conversation_id})
                 break
 
+class CopilotEditConversationDestroyShimCommand(CopilotWindowCommand):
+    def run(self, conversation_id: str) -> None:
+        wecm = WindowEditConversationManager(self.window)
+        if not (view := find_view_by_id(wecm.source_view_id)):
+            status_message("Failed to find source view.")
+            return
+        # Focus the view so that the command runs
+        self.window.focus_view(view)
+        view.run_command("copilot_edit_conversation_destroy", {"conversation_id": conversation_id})
 
 class CopilotEditConversationDestroyCommand(CopilotTextCommand):
     """Command to destroy an edit conversation."""
@@ -1459,32 +1469,42 @@ class CopilotEditConversationDestroyCommand(CopilotTextCommand):
         _: sublime.Edit,
         conversation_id: str
     ) -> None:
+        if not (
+            (window := self.view.window())
+            and (wecm := WindowEditConversationManager(window))
+            and wecm.conversation_id == conversation_id
+        ):
+            status_message("Failed to find window or edit conversation.")
+            return
+
         session.send_request(
             Request(
                 REQ_EDIT_CONVERSATION_DESTROY,
                 {
-                    "conversationId": conversation_id
+                    "editConversationId": conversation_id,
+                    "options": {},
                 }
             ),
-            lambda response: self._on_result_edit_conversation_destroy(conversation_id, response)
+            self._on_result_edit_conversation_destroy,
         )
 
-    def _on_result_edit_conversation_destroy(
-        self,
-        conversation_id: str,
-        payload: Any
-    ) -> None:
+    def _on_result_edit_conversation_destroy(self, payload: str) -> None:
         if not (window := self.view.window()):
+            status_message("Failed to find window")
+            return
+        if payload != "OK":
+            status_message("Failed to destroy edit conversation.")
             return
 
-        # Close and clean up the panel
-        panel_name = f"{COPILOT_OUTPUT_PANEL_PREFIX}_edit_{conversation_id[:8]}"
-        for view in window.views():
-            if view.settings().get('output.name') == panel_name:
-                view.close()
-                break
+        status_message("Destroyed edit conversation.")
+        wecm = WindowEditConversationManager(window)
+        wecm.close()
+        wecm.reset()
 
-        status_message("Edit conversation destroyed", icon="✅")
+    def is_enabled(self, event: dict[Any, Any] | None = None, point: int | None = None) -> bool:  # type: ignore
+        if not (window := self.view.window()):
+            return False
+        return bool(WindowEditConversationManager(window).conversation_id)
 
 
 class CopilotRefreshEditConversationPanelCommand(sublime_plugin.TextCommand):

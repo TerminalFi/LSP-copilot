@@ -33,8 +33,6 @@ from .constants import (
     REQ_GET_VERSION,
     REQ_SET_EDITOR_INFO,
     REQ_CONTEXT_REGISTER_PROVIDERS,
-    COPILOT_ACCEPT_SUGGESTION_KINDS,
-    COPILOT_OUTPUT_PANEL_PREFIX,
     REQ_CONVERSATION_AGENTS,
     REQ_CONVERSATION_PRECONDITIONS,
     REQ_CONVERSATION_TEMPLATES,
@@ -62,6 +60,7 @@ from .types import (
     AccountStatus,
     CopilotPayloadCompletions,
     CopilotPayloadConversationContext,
+    CopilotPayloadConversationEntry,
     CopilotPayloadFeatureFlagsNotification,
     CopilotPayloadGetVersion,
     CopilotPayloadLogMessage,
@@ -70,10 +69,6 @@ from .types import (
     CopilotPayloadStatusNotification,
     NetworkProxy,
     T_Callable,
-    CopilotPayloadNotifyShown,
-    CopilotPayloadSetEditorInfo,
-    T_AccountStatus,
-    T_CompletionItem,
 )
 from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager, WindowEditConversationManager
 from .utils import (
@@ -461,7 +456,7 @@ class CopilotPlugin(NpmClientHandler):
         reply: str, 
         turn_id: str | None = None,
         kind: str = "report"
-    ) -> dict[str, Any]:
+    ) -> CopilotPayloadConversationEntry:
         """Helper method to create a standardized conversation entry."""
         return {
             "kind": kind,
@@ -635,7 +630,7 @@ class CopilotPlugin(NpmClientHandler):
         vcm.show(completions, 0, get_session_setting(session, "completion_style"))
 
     @notification_handler(REQ_NOTIFY_SHOWN)
-    def _handle_notify_shown_notification(self, payload: CopilotPayloadNotifyShown) -> None:
+    def _handle_notify_shown_notification(self, payload: Any) -> None:
         pass
 
     @notification_handler(REQ_COPILOT_MODELS)
