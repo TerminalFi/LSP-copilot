@@ -18,6 +18,7 @@ COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX = "copilot.conversation"
 # ---------------- #
 
 REQ_CHECK_STATUS = "checkStatus"
+REQ_CHECK_QUOTA = "checkQuota"
 REQ_COPILOT_MODELS = "copilot/models"
 REQ_COPILOT_SET_MODEL_POLICY = "copilot/setModelPolicy"
 REQ_COPILOT_CODE_REVIEW = "copilot/codeReview"
@@ -43,6 +44,21 @@ REQ_TEXT_DOCUMENT_DID_FOCUS = "textDocument/didFocus"
 #         "uri": "file:///path/to/file"
 #     }
 # }
+
+# textDocument/inlineCompletionPrompt
+# {
+#         textDocument: nv,
+#         position: wl,
+#         formattingOptions: I.Optional(
+#             I.Object({
+#                 tabSize: I.Optional(I.Union([I.Integer({ minimum: 1 }), I.String()])),
+#                 insertSpaces: I.Optional(I.Union([I.Boolean(), I.String()])),
+#             }),
+#         ),
+#         context: _nt,
+#         data: I.Optional(I.Unknown()),
+#     }
+# textDocument/inlineCompletion
 
 # --------------------- #
 # Copilot chat requests #
@@ -96,3 +112,4 @@ EDIT_STATUS_PLAN_GENERATED = "edit-plan-generated"
 EDIT_STATUS_OVERALL_DESCRIPTION = "overall-description-generated"
 EDIT_STATUS_CODE_GENERATED = "updated-code-generated"
 EDIT_STATUS_NO_CODE_BLOCKS = "no-code-blocks-found"
+# "updated-code-generating"
