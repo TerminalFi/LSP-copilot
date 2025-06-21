@@ -94,7 +94,7 @@ from .types import (
     CopilotPayloadEditConversationCreate,
     CopilotPayloadEditConversationTurn,
 )
-from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager
+from .ui import ViewCompletionManager, ViewPanelCompletionManager, WindowConversationManager, WindowEditConversationManager
 from .utils import (
     find_index_by_key_value,
     find_view_by_id,
@@ -1249,10 +1249,12 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
             status_message("Failed to prepare document for edit conversation", icon="❌")
             return
 
-        wcm = WindowConversationManager(window)
-        if wcm.conversation_id:
-            wcm.open()
-            wcm.prompt(callback=lambda msg: self._on_edit_prompt(plugin, session, msg), initial_text=message)
+        wecm = WindowEditConversationManager(window)
+        if wecm.conversation_id:
+            print("opening pre-existing")
+            ui_entry = wecm.get_ui_entry()
+            ui_entry.open()
+            ui_entry.prompt_for_message(callback=lambda msg: self._on_edit_prompt(plugin, session, msg), initial_text="")
             return
         # Send request to create a new edit conversation
         session.send_request(
@@ -1299,22 +1301,21 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
 
         # The conversation ID will come from progress updates
         # We'll handle it in the progress notification handler
-        wcm = WindowConversationManager(window)
-        wcm.edit_source_view_id = self.view.id()
-        wcm.is_waiting = True
-        wcm.update()
+        wecm = WindowEditConversationManager(window)
+        wecm.source_view_id = self.view.id()
 
 
     def _on_edit_prompt(self, plugin: CopilotPlugin, session: Session, msg: str):
         if not (window := self.view.window()):
             return
 
-        wcm = WindowConversationManager(window)
-        if wcm.is_waiting:
-            wcm.prompt(callback=lambda x: self._on_edit_prompt(plugin, session, x), initial_text=msg)
+        wecm = WindowEditConversationManager(window)
+        ui_entry = wecm.get_ui_entry()
+        if wecm.is_waiting:
+            ui_entry.prompt_for_message(callback=lambda x: self._on_edit_prompt(plugin, session, x), initial_text=msg)
             return
 
-        if not (source_view := find_view_by_id(wcm.edit_source_view_id)):
+        if not (source_view := find_view_by_id(wecm.source_view_id)):
             status_message("Source view no longer available", icon="❌")
             return
 
@@ -1332,24 +1333,15 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
         file_uri = filename_to_uri(source_view.file_name() or "")
 
         # Add user message to conversation
-        wcm.append_conversation_entry({
-            "kind": plugin.get_account_status().user or "user",
-            "conversationId": wcm.edit_conversation_id,
-            "reply": preprocess_message_for_html(msg),
-            "turnId": str(uuid.uuid4()),
-            "references": [],
-            "annotations": [],
-            "hideText": False,
-            "warnings": [],
-        })
+        ui_entry.add_user_message(msg)
 
         # Send the turn request
         session.send_request(
             Request(
                 REQ_EDIT_CONVERSATION_TURN,
                 {
-                    "partialResultToken": f"copilot_edit://{window.id()}_{wcm.edit_conversation_id}",
-                    "editConversationId": wcm.edit_conversation_id,
+                    "partialResultToken": f"copilot_edit://{window.id()}_{wecm.conversation_id}",
+                    "editConversationId": wecm.conversation_id,
                     "message": msg,
                     "workingSet": [
                         {
@@ -1364,10 +1356,9 @@ class CopilotEditConversationCreateCommand(CopilotTextCommand):
                     "model": None
                 }
             ),
-            lambda _: wcm.prompt(callback=lambda x: self._on_edit_prompt(plugin, session, x))
+            lambda _: ui_entry.prompt_for_message(callback=lambda x: self._on_edit_prompt(plugin, session, x))
         )
-        wcm.is_waiting = True
-        wcm.update()
+        ui_entry.show_waiting_state(True)
 
 
 class CopilotApplyEditConversationEditsCommand(CopilotTextCommand):
@@ -1378,10 +1369,10 @@ class CopilotApplyEditConversationEditsCommand(CopilotTextCommand):
         if not (window := self.view.window()):
             return
 
-        wcm = WindowConversationManager(window)
-        # Get pending edits and source view ID from window settings
-        pending_edits = wcm.pending_edits
-        source_view = find_view_by_id(wcm.edit_source_view_id)
+        wecm = WindowEditConversationManager(window)
+        # Get pending edits and source view from the edit conversation manager
+        pending_edits = wecm.pending_edits
+        source_view = wecm.get_source_view()
 
         if not pending_edits:
             status_message("No pending edits to apply", icon="❌")
@@ -1411,7 +1402,7 @@ class CopilotApplyEditConversationEditsCommand(CopilotTextCommand):
                     edit_obj.replace(region, edit_item.get("newText", ""))
 
         # Clear pending edits
-        wcm.pending_edits = []
+        wecm.clear_pending_edits()
         status_message("Applied edits to the document", icon="✅")
 
 

@@ -13,132 +13,126 @@ from ..utils import find_view_by_id, find_window_by_id, get_copilot_setting, rem
 
 
 class WindowConversationManager:
-    """Manages the conversation UI for a window."""
+    # --------------- #
+    # window settings #
+    # --------------- #
 
     @property
     def group_id(self) -> int:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.group_id", -1)
+        """The ID of the group which is used to show conversation panel."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_group_id", -1)
 
     @group_id.setter
     def group_id(self, value: int) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.group_id", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_group_id", value)
 
     @property
     def last_active_view_id(self) -> int:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.last_active_view_id", -1)
+        """The ID of the last active view that is not the conversation panel"""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "last_active_view_id", -1)
 
     @last_active_view_id.setter
     def last_active_view_id(self, value: int) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.last_active_view_id", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "last_active_view_id", value)
 
     @property
     def original_layout(self) -> StLayout | None:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.original_layout")
+        """The original window layout prior to panel presentation."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "original_layout", None)
 
     @original_layout.setter
     def original_layout(self, value: StLayout | None) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.original_layout", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "original_layout", value)
 
     @property
     def view_id(self) -> int:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.view_id", -1)
+        """The ID of the sheet which is used to show conversation panel."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_id", -1)
 
     @view_id.setter
     def view_id(self, value: int) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.view_id", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "view_id", value)
 
     @property
     def suggested_title(self) -> str:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.suggested_title", "")
+        """Suggested title of the conversation"""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "suggested_title", "")
 
     @suggested_title.setter
     def suggested_title(self, value: str) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.suggested_title", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "suggested_title", value)
 
     @property
     def follow_up(self) -> str:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.follow_up", "")
+        """Suggested follow up of the conversation provided by copilot."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", "")
 
     @follow_up.setter
     def follow_up(self, value: str) -> None:
         # Fixes: https://github.com/TerminalFi/LSP-copilot/issues/182
         # Replaces ` with &#96; to avoid breaking the HTML
-        self.window.settings().set(
-            f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.follow_up",
-            value.replace("`", "&#96;"),
+        set_copilot_setting(
+            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "follow_up", value.replace("`", "&#96;")
         )
 
     @property
     def conversation_id(self) -> str:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.conversation_id", "")
+        """The conversation uuid used to identify the conversation."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_id", "")
 
     @conversation_id.setter
     def conversation_id(self, value: str) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.conversation_id", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_id", value)
 
     @property
     def code_block_index(self) -> dict[str, str]:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.code_block_index", {})
+        """The tracking of code blocks across the conversation. Used to support Copy and Insert code commands."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "code_block_index", {})
 
     @code_block_index.setter
     def code_block_index(self, value: dict[str, str]) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.code_block_index", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "code_block_index", value)
 
     @property
     def is_waiting(self) -> bool:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.is_waiting", False)
+        """Whether the converation completions is streaming."""
+        return get_copilot_setting(
+            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_waiting_conversation", False
+        )
 
     @is_waiting.setter
     def is_waiting(self, value: bool) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.is_waiting", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_waiting_conversation", value)
 
     @property
     def is_visible(self) -> bool:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.is_visible", False)
+        """Whether the converation completions is streaming."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible", False)
 
     @is_visible.setter
     def is_visible(self, value: bool) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.is_visible", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "is_visible", value)
 
     @property
     def reference_block_state(self) -> dict[str, bool]:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.reference_block_state", {})
+        return get_copilot_setting(
+            self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "reference_block_state", {}
+        )
 
     @reference_block_state.setter
     def reference_block_state(self, value: dict[str, bool]) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.reference_block_state", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "reference_block_state", value)
 
     @property
     def conversation(self) -> list[CopilotPayloadConversationEntry]:
-        return self.window.settings().get(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.conversation", [])
+        """All `conversation` in the view. Note that this is a copy."""
+        return get_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_entries", [])
 
     @conversation.setter
     def conversation(self, value: list[CopilotPayloadConversationEntry]) -> None:
-        self.window.settings().set(f"{COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX}.conversation", value)
+        set_copilot_setting(self.window, COPILOT_WINDOW_CONVERSATION_SETTINGS_PREFIX, "conversation_entries", value)
 
-    @property
-    def edit_conversation_id(self) -> str:
-        return self.window.settings().get(f"copilot.window.edit_conversation_id", "")
 
-    @edit_conversation_id.setter
-    def edit_conversation_id(self, value: str) -> None:
-        self.window.settings().set(f"copilot.window.edit_conversation_id", value)
-
-    @property
-    def edit_source_view_id(self) -> int:
-        return self.window.settings().get(f"copilot.window.edit_source_view_id", -1)
-
-    @edit_source_view_id.setter
-    def edit_source_view_id(self, value: int) -> None:
-        self.window.settings().set(f"copilot.window.edit_source_view_id", value)
-
-    @property
-    def pending_edits(self) -> list[dict[str, Any]]:
-        return self.window.settings().get(f"copilot.window.pending_edits", [])
-
-    @pending_edits.setter
-    def pending_edits(self, value: list[dict[str, Any]]) -> None:
-        self.window.settings().set(f"copilot.window.pending_edits", value)
 
     def __init__(self, window: sublime.Window) -> None:
         self.window = window
@@ -157,9 +151,6 @@ class WindowConversationManager:
         self.is_visible = False
         self.reference_block_state = {}
         self.conversation = []
-        self.edit_conversation_id = ""
-        self.edit_source_view_id = -1
-        self.pending_edits = []
 
     def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
         # `self.conversation` is a deepcopy of the original value
@@ -195,30 +186,17 @@ class WindowConversationManager:
         self.window.show_input_panel("Copilot:", initial_text, callback, None, None)
 
     def open(self) -> None:
-        self.is_visible = True
+        _ConversationEntry(self.window).open()
 
     def update(self) -> None:
-        pass
+        """Update the completion panel."""
+        _ConversationEntry(self.window).update()
 
     def close(self) -> None:
-        self.is_visible = False
+        """Close the completion panel."""
+        _ConversationEntry(self.window).close()
 
-    def destroy_edit_conversation(self) -> None:
-        """Destroy the current edit conversation and clean up related resources."""
-        if not self.edit_conversation_id:
-            return
 
-        # Close the edit conversation panel if it exists
-        panel_name = f"{COPILOT_OUTPUT_PANEL_PREFIX}_edit_{self.edit_conversation_id[:8]}"
-        for view in self.window.views():
-            if view.settings().get('output.name') == panel_name:
-                view.close()
-                break
-
-        # Reset edit conversation related settings
-        self.edit_conversation_id = ""
-        self.edit_source_view_id = -1
-        self.pending_edits = []
 
 
 class _ConversationEntry:
@@ -392,3 +370,339 @@ class _ConversationEntry:
             "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
         })
         self._open_in_group(window, 1)
+
+
+class _EditConversationEntry:
+    """Handles UI rendering and management for edit conversations using HTML sheets."""
+
+    def __init__(self, window: sublime.Window) -> None:
+        self.window = window
+        self.wecm = WindowEditConversationManager(window)
+
+    @property
+    def completion_content(self) -> str:
+        """Generate the HTML content for the edit conversation sheet."""
+        from ..helpers import GithubInfo, preprocess_message_for_html
+        from ..template import load_resource_template
+
+        # Get source file name if available
+        source_file = ""
+        if source_view := self.wecm.get_source_view():
+            if file_name := source_view.file_name():
+                import os
+                source_file = os.path.basename(file_name)
+
+        # Process conversation entries into sections
+        sections = []
+        for entry in self.wecm.conversation_entries:
+            sections.append({
+                "kind": entry.get("kind", "unknown"),
+                "message": entry.get("reply", ""),
+                "turnId": entry.get("turnId", ""),
+                "thumbs_up_url": sublime.command_url(
+                    "copilot_conversation_rating_shim",
+                    {"turn_id": entry.get("turnId", ""), "rating": 1}
+                ),
+                "thumbs_down_url": sublime.command_url(
+                    "copilot_conversation_rating_shim",
+                    {"turn_id": entry.get("turnId", ""), "rating": -1}
+                ),
+                "turn_delete_url": sublime.command_url(
+                    "copilot_edit_conversation_turn_delete",
+                    {
+                        "conversation_id": self.wecm.conversation_id,
+                        "turn_id": entry.get("turnId", "")
+                    }
+                ),
+            })
+
+        return load_resource_template("edit_conversation.md.jinja", keep_trailing_newline=True).render(
+            window_id=self.window.id(),
+            is_waiting=self.wecm.is_waiting,
+            avatar_img_src=GithubInfo.get_avatar_img_src(),
+            source_file=source_file,
+            sections=sections,
+            pending_edits=self.wecm.pending_edits,
+            close_url=sublime.command_url(
+                "copilot_edit_conversation_close",
+                {"conversation_id": self.wecm.conversation_id}
+            ),
+            destroy_url=sublime.command_url(
+                "copilot_edit_conversation_destroy",
+                {"conversation_id": self.wecm.conversation_id}
+            ),
+            apply_edits_url=sublime.command_url(
+                "copilot_apply_edit_conversation_edits",
+                {}
+            ),
+        )
+
+    def open(self) -> None:
+        """Open the edit conversation sheet."""
+        self.wecm.is_visible = True
+        active_group = self.window.active_group()
+        if active_group == self.window.num_groups() - 1:
+            self._open_in_side_by_side(self.window)
+        else:
+            self._open_in_group(self.window, active_group + 1)
+
+        self.window.focus_view(self.window.active_view())  # type: ignore
+
+    def update(self) -> None:
+        """Update the edit conversation sheet content."""
+        if not (sheet := self.window.transient_sheet_in_group(self.wecm.group_id)):
+            return
+
+        mdpopups.update_html_sheet(sheet=sheet, contents=self.completion_content, md=True, wrapper_class="wrapper")
+
+    def close(self) -> None:
+        """Close the edit conversation sheet."""
+        if not (sheet := self.window.transient_sheet_in_group(self.wecm.group_id)):
+            return
+
+        sheet.close()
+
+        self.wecm.is_visible = False
+        self.wecm.window.run_command("hide_panel")
+        if self.wecm.original_layout:
+            self.window.set_layout(self.wecm.original_layout)  # type: ignore
+            self.wecm.original_layout = None
+
+        if view := self.window.active_view():
+            self.window.focus_view(view)
+
+    def _open_in_group(self, window: sublime.Window, group_id: int) -> None:
+        """Open the edit conversation sheet in a specific group."""
+        self.wecm.group_id = group_id
+
+        window.focus_group(group_id)
+        sheet = mdpopups.new_html_sheet(
+            window=window,
+            name="Copilot Edit",
+            contents=self.completion_content,
+            md=True,
+            flags=sublime.TRANSIENT,
+            wrapper_class="wrapper",
+        )
+        self.wecm.view_id = sheet.id()
+
+    def _open_in_side_by_side(self, window: sublime.Window) -> None:
+        """Open the edit conversation sheet in side-by-side layout."""
+        self.wecm.original_layout = window.layout()  # type: ignore
+        window.set_layout({
+            "cols": [0.0, 0.5, 1.0],
+            "rows": [0.0, 1.0],
+            "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
+        })
+        self._open_in_group(window, 1)
+
+    def prompt_for_message(self, callback: Callable[[str], None], initial_text: str = "") -> None:
+        """Show input panel for new message in edit conversation."""
+        self.window.show_input_panel("Edit Conversation:", initial_text, callback, None, None)
+
+    def add_user_message(self, message: str) -> None:
+        """Add a user message to the edit conversation."""
+        import uuid
+        from ..helpers import preprocess_message_for_html
+
+        self.wecm.append_conversation_entry({
+            "kind": "user",
+            "conversationId": self.wecm.conversation_id,
+            "reply": preprocess_message_for_html(message),
+            "turnId": str(uuid.uuid4()),
+            "references": [],
+            "annotations": [],
+            "hideText": False,
+            "warnings": [],
+        })
+        self.update()
+
+    def add_assistant_message(self, message: str, turn_id: str | None = None) -> None:
+        """Add an assistant message to the edit conversation."""
+        import uuid
+        from ..helpers import preprocess_message_for_html
+
+        self.wecm.append_conversation_entry({
+            "kind": "assistant",
+            "conversationId": self.wecm.conversation_id,
+            "reply": preprocess_message_for_html(message),
+            "turnId": turn_id or str(uuid.uuid4()),
+            "references": [],
+            "annotations": [],
+            "hideText": False,
+            "warnings": [],
+        })
+        self.update()
+
+    def show_waiting_state(self, waiting: bool = True) -> None:
+        """Show or hide waiting state in the sheet."""
+        self.wecm.is_waiting = waiting
+        self.update()
+
+    def add_pending_edit(self, edit: dict[str, Any]) -> None:
+        """Add a pending edit and update the sheet."""
+        self.wecm.add_pending_edit(edit)
+        self.update()
+
+    def clear_pending_edits(self) -> None:
+        """Clear pending edits and update the sheet."""
+        self.wecm.clear_pending_edits()
+        self.update()
+
+
+class WindowEditConversationManager:
+    """Manager for edit conversations which have different lifecycle and requirements than chat conversations."""
+
+    EDIT_CONVERSATION_SETTINGS_PREFIX = "copilot.window.edit_conversation"
+
+    @property
+    def conversation_id(self) -> str:
+        """The edit conversation UUID used to identify the conversation."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "conversation_id", "")
+
+    @conversation_id.setter
+    def conversation_id(self, value: str) -> None:
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "conversation_id", value)
+
+    @property
+    def group_id(self) -> int:
+        """The ID of the group which is used to show edit conversation panel."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "group_id", -1)
+
+    @group_id.setter
+    def group_id(self, value: int) -> None:
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "group_id", value)
+
+    @property
+    def view_id(self) -> int:
+        """The ID of the sheet which is used to show edit conversation panel."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "view_id", -1)
+
+    @view_id.setter
+    def view_id(self, value: int) -> None:
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "view_id", value)
+
+    @property
+    def original_layout(self) -> StLayout | None:
+        """The original window layout prior to panel presentation."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "original_layout", None)
+
+    @original_layout.setter
+    def original_layout(self, value: StLayout | None) -> None:
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "original_layout", value)
+
+    @property
+    def source_view_id(self) -> int:
+        """The ID of the source view being edited."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "source_view_id", -1)
+
+    @source_view_id.setter
+    def source_view_id(self, value: int) -> None:
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "source_view_id", value)
+
+    @property
+    def pending_edits(self) -> list[dict[str, Any]]:
+        """List of pending edits that can be applied to the source view."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "pending_edits", [])
+
+    @pending_edits.setter
+    def pending_edits(self, value: list[dict[str, Any]]) -> None:
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "pending_edits", value)
+
+    @property
+    def is_waiting(self) -> bool:
+        """Whether the edit conversation is waiting for a response."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "is_waiting", False)
+
+    @is_waiting.setter
+    def is_waiting(self, value: bool) -> None:
+        print("setting is_waiting to ", value)
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "is_waiting", value)
+
+    @property
+    def is_visible(self) -> bool:
+        """Whether the edit conversation panel is visible."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "is_visible", False)
+
+    @is_visible.setter
+    def is_visible(self, value: bool) -> None:
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "is_visible", value)
+
+
+
+    @property
+    def conversation_entries(self) -> list[CopilotPayloadConversationEntry]:
+        """All conversation entries for this edit conversation."""
+        return get_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "conversation_entries", [])
+
+    @conversation_entries.setter
+    def conversation_entries(self, value: list[CopilotPayloadConversationEntry]) -> None:
+        set_copilot_setting(self.window, self.EDIT_CONVERSATION_SETTINGS_PREFIX, "conversation_entries", value)
+
+    def __init__(self, window: sublime.Window) -> None:
+        self.window = window
+
+    def reset(self) -> None:
+        """Reset all edit conversation settings to their default values."""
+        self.conversation_id = ""
+        self.group_id = -1
+        self.view_id = -1
+        self.original_layout = None
+        self.source_view_id = -1
+        self.pending_edits = []
+        self.is_waiting = False
+        self.is_visible = False
+        self.conversation_entries = []
+
+    def append_conversation_entry(self, entry: CopilotPayloadConversationEntry) -> None:
+        """Add a new conversation entry to the edit conversation."""
+        entries = self.conversation_entries
+        entries.append(entry)
+        self.conversation_entries = entries
+
+    def add_pending_edit(self, edit: dict[str, Any]) -> None:
+        """Add a pending edit that can be applied to the source view."""
+        edits = self.pending_edits
+        edits.append(edit)
+        self.pending_edits = edits
+
+    def clear_pending_edits(self) -> None:
+        """Clear all pending edits."""
+        self.pending_edits = []
+
+    def get_source_view(self) -> sublime.View | None:
+        """Get the source view being edited, if it still exists."""
+        return find_view_by_id(self.source_view_id)
+
+
+
+    def destroy(self) -> None:
+        """Destroy the edit conversation and clean up all resources."""
+        if ui_entry := self.get_ui_entry():
+            ui_entry.close()
+        self.reset()
+
+    def get_ui_entry(self) -> '_EditConversationEntry':
+        """Get the UI entry helper for this edit conversation."""
+        return _EditConversationEntry(self.window)
+
+    def open(self) -> None:
+        self.get_ui_entry().open()
+
+    def update(self) -> None:
+        """Update the completion panel."""
+        self.get_ui_entry().update()
+
+    def close(self) -> None:
+        """Close the completion panel."""
+        self.get_ui_entry().close()
+
+
+    @staticmethod
+    def find_by_conversation_id(conversation_id: str) -> 'WindowEditConversationManager | None':
+        """Find an edit conversation manager by conversation ID across all windows."""
+        for window in sublime.windows():
+            wecm = WindowEditConversationManager(window)
+            if wecm.conversation_id == conversation_id:
+                return wecm
+        return None

@@ -88,3 +88,11 @@ NTFY_PANEL_SOLUTION = "PanelSolution"
 NTFY_PANEL_SOLUTION_DONE = "PanelSolutionsDone"
 NTFY_PROGRESS = "$/progress"
 NTFY_STATUS_NOTIFICATION = "statusNotification"
+
+# Edit conversation file generation statuses
+EDIT_STATUS_BEGIN = "edit-conversation-begin"
+EDIT_STATUS_END = "edit-conversation-end"
+EDIT_STATUS_PLAN_GENERATED = "edit-plan-generated"
+EDIT_STATUS_OVERALL_DESCRIPTION = "overall-description-generated"
+EDIT_STATUS_CODE_GENERATED = "updated-code-generated"
+EDIT_STATUS_NO_CODE_BLOCKS = "no-code-blocks-found"
