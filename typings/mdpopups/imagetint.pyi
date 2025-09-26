@@ -1,0 +1,6 @@
+from .coloraide import Color as Color, util as util
+from .png import Reader as Reader, Writer as Writer
+from _typeshed import Incomplete
+
+def tint_raw(byte_string, color, opacity: int = 255): ...
+def tint(byte_string, color, opacity: int = 255, height: Incomplete | None = None, width: Incomplete | None = None): ...

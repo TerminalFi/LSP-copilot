@@ -1,0 +1,23 @@
+from . import util as util
+from ..markdown import Extension as Extension
+from ..markdown.extensions.attr_list import AttrListTreeprocessor as AttrListTreeprocessor
+from ..markdown.inlinepatterns import InlineProcessor as InlineProcessor, dequote as dequote
+from _typeshed import Incomplete
+
+RE_PROGRESS: str
+CLASS_LEVEL: str
+
+class ProgressBarTreeProcessor(AttrListTreeprocessor):
+    def run(self, elem) -> None: ...
+
+class ProgressBarPattern(InlineProcessor):
+    def __init__(self, pattern, md) -> None: ...
+    def create_tag(self, width, label, add_classes, alist): ...
+    def handleMatch(self, m, data): ...
+
+class ProgressBarExtension(Extension):
+    config: Incomplete
+    def __init__(self, *args, **kwargs) -> None: ...
+    def extendMarkdown(self, md) -> None: ...
+
+def makeExtension(*args, **kwargs): ...

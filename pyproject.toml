@@ -29,7 +29,7 @@ default-groups = ["dev"]
 # ignore_missing_imports = False
 check_untyped_defs = true
 strict_optional = true
-mypy_path = 'typings/lsp_utils/st3:typings/ST-API-stubs/typings:typings/sublime-markdown-popups/st3:typings:stubs'
+mypy_path = 'typings:stubs'
 python_version = '3.8'
 
 [[tool.mypy.overrides]]

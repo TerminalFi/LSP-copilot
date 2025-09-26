@@ -1,0 +1,9 @@
+import sublime
+from .logging import debug as debug
+from .protocol import AnnotatedTextEdit as AnnotatedTextEdit, Position as Position, TextEdit as TextEdit, UINT_MAX as UINT_MAX, WorkspaceEdit as WorkspaceEdit
+
+WorkspaceChanges = dict[str, tuple[list[TextEdit | AnnotatedTextEdit], int | None]]
+
+def parse_workspace_edit(workspace_edit: WorkspaceEdit) -> WorkspaceChanges: ...
+def parse_range(range: Position) -> tuple[int, int]: ...
+def apply_text_edits(view: sublime.View, edits: list[TextEdit] | None, *, process_placeholders: bool | None = False, required_view_version: int | None = None) -> None: ...

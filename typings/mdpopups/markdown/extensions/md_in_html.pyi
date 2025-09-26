@@ -1,0 +1,13 @@
+from . import Extension as Extension
+from .. import util as util
+from ..blockprocessors import BlockProcessor as BlockProcessor
+from _typeshed import Incomplete
+
+class MarkdownInHtmlProcessor(BlockProcessor):
+    def test(self, parent, block): ...
+    def run(self, parent, blocks, tail: Incomplete | None = None, nest: bool = False) -> None: ...
+
+class MarkdownInHtmlExtension(Extension):
+    def extendMarkdown(self, md) -> None: ...
+
+def makeExtension(**kwargs): ...

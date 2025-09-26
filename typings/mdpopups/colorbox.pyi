@@ -1,0 +1,3 @@
+__all__ = ['color_box']
+
+def color_box(*args, **kwargs): ...

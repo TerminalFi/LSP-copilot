@@ -1,0 +1,16 @@
+import unittest
+from _typeshed import Incomplete
+
+__all__ = ['TestCase', 'LegacyTestCase', 'Kwargs']
+
+class TestCase(unittest.TestCase):
+    default_kwargs: Incomplete
+    def assertMarkdownRenders(self, source, expected, **kwargs) -> None: ...
+    def dedent(self, text): ...
+
+class Kwargs(dict): ...
+
+class LegacyTestMeta(type):
+    def __new__(cls, name, bases, dct): ...
+
+class LegacyTestCase(unittest.TestCase, metaclass=LegacyTestMeta): ...

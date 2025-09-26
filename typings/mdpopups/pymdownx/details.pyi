@@ -1,0 +1,19 @@
+from ..markdown import Extension as Extension
+from ..markdown.blockprocessors import BlockProcessor as BlockProcessor
+from _typeshed import Incomplete
+
+class DetailsProcessor(BlockProcessor):
+    START: Incomplete
+    COMPRESS_SPACES: Incomplete
+    current_sibling: Incomplete
+    content_indention: int
+    def __init__(self, parser) -> None: ...
+    content_indent: int
+    def get_sibling(self, parent, block): ...
+    def test(self, parent, block): ...
+    def run(self, parent, blocks) -> None: ...
+
+class DetailsExtension(Extension):
+    def extendMarkdown(self, md) -> None: ...
+
+def makeExtension(*args, **kwargs): ...

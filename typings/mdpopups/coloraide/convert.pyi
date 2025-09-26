@@ -1,0 +1,9 @@
+from .color import Color as Color
+from .spaces import Space as Space
+from .types import Vector as Vector
+
+ABSOLUTE_BASE: str
+
+def calc_path_to_xyz(color: type['Color'], space: str) -> tuple[list['Space'], dict[str, int]]: ...
+def get_convert_chain(color: type['Color'], space: Space, target: str) -> list[tuple['Space', 'Space', int, bool]]: ...
+def convert(color: Color, space: str) -> tuple['Space', Vector]: ...
