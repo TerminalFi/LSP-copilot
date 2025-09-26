@@ -1,7 +1,0 @@
--r requirements.in
-
-mypy>=1.14
-ruff>=0.9
-
-types-jmespath
-types-requests

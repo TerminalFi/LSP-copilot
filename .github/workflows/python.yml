@@ -26,29 +26,20 @@ jobs:
     name: ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
 
-    env:
-      UV_SYSTEM_PYTHON: 1
-
     strategy:
       matrix:
         os: ['ubuntu-latest']
         python-version: ['3.8']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
-
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install -U uv
-          make install-dev
-
       - name: Do linting
         run: |
           make ci-check
