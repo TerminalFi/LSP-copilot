@@ -16,10 +16,12 @@ mkdocs.yml export-ignore
 mypy.ini export-ignore
 pyproject.toml export-ignore
 pyrightconfig.json export-ignore
-requirements.txt export-ignore
+renovate.json export-ignore
+requirements* export-ignore
 scripts/ export-ignore
 stubs/ export-ignore
 tests/ export-ignore
 tox.ini export-ignore
 typings/ export-ignore
 unittesting.json export-ignore
+uv.lock export-ignore
